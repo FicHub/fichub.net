@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+	<head>
+		<title>fic.pw</title>
+		<link href="/static/_.css" rel="stylesheet" type="text/css">
+		<script type="text/javascript" src="/static/_.js"></script>
+	</head>
+	<body>
+		<p>Enter a fic url and click 'Export', or view the list of previously
+		exported fics by going to the
+		<a href="{{ url_for('cache_listing') }}">Cache</a>.</p>
+		<form onsubmit="epub();" action="javascript:void(0);">
+			<input type="text" size="100" name="q" id="q" />
+			<br />
+			<button onclick="epub()">Export</button>
+		</form>
+		<span id="info"></span>
+
+		<p><a href="{{ url_for('cache_listing') }}">Cache</a></p>
+	</body>
+</html>

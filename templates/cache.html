@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+	<head>
+		<title>fic.pw</title>
+		<link href="/static/_.css" rel="stylesheet" type="text/css">
+	</head>
+	<body>
+		<p><a href=/>Home</a></p>
+		<h2>Cached epubs</h2>
+		<ul>
+		{% for item in cache %}
+			<li><a href="{{ item.href }}">{{ item.fname }}</a></li>
+		{% endfor %}
+		</ul>
+	</body>
+</html>

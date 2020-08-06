@@ -1,0 +1,9 @@
+ebooklib
+authentications.py
+
+__pycache__/
+epub_cache/
+
+master.pid
+uwsgi.log
+

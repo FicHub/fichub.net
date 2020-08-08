@@ -16,34 +16,20 @@ function error(r) {
 	info().innerHTML = '<p>an error ocurred :(</p>' +
 		'<pre>' + r.responseText + '</pre>';
 }
-function lookup() {
-	console.log('lookup');
-	working();
-	var lookupReq = new XMLHttpRequest();
-	lookupReq.addEventListener("load", function () {
-		var res = JSON.parse(this.responseText);
-		if (!res || res.error != 0) {
-			return error(this);
-		}
-		info().innerHTML = '<p>' + res.info + '</p>';
-	});
-	var data = null;
-	lookupReq.open('GET', '/api/v0/lookup?q=' + q());
-	lookupReq.send(data);
-}
 function epub() {
 	console.log('epub');
 	working();
-	var lookupReq = new XMLHttpRequest();
-	lookupReq.addEventListener("load", function () {
+	var exportReq = new XMLHttpRequest();
+	exportReq.addEventListener("load", function () {
 		var res = JSON.parse(this.responseText);
 		if (!res || res.error != 0) {
 			return error(this);
 		}
 		info().innerHTML = '<p><a href="' + res.url + '">Download</a></p>' +
-			'<p>' + res.info + '</p>';
+			'<p>' + res.info.replace('\n', '<br/>') + '</p>';
 	});
 	var data = null;
-	lookupReq.open('GET', '/api/v0/epub?q=' + q());
-	lookupReq.send(data);
+	exportReq.open('GET', '/api/v0/epub?q=' + q());
+	exportReq.send(data);
 }
+

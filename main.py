@@ -18,21 +18,10 @@ import authentications as a
 class WebError(IntEnum):
 	success = 0
 	no_body = -1
-	no_json_body = -2
-
-	url_not_found = -3
-	url_null = -4
-	unknown_encoding = -5
-	invalid_url = -6
 
 errorMessages = {
 		WebError.success: 'success',
 		WebError.no_body: 'no body',
-		WebError.no_json_body: 'no json body',
-		WebError.url_not_found: 'not found',
-		WebError.url_null: 'url null',
-		WebError.unknown_encoding: 'unknown encoding',
-		WebError.invalid_url: 'invalid url',
 	}
 
 def getErr(err: WebError) -> Dict[str, Any]:
@@ -48,18 +37,6 @@ def cache_listing() -> str:
 	for f in os.listdir(ec.CACHE_DIR):
 		items.append({'href':url_for('epub', fname=f), 'fname':f})
 	return render_template('cache.html', cache=items)
-
-@app.route('/api/v0/lookup', methods=['GET'])
-def lookup_fic() -> Any:
-	q = request.args.get('q', None)
-	if q is None:
-		return jsonify(getErr(WebError.no_body))
-	p = ec.reqJson('/'.join([a.AX_LOOKUP_ENDPOINT, q]))
-	if 'error' in p:
-		return jsonify(p)
-		return jsonify(getErr(WebError.url_not_found))
-	ficInfo = ec.metaDataString(p)[0]
-	return jsonify({'error':0,'info':ficInfo})
 
 @app.route('/epub/<fname>')
 def epub(fname: str) -> Any:

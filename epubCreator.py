@@ -89,10 +89,7 @@ def createEpub(link):
 	""" % (intro_page['title'], intro_page['author'], intro_page['desc'])
 	book.add_item(intro)
 	# define Table Of Contents
-	book.toc = (epub.Link('introduction.xhtml', 'Introduction', 'intro'),
-				(epub.Section('...'),
-				list(chapters.values()))
-				)
+	book.toc = [epub.Link('introduction.xhtml', 'Introduction', 'intro')] + list(chapters.values())
 
 	# add default NCX and Nav file
 	book.add_item(epub.EpubNcx())

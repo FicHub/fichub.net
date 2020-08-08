@@ -11,17 +11,19 @@ function info() {
 function working() {
 	info().innerHTML = '<p>working...</p>';
 }
+function error(r) {
+	console.log('uh-oh');
+	info().innerHTML = '<p>an error ocurred :(</p>' +
+		'<pre>' + r.responseText + '</pre>';
+}
 function lookup() {
 	console.log('lookup');
 	working();
 	var lookupReq = new XMLHttpRequest();
 	lookupReq.addEventListener("load", function () {
 		var res = JSON.parse(this.responseText);
-		if (!res || res.err != 0) {
-			console.log('uh-oh');
-			info().innerHTML = '<p>an error ocurred :(</p>' +
-				'<p>' + this.responseText + '</p>';
-			return;
+		if (!res || res.error != 0) {
+			return error(this);
 		}
 		info().innerHTML = '<p>' + res.info + '</p>';
 	});
@@ -35,11 +37,8 @@ function epub() {
 	var lookupReq = new XMLHttpRequest();
 	lookupReq.addEventListener("load", function () {
 		var res = JSON.parse(this.responseText);
-		if (!res || res.err != 0) {
-			console.log('uh-oh');
-			info().innerHTML = '<p>an error ocurred :(</p>' +
-				'<p>' + this.responseText + '</p>';
-			return;
+		if (!res || res.error != 0) {
+			return error(this);
 		}
 		info().innerHTML = '<p><a href="' + res.url + '">Download</a></p>' +
 			'<p>' + res.info + '</p>';

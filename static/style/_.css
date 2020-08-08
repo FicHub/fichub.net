@@ -1,0 +1,13 @@
+html { font-size: 1.4em; font-family: sans-serif; }
+button, input { font-size: 1.1em; }
+
+button { margin-top: .3em; margin-bottom: .3em; }
+#q { width: 98%; }
+
+.btn-ref { font-family: monospace; font-weight: bold; }
+
+#content {
+	width: 80%;
+	max-width: 960px;
+	margin: 0 auto;
+}

@@ -10,7 +10,7 @@ from flask import Flask, Response, jsonify, request, render_template, \
 #from weaver import Web, WebScraper, WebQueue
 
 #db = oil.open()
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 
 import epubCreator as ec
 import authentications as a
@@ -36,7 +36,7 @@ errorMessages = {
 	}
 
 def getErr(err: WebError) -> Dict[str, Any]:
-	return {'err':int(err),'msg':errorMessages[err]}
+	return {'error':int(err),'msg':errorMessages[err]}
 
 @app.route('/')
 def index() -> str:
@@ -59,7 +59,7 @@ def lookup_fic() -> Any:
 		return jsonify(p)
 		return jsonify(getErr(WebError.url_not_found))
 	ficInfo = ec.metaDataString(p)[0]
-	return jsonify({'err':0,'info':ficInfo})
+	return jsonify({'error':0,'info':ficInfo})
 
 @app.route('/epub/<fname>')
 def epub(fname: str) -> Any:
@@ -79,7 +79,7 @@ def epub_fic() -> Any:
 	fic = p['urlId']
 	ficInfo, ficName = ec.metaDataString(p)
 	epub_fname = ec.createEpub('/'.join([a.AX_FIC_ENDPOINT, fic, '']))
-	return jsonify({'err':0,'url':url_for('epub', fname=epub_fname),'info':ficInfo})
+	return jsonify({'error':0,'url':url_for('epub', fname=epub_fname),'info':ficInfo})
 
 if __name__ == '__main__':
 	app.run(debug=True)

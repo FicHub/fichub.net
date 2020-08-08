@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+	<head>
+		{% block head %}
+		<title>{% block title %}{% endblock %} Fic.PW</title>
+		<link href="/style/_.css" rel="stylesheet" type="text/css">
+		<script type="text/javascript" src="/js/_.js"></script>
+		{% endblock %}
+	</head>
+	<body>
+		<div id="content">
+			{% block content %}{% endblock %}
+		</div>
+	</body>
+</html>

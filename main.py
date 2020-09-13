@@ -15,6 +15,8 @@ app = Flask(__name__, static_url_path='')
 import epubCreator as ec
 import authentications as a
 
+CACHE_BUSTER=3
+
 class WebError(IntEnum):
 	success = 0
 	no_body = -1
@@ -29,14 +31,14 @@ def getErr(err: WebError) -> Dict[str, Any]:
 
 @app.route('/')
 def index() -> str:
-	return render_template('index.html')
+	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)
 
 @app.route('/cache/')
 def cache_listing() -> str:
 	items = []
 	for f in os.listdir(ec.CACHE_DIR):
-		items.append({'href':url_for('epub', fname=f), 'fname':f})
-	return render_template('cache.html', cache=items)
+		items.append({'href':url_for('epub', fname=f, cv=CACHE_BUSTER), 'fname':f})
+	return render_template('cache.html', cache=items, CACHE_BUSTER=CACHE_BUSTER)
 
 @app.route('/epub/<fname>')
 def epub(fname: str) -> Any:

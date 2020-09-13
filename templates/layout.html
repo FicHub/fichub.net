@@ -3,8 +3,8 @@
 	<head>
 		{% block head %}
 		<title>{% block title %}{% endblock %} Fic.PW</title>
-		<link href="/style/_.css" rel="stylesheet" type="text/css">
-		<script type="text/javascript" src="/js/_.js"></script>
+		<link href="/style/_.css?{{ CACHE_BUSTER }}" rel="stylesheet" type="text/css">
+		<script type="text/javascript" src="/js/_.js?{{ CACHE_BUSTER }}"></script>
 		{% endblock %}
 	</head>
 	<body>

@@ -3,7 +3,7 @@ function setup() {
 	console.log('setup');
 }
 function q() {
-	return document.getElementById('q').value;
+	return (<HTMLInputElement>document.getElementById('q')).value;
 }
 function info() {
 	return document.getElementById('info');
@@ -21,15 +21,20 @@ function epub() {
 	working();
 	var exportReq = new XMLHttpRequest();
 	exportReq.addEventListener("load", function () {
-		var res = JSON.parse(this.responseText);
-		if (!res || res.error != 0) {
-			return error(this);
+		try {
+			var res = JSON.parse(this.responseText);
+			if (!res || res.error != 0) {
+				return error(this);
+			}
+			info().innerHTML = '<p><a href="' + res.url + '">Download</a></p>' +
+				'<p>' + res.info.replace('\n', '<br/>') + '</p>';
+		} catch (e) {
+			return error("response was not valid :/");
 		}
-		info().innerHTML = '<p><a href="' + res.url + '">Download</a></p>' +
-			'<p>' + res.info.replace('\n', '<br/>') + '</p>';
 	});
 	var data = null;
 	exportReq.open('GET', '/api/v0/epub?q=' + q());
 	exportReq.send(data);
 }
 
+window['epub'] = epub;

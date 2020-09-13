@@ -1,10 +1,13 @@
 import os
 import os.path
+import hashlib
 import time
+import traceback
 from typing import Any, Dict, Union
 from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
 	send_from_directory, redirect, url_for
+import util
 #from oil import oil
 #import weaver.enc as enc
 #from weaver import Web, WebScraper, WebQueue
@@ -33,6 +36,13 @@ def getErr(err: WebError) -> Dict[str, Any]:
 def index() -> str:
 	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)
 
+def hashEPUB(fname: str) -> str:
+	digest = 'hash_err'
+	with open(os.path.join(ec.CACHE_DIR, fname), 'rb') as f:
+		data = f.read()
+		digest = hashlib.md5(data).hexdigest()
+	return digest
+
 @app.route('/cache/')
 def cache_listing() -> str:
 	items = []
@@ -50,15 +60,34 @@ def epub_fic() -> Any:
 	if q is None:
 		return jsonify(getErr(WebError.no_body))
 
+	initTimeMs = int(time.time() * 1000)
 	p = ec.reqJson('/'.join([a.AX_LOOKUP_ENDPOINT, q]))
 	if 'error' in p:
 		return jsonify(p)
+	infoTimeMs = int(time.time() * 1000)
 	ficInfo = ec.metaDataString(p)[0]
 
-	fic = p['urlId']
-	ficInfo, ficName = ec.metaDataString(p)
-	epub_fname = ec.createEpub('/'.join([a.AX_FIC_ENDPOINT, fic, '']))
-	return jsonify({'error':0,'url':url_for('epub', fname=epub_fname),'info':ficInfo})
+	try:
+		fic = p['urlId']
+		ficInfo, ficName = ec.metaDataString(p)
+		epub_fname = ec.createEpub('/'.join([a.AX_FIC_ENDPOINT, fic, '']))
+		h = 'hash_err'
+		try:
+			h = hashEPUB(epub_fname)
+		except Exception as e:
+			traceback.print_exc()
+			print(e)
+			print('^ something went wrong hashing :/')
+		url = url_for('epub', fname=epub_fname, cv=CACHE_BUSTER, h=h)
+		endTimeMs = int(time.time() * 1000)
+		util.logRequest(infoTimeMs - initTimeMs, endTimeMs - infoTimeMs, \
+				p['urlId'], q, p, epub_fname, h, url)
+		return jsonify({'error':0,'url':url,'info':ficInfo})
+	except Exception as e:
+		traceback.print_exc()
+		print(e)
+		print('^ something went wrong :/')
+		return jsonify({'error':-9,'msg':'exception encountered while building epub'})
 
 if __name__ == '__main__':
 	app.run(debug=True)

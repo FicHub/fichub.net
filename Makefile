@@ -2,7 +2,7 @@
 default: dev
 
 dev: dirs static/js/_.js static/style/_.css
-	rsync -aPvc static/ /var/www/fic.pw/
+	rsync -aPvc --delete static/ /var/www/fic.pw/
 
 dirs:
 	mkdir -p static/js static/style

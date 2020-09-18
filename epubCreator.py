@@ -99,9 +99,9 @@ def createEpub(link, info = None):
 	titles = []
 	for _, c in sorted(chapters.items()):
 		c.title = str(c.title).strip()
+		titles.append(c.title)
 		if c.title is None or len(c.title) < 1:
 			c.title = f'Chapter {_}'
-		titles.append(c.title)
 		book.add_item(c)
 	print(titles)
 

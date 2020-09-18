@@ -48,7 +48,10 @@ def requestAll(link: str, expected: int):
 	for ch in res['chapters']:
 		n = ch['chapterId']
 		c = epub.EpubHtml(title=ch['title'], file_name=f'chap_{n}.xhtml', lang='en')
-		c.content = ch['content']
+		c.content = str(ch['content']).strip()
+		if len(c.content) == 0:
+			print(f'note: {link} {n} has an empty content body')
+			c.content = '<p></p>'
 		chapters[n] = c
 	for i in range(1, expected + 1):
 		if i not in chapters:

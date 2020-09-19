@@ -1,5 +1,6 @@
 import os
 import time
+import traceback
 import requests
 from ebooklib import epub
 import threading

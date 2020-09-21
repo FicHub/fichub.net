@@ -5,8 +5,11 @@
 	{% for item in cache %}
 	<p class='cache-entry'>
 		<a href="{{ item.href }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
+		{% if (item.ficInfo.description|striptags).strip()
+			!= item.ficInfo.title ~ " by " ~ item.ficInfo.author %}
 		<br />
 		{{ item.ficInfo.description|striptags }}
+		{% endif %}
 		<br />
 		{{ item.ficInfo.words }} words in {{ item.ficInfo.chapters }} chapters
 	</p>

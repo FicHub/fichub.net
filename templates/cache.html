@@ -2,9 +2,13 @@
 {% block content %}
 	<h2><a href=/>Home</a></h2>
 	<h3>Cached EPUBs</h3>
-	<ul>
 	{% for item in cache %}
-		<li><a href="{{ item.href }}">{{ item.fname }}</a></li>
+	<p class='cache-entry'>
+		<a href="{{ item.href }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
+		<br />
+		{{ item.ficInfo.description|striptags }}
+		<br />
+		{{ item.ficInfo.words }} words in {{ item.ficInfo.chapters }} chapters
+	</p>
 	{%- endfor %}
-	</ul>
 {% endblock %}

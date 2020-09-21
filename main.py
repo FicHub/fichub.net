@@ -8,6 +8,7 @@ from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
 	send_from_directory, redirect, url_for
 import util
+from util import FicInfo
 #from oil import oil
 #import weaver.enc as enc
 #from weaver import Web, WebScraper, WebQueue
@@ -45,9 +46,18 @@ def hashEPUB(fname: str) -> str:
 
 @app.route('/cache/')
 def cache_listing() -> str:
+	fis = {fi.id: fi for fi in FicInfo.select()}
 	items = []
 	for f in os.listdir(ec.CACHE_DIR):
-		items.append({'href':url_for('epub', fname=f, cv=CACHE_BUSTER), 'fname':f})
+		if len(str(f).strip()) < 1:
+			continue
+		href = url_for('epub', fname=f, cv=CACHE_BUSTER)
+		urlId = f.split('-')[-1]
+		if not urlId.endswith('.epub'):
+			continue
+		urlId = urlId[:-len('.epub')]
+		fi = fis[urlId] if urlId in fis else None
+		items.append({'href':href, 'fname':f, 'ficInfo':fi})
 	return render_template('cache.html', cache=items, CACHE_BUSTER=CACHE_BUSTER)
 
 @app.route('/epub/<fname>')

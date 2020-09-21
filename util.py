@@ -3,6 +3,43 @@ import traceback
 import json
 from oil import oil
 
+class FicInfo:
+	def __init__(self, id_, created_, updated_, title_, author_, chapters_,
+			words_, description_, ficCreated_, ficUpdated_, status_):
+		self.id = id_
+		self.created = created_
+		self.updated = updated_
+		self.title = title_
+		self.author = author_
+		self.chapters = chapters_
+		self.words = words_
+		self.description = description_
+		self.ficCreated = ficCreated_
+		self.ficUpdated = ficUpdated_
+		self.status = status_
+	@staticmethod
+	def fromRow(row):
+		return FicInfo(
+				id_ = row[0],
+				created_ = row[1],
+				updated_ = row[2],
+				title_ = row[3],
+				author_ = row[4],
+				chapters_ = row[5],
+				words_ = row[6],
+				description_ = row[7],
+				ficCreated_ = row[8],
+				ficUpdated_ = row[9],
+				status_ = row[10],
+			)
+	@staticmethod
+	def select(urlId = None):
+		with oil.open() as db, db, db.cursor() as curs:
+			curs.execute('''
+				select * from ficInfo where %s is null or id = %s
+			''', (urlId, urlId))
+			return [FicInfo.fromRow(r) for r in curs.fetchall()]
+
 def saveFicInfo(ficInfo):
 	try:
 		with oil.open() as db, db, db.cursor() as curs:

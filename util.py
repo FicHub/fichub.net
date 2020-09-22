@@ -65,16 +65,17 @@ def saveFicInfo(ficInfo):
 		print(e)
 		print('saveFicInfo: error: ^')
 
-def logRequest(infoRequestMs, epubCreationMs, urlId, q, ficInfo, epubFileName, h, url):
+def logRequest(infoRequestMs, epubCreationMs, urlId, q, ficInfo, epubFileName,
+		h, url, isAutomated = False):
 	try:
 		with oil.open() as db, db, db.cursor() as curs:
 			curs.execute('''
 				insert into requestLog(
 					infoRequestMs, epubCreationMs, urlId, query,
-					ficInfo, epubFileName, hash, url)
-				values(%s, %s, %s, %s, %s, %s, %s, %s)
+					ficInfo, epubFileName, hash, url, isAutomated)
+				values(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 				''', (infoRequestMs, epubCreationMs, urlId, q, json.dumps(ficInfo),
-					epubFileName, h, url))
+					epubFileName, h, url, isAutomated))
 		saveFicInfo(ficInfo)
 	except Exception as e:
 		traceback.print_exc()

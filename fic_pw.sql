@@ -8,7 +8,8 @@ create table if not exists requestLog (
 	ficInfo text not null,
 	epubFileName text not null,
 	hash text not null,
-	url text not null
+	url text not null,
+	isAutomated boolean default(false),
 );
 create table if not exists ficInfo (
 	id varchar(128) primary key,

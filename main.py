@@ -90,9 +90,10 @@ def epub_fic() -> Any:
 			print('^ something went wrong hashing :/')
 		url = url_for('epub', fname=epub_fname, cv=CACHE_BUSTER, h=h)
 		endTimeMs = int(time.time() * 1000)
+		isAutomated = (request.args.get('automated', None) == 'true')
 		util.logRequest(infoTimeMs - initTimeMs, endTimeMs - infoTimeMs, \
-				p['urlId'], q, p, epub_fname, h, url)
-		return jsonify({'error':0,'url':url,'info':ficInfo})
+				p['urlId'], q, p, epub_fname, h, url, isAutomated)
+		return jsonify({'error':0,'url':url,'info':ficInfo,'urlId':p['urlId']})
 	except Exception as e:
 		traceback.print_exc()
 		print(e)

@@ -151,7 +151,7 @@ def createEpub(link, info = None):
 	updated = datetime.datetime.utcfromtimestamp(int(info['updated'])/1000)
 
 	path_safe_title = f"{info['title']} by {info['author']}"
-	path_safe_title = re.sub('[^\w\-_\.]+', '_', path_safe_title)
+	path_safe_title = re.sub('[^\w\-_]+', '_', path_safe_title)
 	path_safe_title = re.sub('_+', '_', path_safe_title)
 	path_safe_title = path_safe_title.strip('_')
 	epub_fname = f"{path_safe_title}-{urlId}.epub"

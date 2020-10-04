@@ -1,7 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
-	<h2><a href=/>Home</a></h2>
-	<h3>Cached EPUBs</h3>
+	<nav>
+		<h2><a href=/>Home</a></h2>
+	</nav>
+	<main>
+	<h1>Cached EPUBs</h1>
 	{% for item in cache %}
 	<p class='cache-entry'>
 		<a href="{{ item.href }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
@@ -14,4 +17,5 @@
 		{{ item.ficInfo.words }} words in {{ item.ficInfo.chapters }} chapters
 	</p>
 	{%- endfor %}
+	</main>
 {% endblock %}

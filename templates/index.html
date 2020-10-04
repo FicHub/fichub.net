@@ -1,17 +1,22 @@
 {% extends "layout.html" %}
 {% block content %}
-	<h3>EPUB export</h3>
+	<main>
+	<h1>EPUB export</h1>
 	<p>Enter a fic url and click the <span class='btn-ref'>Export</span> button,
 	or view the list of previously exported fics by going to the
 	<a href="{{ url_for('cache_listing') }}">Cache</a>.</p>
 	<form action="javascript:void(0);">
+		<label for="q" class="visuallyhidden">Fic URL:</label>
 		<input type="text" size=60 name="q" id="q" />
 		<br />
 		<button onclick="epub()">Export</button>
 	</form>
 	<div id="info"></div>
-	<h3>Contact</h3>
+	</main>
+	<section>
+	<h1>Contact</h1>
 	<p>Need to report an issue, offer a suggestion, want to contribute, or just
 	say 'hi'? Feel free to join <a href='https://discord.gg/sByBAhX'>the
 	discord</a>.</p>
+	</section>
 {% endblock %}

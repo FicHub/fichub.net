@@ -1,9 +1,7 @@
-window.onload = setup;
-function setup() {
-	console.log('setup');
-}
 function q() {
-	return (<HTMLInputElement>document.getElementById('q')).value;
+	let qe = (<HTMLInputElement>document.getElementById('q'));
+	if(!qe) return '';
+	return qe.value;
 }
 function info() {
 	return document.getElementById('info');
@@ -38,3 +36,11 @@ function epub() {
 }
 
 window['epub'] = epub;
+
+window.onload = setup;
+function setup() {
+	console.log('setup');
+	console.log(q());
+	if(q()) { epub(); }
+}
+

@@ -65,6 +65,35 @@ def saveFicInfo(ficInfo):
 		print(e)
 		print('saveFicInfo: error: ^')
 
+class RequestLog:
+	def __init__(self, id_, created_, infoRequestMs_, epubCreationMs_, urlId_,
+			query_, ficInfo_, epubFileName_, hash_, url_, isAutomated_):
+		self.id = id_
+		self.created = created_
+		self.infoRequestMs = infoRequestMs_
+		self.epubCreationMs = epubCreationMs_
+		self.urlId = urlId_
+		self.query = query_
+		self.ficInfo = ficInfo_
+		self.epubFileName = epubFileName_
+		self.hash = hash_
+		self.url = url_
+		self.isAutomated = isAutomated_
+
+	@staticmethod
+	def mostRecent():
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+			select r.* from requestLog r
+			left join requestLog o
+				on o.urlId = r.urlId
+				and o.created > r.created
+			where o.urlId is null
+			''')
+			ls = [RequestLog(*r) for r in curs.fetchall()]
+			return ls
+		return []
+
 def logRequest(infoRequestMs, epubCreationMs, urlId, q, ficInfo, epubFileName,
 		h, url, isAutomated = False):
 	try:

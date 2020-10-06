@@ -8,7 +8,7 @@ from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
 	send_from_directory, redirect, url_for
 import util
-from util import FicInfo
+from util import FicInfo, RequestLog
 #from oil import oil
 #import weaver.enc as enc
 #from weaver import Web, WebScraper, WebQueue
@@ -19,7 +19,7 @@ app = Flask(__name__, static_url_path='')
 import epubCreator as ec
 import authentications as a
 
-CACHE_BUSTER=3
+CACHE_BUSTER=5
 
 class WebError(IntEnum):
 	success = 0
@@ -47,6 +47,7 @@ def hashEPUB(fname: str) -> str:
 @app.route('/cache/')
 def cache_listing() -> str:
 	fis = {fi.id: fi for fi in FicInfo.select()}
+	rls = {rl.urlId: rl for rl in RequestLog.mostRecent()}
 	items = []
 	for f in os.listdir(ec.CACHE_DIR):
 		if len(str(f).strip()) < 1:
@@ -57,8 +58,13 @@ def cache_listing() -> str:
 			continue
 		urlId = urlId[:-len('.epub')]
 		fi = fis[urlId] if urlId in fis else None
-		items.append({'href':href, 'fname':f, 'ficInfo':fi})
-	return render_template('cache.html', cache=items, CACHE_BUSTER=CACHE_BUSTER)
+		rl = rls[urlId] if urlId in rls else None
+		if rl is None:
+			continue
+		dt = rl.created
+		items.append({'href':href, 'fname':f, 'ficInfo':fi, 'requestLog':rl, 'created':dt})
+	sitems = sorted(items, key=lambda e: e['created'], reverse=True)
+	return render_template('cache.html', cache=sitems, CACHE_BUSTER=CACHE_BUSTER)
 
 @app.route('/epub/<fname>')
 def epub(fname: str) -> Any:

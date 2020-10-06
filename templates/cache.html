@@ -15,6 +15,8 @@
 		{% endif %}
 		<br />
 		{{ item.ficInfo.words }} words in {{ item.ficInfo.chapters }} chapters
+		<br />
+		requested {{ item.created.strftime('%Y-%m-%d %H:%M UTC') }}
 	</p>
 	{%- endfor %}
 	</main>

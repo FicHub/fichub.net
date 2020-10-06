@@ -46,19 +46,30 @@ def worker(book, number, chapters, link):
 def requestAll(link: str, expected: int):
 	res = reqJson(link + "all")
 	chapters = {}
+	titles = []
 	for ch in res['chapters']:
 		n = ch['chapterId']
 		c = epub.EpubHtml(title=ch['title'], file_name=f'chap_{n}.xhtml', lang='en')
+
 		c.content = str(ch['content']).strip()
 		if len(c.content) == 0:
 			print(f'note: {link} {n} has an empty content body')
 			c.content = '<p></p>'
+
+		c.title = str(c.title).strip()
+		titles.append(c.title)
+		if c.title is None or len(c.title) < 1:
+			c.title = f'Chapter {n}'
+
+		c.content = f'<h2>{c.title}</h2>' + c.content
+
 		chapters[n] = c
 	for i in range(1, expected + 1):
 		if i not in chapters:
 			print(f'requestAll: err: {i} not in chapters')
 			print(list(chapters.keys()))
 			return None
+	print(f'titles: {titles}')
 	return chapters
 
 def createEpub(link, info = None):
@@ -97,14 +108,8 @@ def createEpub(link, info = None):
 			thread.join()
 		chapters = collections.OrderedDict(sorted(chapters.items()))
 
-	titles = []
 	for _, c in sorted(chapters.items()):
-		c.title = str(c.title).strip()
-		titles.append(c.title)
-		if c.title is None or len(c.title) < 1:
-			c.title = f'Chapter {_}'
 		book.add_item(c)
-	print(titles)
 
 	intro = epub.EpubHtml(title='Introduction', file_name='introduction' + '.xhtml', lang='en')
 	intro.content = """

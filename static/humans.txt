@@ -1,0 +1,8 @@
+/* TEAM */
+	iris
+	fic.pw discord: https://discord.gg/sByBAhX
+
+/* SITE */
+	python+flask
+	minimal typescript
+

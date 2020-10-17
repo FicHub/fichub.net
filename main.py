@@ -3,6 +3,7 @@ import os.path
 import hashlib
 import time
 import traceback
+import urllib.parse
 from typing import Any, Dict, Union
 from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
@@ -77,7 +78,7 @@ def epub_fic() -> Any:
 		return jsonify(getErr(WebError.no_body))
 
 	initTimeMs = int(time.time() * 1000)
-	p = ec.reqJson('/'.join([a.AX_LOOKUP_ENDPOINT, q]))
+	p = ec.reqJson('/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(q)]))
 	if 'error' in p:
 		return jsonify(p)
 	infoTimeMs = int(time.time() * 1000)

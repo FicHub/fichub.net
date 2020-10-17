@@ -92,21 +92,7 @@ def createEpub(link, info = None):
 		traceback.print_exc()
 		print(e)
 		print('^ something went wrong :/')
-
-	# if something went wrong, fall back to making a request per chapter
-	if chapters is None:
-		chapters = {}
-		threads = []
-		for i in range(1, int(info['chapters'])+1):
-			# let's not have _too_ many requests in play at once...
-			while threading.active_count() > 64:
-				time.sleep(.2)
-			t = threading.Thread(target=worker, args=(book, i, chapters, link))
-			threads.append(t)
-			t.start()
-		for thread in threads:
-			thread.join()
-		chapters = collections.OrderedDict(sorted(chapters.items()))
+		raise
 
 	for _, c in sorted(chapters.items()):
 		book.add_item(c)

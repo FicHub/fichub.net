@@ -97,6 +97,13 @@ def createEpub(link, info = None):
 	for _, c in sorted(chapters.items()):
 		book.add_item(c)
 
+	sourceUrl = None
+	if 'source' in info:
+		sourceUrl = info['source']
+	sourceSection = ''
+	if sourceUrl is not None:
+		sourceSection = f'<p>Original source: <a rel="noopener noreferrer" href="{sourceUrl}">{sourceUrl}</a></p>'
+
 	intro = epub.EpubHtml(title='Introduction', file_name='introduction' + '.xhtml', lang='en')
 	intro.content = """
 	<html>
@@ -108,9 +115,10 @@ def createEpub(link, info = None):
 		<h1>%s</h1>
 		<p><b>By: %s</b></p>
 		<p>%s</p>
+		%s
 	</body>
 	</html>
-	""" % (info['title'], info['author'], info['desc'])
+	""" % (info['title'], info['author'], info['desc'], sourceSection)
 	book.add_item(intro)
 	# define Table Of Contents
 	book.toc = [epub.Link('introduction.xhtml', 'Introduction', 'intro')] + list(chapters.values())

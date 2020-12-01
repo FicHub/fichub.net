@@ -4,6 +4,7 @@ import hashlib
 import time
 import traceback
 import urllib.parse
+import json
 from typing import Any, Dict, Union
 from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
@@ -63,7 +64,17 @@ def cache_listing() -> str:
 		if rl is None:
 			continue
 		dt = rl.created
-		items.append({'href':href, 'fname':f, 'ficInfo':fi, 'requestLog':rl, 'created':dt})
+
+		sourceUrl = ''
+		try:
+			info = json.loads(rl.ficInfo)
+			if 'source' in info:
+				sourceUrl = info['source']
+		except:
+			pass
+
+		items.append({'href':href, 'fname':f, 'ficInfo':fi, 'requestLog':rl,
+			'created':dt, 'sourceUrl':sourceUrl})
 	sitems = sorted(items, key=lambda e: e['created'], reverse=True)
 	return render_template('cache.html', cache=sitems, CACHE_BUSTER=CACHE_BUSTER)
 

@@ -17,6 +17,10 @@
 		{{ item.ficInfo.words }} words in {{ item.ficInfo.chapters }} chapters
 		<br />
 		requested {{ item.created.strftime('%Y-%m-%d %H:%M UTC') }}
+		{% if item.sourceUrl|length > 0 %}
+		<br />
+		source: <a rel="noopener noreferrer" href="{{item.sourceUrl}}">{{item.sourceUrl}}</a>
+		{% endif %}
 	</p>
 	{%- endfor %}
 	</main>

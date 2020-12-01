@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>{{info.title}} by {{info.author}}</title>
+		<style type="text/css">
+			html { font-size: 24px; font-family: sans-serif; }
+			body { width: 90%; max-width: 960px; margin: 0 auto; }
+			.left { float: left; }
+			.right { float: right; }
+			.chapter_nav { text-align: center; }
+			.cfix { clear: both; }
+		</style>
+	</head>
+	<body>
+		<h1><span class="title">{{info.title}}</span></h1>
+		<h2>by <span class="author">{{info.author}}</span></h2>
+		<div>{{info.desc|safe}}</div>
+		<p>Original source:
+		<a rel="noopener noreferrer" href="{{info.source}}">{{info.source}}</a>
+		</p>
+		<p>Chapters: {{info.chapters}}</p>
+		<p>Words: {{info.words}}</p>
+		<nav id="contents-list"> <ul>
+			{% for chapter in chapters %}
+				<li><a href="#chap_{{loop.index}}">{{chapter.title}}</a></li>
+			{% endfor %}
+		</ul> </nav>
+		{% for chapter in chapters %}
+		<div id="chap_{{loop.index}}">
+			<div class="chapter_nav">
+				{% if loop.index > 1 %}
+				<a href="#chap_{{loop.index - 1}}" class="left">previous chapter</a>
+				{% endif %}
+				{% if loop.index < chapters|length %}
+				<a href="#chap_{{loop.index + 1}}" class="right">next chapter</a>
+				{% endif %}
+				<span class="cfix"></span>
+				<a href="#contents-list">chapter list</a>
+			</div>
+			{{ chapter.content|safe }}
+		</div>
+		{% endfor %}
+		<a href="#contents-list">(back to chapter list)</a>
+	</body>
+</html>

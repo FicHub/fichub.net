@@ -21,7 +21,7 @@ app = Flask(__name__, static_url_path='')
 import epubCreator as ec
 import authentications as a
 
-CACHE_BUSTER=5
+CACHE_BUSTER=7
 
 class WebError(IntEnum):
 	success = 0
@@ -82,6 +82,10 @@ def cache_listing() -> str:
 def epub(fname: str) -> Any:
 	return send_from_directory(ec.CACHE_DIR, fname)
 
+@app.route('/html/<fname>')
+def cache_html(fname: str) -> Any:
+	return send_from_directory(ec.HTML_CACHE_DIR, fname)
+
 @app.route('/api/v0/epub', methods=['GET'])
 def epub_fic() -> Any:
 	q = request.args.get('q', None)
@@ -107,11 +111,18 @@ def epub_fic() -> Any:
 			print(e)
 			print('^ something went wrong hashing :/')
 		url = url_for('epub', fname=epub_fname, cv=CACHE_BUSTER, h=h)
+		zurl = None
+		bfname = epub_fname[:-len('.epub')]
+		print(f'bfname: {bfname}')
+		if os.path.isfile(os.path.join(ec.HTML_CACHE_DIR, bfname + '.zip')):
+			zurl = url_for('cache_html', fname=bfname + '.zip', cv=CACHE_BUSTER, h=h)
+			print(f'zurl: {zurl}')
+
 		endTimeMs = int(time.time() * 1000)
 		isAutomated = (request.args.get('automated', None) == 'true')
 		util.logRequest(infoTimeMs - initTimeMs, endTimeMs - infoTimeMs, \
 				p['urlId'], q, p, epub_fname, h, url, isAutomated)
-		return jsonify({'error':0,'url':url,'info':ficInfo,'urlId':p['urlId']})
+		return jsonify({'error':0,'url':url,'info':ficInfo,'urlId':p['urlId'],'zurl':zurl})
 	except Exception as e:
 		traceback.print_exc()
 		print(e)

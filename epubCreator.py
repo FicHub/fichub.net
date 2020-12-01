@@ -10,8 +10,11 @@ from dateutil.relativedelta import relativedelta
 import authentications as a
 import collections
 import random
+import zipfile
+from flask import render_template
 
 CACHE_DIR='epub_cache'
+HTML_CACHE_DIR='html_cache'
 
 def formatRelDatePart(val, which): 
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""
@@ -71,6 +74,16 @@ def requestAll(link: str, expected: int):
 			return None
 	print(f'titles: {titles}')
 	return chapters
+
+def createHtmlBundle(fname: str, info, chapters) -> None:
+	if not os.path.isdir(HTML_CACHE_DIR):
+		os.mkdir(HTML_CACHE_DIR)
+	bundle_zip_fname = os.path.join(HTML_CACHE_DIR, fname + '.zip')
+	bundle_fname = fname + '.html'
+	nchaps = chapters.values()
+	data = render_template('full_fic.html', info=info, chapters=nchaps)
+	with zipfile.ZipFile(bundle_zip_fname, 'w') as zf:
+		zf.writestr(bundle_fname, data, compress_type=zipfile.ZIP_DEFLATED)
 
 def createEpub(link, info = None):
 	if info is None:
@@ -159,5 +172,14 @@ def createEpub(link, info = None):
 	if not os.path.isdir(CACHE_DIR):
 		os.mkdir(CACHE_DIR)
 	epub.write_epub(os.path.join(CACHE_DIR, epub_fname), book, {'mtime':updated})
+
+	try:
+		htmlBundleName = f'{path_safe_title}-{urlId}'
+		createHtmlBundle(htmlBundleName, info, chapters)
+	except Exception as e:
+		traceback.print_exc()
+		print(e)
+		print('^ something went wrong :/')
+
 	return epub_fname
 

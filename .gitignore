@@ -3,6 +3,7 @@ authentications.py
 
 __pycache__/
 epub_cache/
+html_cache/
 
 master.pid
 uwsgi.log

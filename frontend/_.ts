@@ -24,8 +24,12 @@ function epub() {
 			if (!res || res.error != 0) {
 				return error(this);
 			}
-			info().innerHTML = '<p><a href="' + res.url + '">Download</a></p>' +
+			let htmlRes = '<p><a href="' + res.url + '">Download EPUB</a></p>' +
 				'<p>' + res.info.replace('\n', '<br/>') + '</p>';
+			if (res.zurl) {
+				htmlRes += '<a href="' + res.zurl + '">Download as zipped HTML</a>';
+			}
+			info().innerHTML = htmlRes;
 		} catch (e) {
 			return error("response was not valid :/");
 		}

@@ -88,7 +88,8 @@ class RequestLog:
 			left join requestLog o
 				on o.urlId = r.urlId
 				and o.created > r.created
-			where o.urlId is null
+				and o.isAutomated = false
+			where r.isAutomated = false and o.urlId is null
 			''')
 			ls = [RequestLog(*r) for r in curs.fetchall()]
 			return ls

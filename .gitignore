@@ -6,7 +6,7 @@ epub_cache/
 html_cache/
 
 master.pid
-uwsgi.log
+fic_pw_uwsgi.log
 
 static/js/_.js
 static/style/_.css

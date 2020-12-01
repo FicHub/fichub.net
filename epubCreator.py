@@ -154,6 +154,8 @@ def createEpub(link, info = None):
 		media_type="text/css",
 		content=open("epub_style.css").read()
 	)
+	book.add_item(doc_style)
+
 	nav_page = epub.EpubNav(uid='book_toc', file_name='toc.xhtml')
 	nav_page.add_item(doc_style)
 	book.add_item(nav_page)
@@ -171,7 +173,8 @@ def createEpub(link, info = None):
 
 	if not os.path.isdir(CACHE_DIR):
 		os.mkdir(CACHE_DIR)
-	epub.write_epub(os.path.join(CACHE_DIR, epub_fname), book, {'mtime':updated})
+	epub.write_epub(os.path.join(CACHE_DIR, epub_fname), book,
+			{'mtime':updated, 'play_order':{'enabled':True}})
 
 	try:
 		htmlBundleName = f'{path_safe_title}-{urlId}'

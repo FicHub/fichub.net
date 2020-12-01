@@ -3,7 +3,7 @@
 ls -1 epub_cache/ | sed 's/.*-\(.*\).epub/\1/' > tmp_regen_ids
 
 for id in $(cat tmp_regen_ids); do
-	rm -f epub_cache/*-${id}.epub
+	#rm -f epub_cache/*-${id}.epub
 	./export_epub.sh ${id}
 done
 

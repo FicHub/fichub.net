@@ -35,6 +35,10 @@ errorMessages = {
 def getErr(err: WebError) -> Dict[str, Any]:
 	return {'error':int(err),'msg':errorMessages[err]}
 
+@app.errorhandler(404)
+def page_not_found(e):
+	return render_template('404.html'), 404
+
 @app.route('/')
 def index() -> str:
 	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)

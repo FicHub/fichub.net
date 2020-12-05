@@ -9,8 +9,8 @@ from flask import render_template
 from ebooklib import epub
 from ax import Chapter
 
-EPUB_CACHE_DIR='epub_cache'
-HTML_CACHE_DIR='html_cache'
+EPUB_CACHE_DIR='cache/epub'
+HTML_CACHE_DIR='cache/html'
 
 def formatRelDatePart(val, which): 
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""
@@ -28,9 +28,10 @@ def buildFileSlug(title: str, author: str, urlId: str) -> str:
 	slug = slug.strip('_')
 	return f"{slug}-{urlId}"
 
+
 def createHtmlBundle(info, chapters) -> None:
 	if not os.path.isdir(HTML_CACHE_DIR):
-		os.mkdir(HTML_CACHE_DIR)
+		os.makedirs(HTML_CACHE_DIR)
 
 	urlId = info['urlId']
 	slug = buildFileSlug(info['title'], info['author'], urlId)
@@ -42,7 +43,8 @@ def createHtmlBundle(info, chapters) -> None:
 	with zipfile.ZipFile(bundle_zip_fname, 'w') as zf:
 		zf.writestr(bundle_fname, data, compress_type=zipfile.ZIP_DEFLATED)
 
-	return bundle_fname
+	return slug + '.zip'
+
 
 def buildEpubChapters(chapters: Dict[int, Chapter]):
 	epubChapters = {}
@@ -114,7 +116,7 @@ def createEpub(info, rawChapters):
 	print(f"creating book with name: {epub_fname}")
 
 	if not os.path.isdir(EPUB_CACHE_DIR):
-		os.mkdir(EPUB_CACHE_DIR)
+		os.makedirs(EPUB_CACHE_DIR)
 	epub.write_epub(os.path.join(EPUB_CACHE_DIR, epub_fname), book,
 			{'mtime':updated, 'play_order':{'enabled':True}})
 

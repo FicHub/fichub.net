@@ -3,7 +3,6 @@ import os.path
 import hashlib
 import time
 import traceback
-import urllib.parse
 import json
 from typing import Any, Dict, Union
 from enum import IntEnum
@@ -18,7 +17,8 @@ from util import FicInfo, RequestLog
 #db = oil.open()
 app = Flask(__name__, static_url_path='')
 
-import epubCreator as ec
+import ax
+import epubCreator as ebook
 import authentications as a
 
 CACHE_BUSTER=7
@@ -41,7 +41,7 @@ def index() -> str:
 
 def hashEPUB(fname: str) -> str:
 	digest = 'hash_err'
-	with open(os.path.join(ec.CACHE_DIR, fname), 'rb') as f:
+	with open(os.path.join(ebook.EPUB_CACHE_DIR, fname), 'rb') as f:
 		data = f.read()
 		digest = hashlib.md5(data).hexdigest()
 	return digest
@@ -51,7 +51,7 @@ def cache_listing() -> str:
 	fis = {fi.id: fi for fi in FicInfo.select()}
 	rls = {rl.urlId: rl for rl in RequestLog.mostRecent()}
 	items = []
-	for f in os.listdir(ec.CACHE_DIR):
+	for f in os.listdir(ebook.EPUB_CACHE_DIR):
 		if len(str(f).strip()) < 1:
 			continue
 		href = url_for('epub', fname=f, cv=CACHE_BUSTER)
@@ -80,49 +80,54 @@ def cache_listing() -> str:
 
 @app.route('/epub/<fname>')
 def epub(fname: str) -> Any:
-	return send_from_directory(ec.CACHE_DIR, fname)
+	return send_from_directory(ebook.EPUB_CACHE_DIR, fname)
 
 @app.route('/html/<fname>')
 def cache_html(fname: str) -> Any:
-	return send_from_directory(ec.HTML_CACHE_DIR, fname)
+	return send_from_directory(ebook.HTML_CACHE_DIR, fname)
 
 @app.route('/api/v0/epub', methods=['GET'])
 def epub_fic() -> Any:
+	isAutomated = (request.args.get('automated', None) == 'true')
 	q = request.args.get('q', None)
 	if q is None:
 		return jsonify(getErr(WebError.no_body))
 
 	initTimeMs = int(time.time() * 1000)
-	p = ec.reqJson('/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(q)]))
-	if 'error' in p:
-		return jsonify(p)
+	meta = ax.lookup(q)
+	if 'error' in meta:
+		return jsonify(meta)
 	infoTimeMs = int(time.time() * 1000)
-	ficInfo = ec.metaDataString(p)[0]
 
 	try:
-		fic = p['urlId']
-		ficInfo, ficName = ec.metaDataString(p)
-		epub_fname = ec.createEpub('/'.join([a.AX_FIC_ENDPOINT, fic, '']))
-		h = 'hash_err'
+		urlId = meta['urlId']
+		ficInfo, ficName = ebook.metaDataString(meta)
+		chapters = ax.fetchChapters(meta)
+
+		# build epub
+		epub_fname = ebook.createEpub(meta, chapters)
+		h = hashEPUB(epub_fname)
+		epub_url = url_for('epub', fname=epub_fname, cv=CACHE_BUSTER, h=h)
+
+		# try to build html bundle
+		html_url = None
 		try:
-			h = hashEPUB(epub_fname)
+			html_fname = ebook.createHtmlBundle(meta, chapters)
+			html_url = url_for('cache_html', fname=html_fname, cv=CACHE_BUSTER)
 		except Exception as e:
 			traceback.print_exc()
 			print(e)
-			print('^ something went wrong hashing :/')
-		url = url_for('epub', fname=epub_fname, cv=CACHE_BUSTER, h=h)
-		zurl = None
-		bfname = epub_fname[:-len('.epub')]
-		print(f'bfname: {bfname}')
-		if os.path.isfile(os.path.join(ec.HTML_CACHE_DIR, bfname + '.zip')):
-			zurl = url_for('cache_html', fname=bfname + '.zip', cv=CACHE_BUSTER, h=h)
-			print(f'zurl: {zurl}')
+			print('^ something went wrong :/')
 
 		endTimeMs = int(time.time() * 1000)
-		isAutomated = (request.args.get('automated', None) == 'true')
 		util.logRequest(infoTimeMs - initTimeMs, endTimeMs - infoTimeMs, \
-				p['urlId'], q, p, epub_fname, h, url, isAutomated)
-		return jsonify({'error':0,'url':url,'info':ficInfo,'urlId':p['urlId'],'zurl':zurl})
+				urlId, q, meta, epub_fname, h, epub_url, isAutomated)
+
+		return jsonify({
+				'error':0, 'info':ficInfo, 'urlId':urlId,
+				'url':epub_url,
+				'zurl':html_url,
+			})
 	except Exception as e:
 		traceback.print_exc()
 		print(e)

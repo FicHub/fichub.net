@@ -1,0 +1,16 @@
+<html>
+<head>
+	<title>Introduction</title>
+	<link rel="stylesheet" href="style/main.css" type="text/css" />
+</head>
+<body>
+	<h1>{{title}}</h1>
+	<p><b>By: {{author}}</b></p>
+	<p>{{desc|safe}}</p>
+	{% if sourceUrl|length %}
+	<p>Original source:
+		<a rel="noopener noreferrer" href="{{sourceUrl}}">{{sourceUrl}}</a>
+	</p>
+	{% endif %}
+</body>
+</html>

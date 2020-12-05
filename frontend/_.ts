@@ -29,6 +29,12 @@ function epub() {
 			if (res.html_url) {
 				htmlRes += '<p><a href="' + res.html_url + '">Download as zipped HTML</a></p>';
 			}
+			if (res.mobi_url) {
+				htmlRes += '<p><a href="' + res.mobi_url + '">Download as MOBI (may take time to start)</a></p>';
+			}
+			if (res.pdf_url) {
+				htmlRes += '<p><a href="' + res.pdf_url + '">Download as PDF (may take time to start)</a></p>';
+			}
 			info().innerHTML = htmlRes;
 		} catch (e) {
 			return error("response was not valid :/");

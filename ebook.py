@@ -4,13 +4,23 @@ import traceback
 import datetime
 import re
 import zipfile
+import subprocess
 from dateutil.relativedelta import relativedelta
 from flask import render_template
 from ebooklib import epub
 from ax import Chapter
 
+CACHE_DIR='cache'
 EPUB_CACHE_DIR='cache/epub'
 HTML_CACHE_DIR='cache/html'
+
+EXPORT_TYPES = ['epub', 'html', 'mobi', 'pdf']
+EXPORT_SUFFIXES = {
+		'epub': '.epub',
+		'html': '.zip',
+		'mobi': '.mobi',
+		'pdf': '.pdf',
+	}
 
 def formatRelDatePart(val, which): 
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""
@@ -44,6 +54,32 @@ def createHtmlBundle(info, chapters) -> None:
 		zf.writestr(bundle_fname, data, compress_type=zipfile.ZIP_DEFLATED)
 
 	return slug + '.zip'
+
+
+def convertEpub(info, chapters, etype) -> str:
+	if etype not in EXPORT_TYPES:
+		raise Exception(f'convertEpub: invalid etype: {etype}')
+
+	cdir = os.path.join(CACHE_DIR, etype)
+	if not os.path.isdir(cdir):
+		os.makedirs(cdir)
+
+	urlId = info['urlId']
+	slug = buildFileSlug(info['title'], info['author'], urlId)
+
+	epub_fname = createEpub(info, chapters)
+	suff = EXPORT_SUFFIXES[etype]
+	res_fname = f'{slug}{suff}'
+
+	in_fname = os.path.join(EPUB_CACHE_DIR, epub_fname)
+	out_fname = os.path.join(cdir, res_fname)
+
+	try:
+		subprocess.run(['ebook-convert', in_fname, out_fname])
+	except:
+		raise
+
+	return res_fname
 
 
 def buildEpubChapters(chapters: Dict[int, Chapter]):

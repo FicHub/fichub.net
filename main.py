@@ -18,7 +18,7 @@ from util import FicInfo, RequestLog
 app = Flask(__name__, static_url_path='')
 
 import ax
-import epubCreator as ebook
+import ebook
 import authentications as a
 
 CACHE_BUSTER=7

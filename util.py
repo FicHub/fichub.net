@@ -1,3 +1,4 @@
+from typing import Dict, Optional
 import datetime
 import traceback
 import json
@@ -40,8 +41,8 @@ class FicInfo:
 			''', (urlId, urlId))
 			return [FicInfo.fromRow(r) for r in curs.fetchall()]
 
-def saveFicInfo(ficInfo):
-	try:
+	@staticmethod
+	def save(ficInfo: Dict[str, str]) -> None:
 		with oil.open() as db, db, db.cursor() as curs:
 			curs.execute('''
 				insert into ficInfo(
@@ -60,55 +61,91 @@ def saveFicInfo(ficInfo):
 					datetime.date.fromtimestamp(int(ficInfo['published'])/1000.0),
 					datetime.date.fromtimestamp(int(ficInfo['updated'])/1000.0),
 					ficInfo['status']))
-	except Exception as e:
-		traceback.print_exc()
-		print(e)
-		print('saveFicInfo: error: ^')
 
-class RequestLog:
-	def __init__(self, id_, created_, infoRequestMs_, epubCreationMs_, urlId_,
-			query_, ficInfo_, epubFileName_, hash_, url_, isAutomated_):
+class RequestSource:
+	def __init__(self, id_, created_, isAutomated_, route_, description_):
 		self.id = id_
 		self.created = created_
-		self.infoRequestMs = infoRequestMs_
-		self.epubCreationMs = epubCreationMs_
-		self.urlId = urlId_
-		self.query = query_
-		self.ficInfo = ficInfo_
-		self.epubFileName = epubFileName_
-		self.hash = hash_
-		self.url = url_
 		self.isAutomated = isAutomated_
+		self.route = route_
+		self.description = description_
+
+	@staticmethod
+	def select(isAutomated, route, description):
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select rs.id, rs.created, rs.isAutomated, rs.route, rs.description
+				from requestSource rs
+				where rs.isAutomated = %s and route = %s and description = %s
+			''', (isAutomated, route, description))
+			r = curs.fetchone()
+			return None if r is None else RequestSource(*r)
+
+	@staticmethod
+	def upsert(isAutomated, route, description):
+		existing = RequestSource.select(isAutomated, route, description)
+		if existing is not None:
+			return existing
+		with oil.open() as db, db, db.cursor() as curs:
+			curs.execute('''
+				insert into requestSource(isAutomated, route, description)
+				values (%s, %s, %s)
+				on conflict(isAutomated, route, description) do nothing
+			''', (isAutomated, route, description))
+		return RequestSource.select(isAutomated, route, description)
+
+class RequestLog:
+	def __init__(self, id_, created_, sourceId_, query_, infoRequestMs_, urlId_,
+			ficInfo_, exportMs_, exportFileName_, exportFileHash_, url_):
+		self.id = id_
+		self.created = created_
+		self.sourceId = sourceId_
+		self.query = query_
+		self.infoRequestMs = infoRequestMs_
+		self.urlId = urlId_
+		self.ficInfo = ficInfo_
+		self.exportMs = exportMs_
+		self.exportFileName = exportFileName_
+		self.exportFileHash = exportFileHash_
+		self.url = url_
 
 	@staticmethod
 	def mostRecent():
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
-			select r.* from requestLog r
-			left join requestLog o
-				on o.urlId = r.urlId
-				and o.created > r.created
-				and o.isAutomated = false
-			where r.isAutomated = false and o.urlId is null
-			''')
+				; with mostRecentPerUrlId as (
+					select coalesce(
+						max(case when rs.isAutomated = true then null else r.created end),
+						max(r.created)) as created,
+						r.urlId
+					from requestLog r
+					join requestSource rs
+						on rs.id = r.sourceId
+					where r.exportFileName is not null
+						and r.exportFileName like '%.epub'
+					group by r.urlId
+				)
+				select r.id, r.created, r.sourceId, r.query, r.infoRequestMs, r.urlId,
+					r.ficInfo, r.exportMs, r.exportFileName, r.exportFileHash, r.url
+				from mostRecentPerUrlId mr
+				join requestLog r
+					on r.urlId = mr.urlId
+					and r.created = mr.created
+				''')
 			ls = [RequestLog(*r) for r in curs.fetchall()]
 			return ls
 		return []
 
-def logRequest(infoRequestMs, epubCreationMs, urlId, q, ficInfo, epubFileName,
-		h, url, isAutomated = False):
-	try:
+	@staticmethod
+	def insert(source: RequestSource, query: str, infoRequestMs: int,
+			urlId: Optional[str], ficInfo: Optional[str], exportMs: Optional[int],
+			exportFileName: Optional[str], exportFileHash: Optional[str],
+			url: Optional[str]):
 		with oil.open() as db, db, db.cursor() as curs:
 			curs.execute('''
-				insert into requestLog(
-					infoRequestMs, epubCreationMs, urlId, query,
-					ficInfo, epubFileName, hash, url, isAutomated)
+				insert into requestLog(sourceId, query, infoRequestMs, urlId, ficInfo,
+					exportMs, exportFileName, exportFileHash, url)
 				values(%s, %s, %s, %s, %s, %s, %s, %s, %s)
-				''', (infoRequestMs, epubCreationMs, urlId, q, json.dumps(ficInfo),
-					epubFileName, h, url, isAutomated))
-		saveFicInfo(ficInfo)
-	except Exception as e:
-		traceback.print_exc()
-		print(e)
-		print('logRequest: error: ^')
+				''', (source.id, query, infoRequestMs, urlId, ficInfo, exportMs,
+					exportFileName, exportFileHash, url))
 

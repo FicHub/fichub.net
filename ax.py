@@ -3,6 +3,7 @@ import traceback
 import urllib.parse
 import requests
 import authentications as a
+from util import FicInfo
 
 def reqJson(link: str, retryCount: int = 5):
 	cookies = {'session': a.SESSION}
@@ -17,7 +18,10 @@ def reqJson(link: str, retryCount: int = 5):
 	return p
 
 def lookup(query: str):
-	return reqJson('/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query)]))
+	meta = reqJson('/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query)]))
+	if 'error' not in meta:
+		FicInfo.save(meta)
+	return meta
 
 class Chapter:
 	def __init__(self, n: int, title: str, content: str):

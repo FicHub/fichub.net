@@ -1,7 +1,10 @@
 
-default: dev
+default: beta
 
-dev: dirs static/js/_.js static/style/_.css
+beta: dirs static/js/_.js static/style/_.css
+	rsync -aPvc --delete static/ /var/www/b.fic.pw/
+
+prod: dirs static/js/_.js static/style/_.css
 	rsync -aPvc --delete static/ /var/www/fic.pw/
 
 dirs:
@@ -13,7 +16,7 @@ static/js/_.js: frontend/_.ts | dirs
 static/style/_.css: frontend/_.sass | dirs
 	sassc -t nested $< > $@
 
-.PHONY: clean dirs dev
+.PHONY: clean dirs beta prod
 
 clean:
 	rm -f static/js/_.js static/style/_.css

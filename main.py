@@ -10,8 +10,7 @@ from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
 	send_from_directory, redirect, url_for
 from werkzeug.exceptions import NotFound
-import util
-from util import FicInfo, RequestLog
+from util import FicInfo, RequestLog, RequestSource
 #from oil import oil
 #import weaver.enc as enc
 #from weaver import Web, WebScraper, WebQueue
@@ -23,7 +22,7 @@ import ax
 import ebook
 import authentications as a
 
-CACHE_BUSTER=7
+CACHE_BUSTER=8
 
 class WebError(IntEnum):
 	success = 0
@@ -45,9 +44,9 @@ def page_not_found(e):
 def index() -> str:
 	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)
 
-def hashEPUB(fname: str) -> str:
+def hashFile(fname: str) -> str:
 	digest = 'hash_err'
-	with open(os.path.join(ebook.EPUB_CACHE_DIR, fname), 'rb') as f:
+	with open(fname, 'rb') as f:
 		data = f.read()
 		digest = hashlib.md5(data).hexdigest()
 	return digest
@@ -96,27 +95,49 @@ def get_cached_epub(fname: str) -> Any:
 	return send_from_directory(ebook.EPUB_CACHE_DIR, fname)
 
 def try_ensure_html(urlId: str) -> str:
+	remoteAddr = request.headers.get('X-Real-IP', 'unknown')
+	urlRoot = request.headers.get('X-Real-Root', request.url_root)
+	isAutomated = (request.args.get('automated', None) == 'true')
+	source = RequestSource.upsert(isAutomated, urlRoot, remoteAddr)
+
 	initTimeMs = int(time.time() * 1000)
 	meta = ax.lookup(urlId)
 	if 'error' in meta:
+		endTimeMs = int(time.time() * 1000)
+		RequestLog.insert(source, urlId, endTimeMs - initTimeMs, None,
+				json.dumps(meta), None, None, None, None)
 		return None
 	infoTimeMs = int(time.time() * 1000)
+	infoRequestMs = infoTimeMs - initTimeMs
+
+	urlId = None
+	if meta is not None and 'urlId' in meta:
+		urlId = meta['urlId']
 
 	try:
 		chapters = ax.fetchChapters(meta)
 
 		# try to build html bundle
 		html_fname = ebook.createHtmlBundle(meta, chapters)
-		html_url = url_for('get_cached_html', fname=html_fname, cv=CACHE_BUSTER)
+		# TODO technically this has a race condition...
+		exportFileName = os.path.join(ebook.HTML_CACHE_DIR, html_fname)
+		exportFileHash = hashFile(exportFileName)
+		html_url = url_for('get_cached_html', fname=html_fname, cv=CACHE_BUSTER,
+				h=exportFileHash)
 
 		endTimeMs = int(time.time() * 1000)
+		exportMs = endTimeMs - infoTimeMs
 
-		# TODO we need per filetype request logs
-		#util.logRequest(infoTimeMs - initTimeMs, endTimeMs - infoTimeMs, urlId, q,
-		#	meta, epub_fname, h, epub_url, isAutomated)
+		RequestLog.insert(source, urlId, infoRequestMs, urlId, json.dumps(meta),
+				exportMs, exportFileName, exportFileHash, html_url)
 
 		return html_fname
 	except Exception as e:
+		endTimeMs = int(time.time() * 1000)
+		exportMs = endTimeMs - infoTimeMs
+		RequestLog.insert(source, urlId, endTimeMs - initTimeMs, urlId,
+				json.dumps(meta), exportMs, None, None, None)
+
 		traceback.print_exc()
 		print(e)
 		print('^ something went wrong :/')
@@ -145,7 +166,11 @@ def get_cached_html(fname: str) -> Any:
 
 @app.route('/api/v0/epub', methods=['GET'])
 def api_v0_epub() -> Any:
+	remoteAddr = request.headers.get('X-Real-IP', 'unknown')
+	urlRoot = request.headers.get('X-Real-Root', request.url_root)
 	isAutomated = (request.args.get('automated', None) == 'true')
+	source = RequestSource.upsert(isAutomated, urlRoot, remoteAddr)
+
 	q = request.args.get('q', None)
 	if q is None:
 		return jsonify(getErr(WebError.no_body))
@@ -153,33 +178,49 @@ def api_v0_epub() -> Any:
 	initTimeMs = int(time.time() * 1000)
 	meta = ax.lookup(q)
 	if 'error' in meta:
+		endTimeMs = int(time.time() * 1000)
+		RequestLog.insert(source, q, endTimeMs - initTimeMs, None,
+				json.dumps(meta), None, None, None, None)
 		return jsonify(meta)
 	infoTimeMs = int(time.time() * 1000)
+	infoRequestMs = infoTimeMs - initTimeMs
+
+	urlId = None
+	if meta is not None and 'urlId' in meta:
+		urlId = meta['urlId']
 
 	try:
-		urlId = meta['urlId']
 		ficInfo, ficName = ebook.metaDataString(meta)
 		chapters = ax.fetchChapters(meta)
 
 		# build epub
 		epub_fname = ebook.createEpub(meta, chapters)
-		h = hashEPUB(epub_fname)
+		# TODO technically this has a race condition...
+		exportFileName = os.path.join(ebook.EPUB_CACHE_DIR, epub_fname)
+		exportFileHash = hashFile(exportFileName)
 		epub_url = url_for('get_cached_epub', fname=epub_fname, cv=CACHE_BUSTER,
-				h=h)
+				h=exportFileHash)
 
 		# build auto-generating html bundle link
 		html_url = url_for('get_cached_html', fname=urlId, cv=CACHE_BUSTER)
 
 		endTimeMs = int(time.time() * 1000)
-		util.logRequest(infoTimeMs - initTimeMs, endTimeMs - infoTimeMs, \
-				urlId, q, meta, epub_fname, h, epub_url, isAutomated)
+		exportMs = endTimeMs - infoTimeMs
+
+		RequestLog.insert(source, q, infoRequestMs, urlId, json.dumps(meta),
+				exportMs, exportFileName, exportFileHash, epub_url)
 
 		return jsonify({
 				'error':0, 'info':ficInfo, 'urlId':urlId,
-				'url':epub_url,
-				'zurl':html_url,
+				'epub_url':epub_url,
+				'html_url':html_url,
 			})
 	except Exception as e:
+		endTimeMs = int(time.time() * 1000)
+		exportMs = endTimeMs - infoTimeMs
+		RequestLog.insert(source, q, endTimeMs - initTimeMs, urlId,
+				json.dumps(meta), exportMs, None, None, None)
+
 		traceback.print_exc()
 		print(e)
 		print('^ something went wrong :/')

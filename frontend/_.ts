@@ -24,10 +24,10 @@ function epub() {
 			if (!res || res.error != 0) {
 				return error(this);
 			}
-			let htmlRes = '<p><a href="' + res.url + '">Download EPUB</a></p>' +
+			let htmlRes = '<p><a href="' + res.epub_url + '">Download EPUB</a></p>' +
 				'<p>' + res.info.replace('\n', '<br/>') + '</p>';
-			if (res.zurl) {
-				htmlRes += '<a href="' + res.zurl + '">Download as zipped HTML</a>';
+			if (res.html_url) {
+				htmlRes += '<p><a href="' + res.html_url + '">Download as zipped HTML</a></p>';
 			}
 			info().innerHTML = htmlRes;
 		} catch (e) {

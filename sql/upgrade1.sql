@@ -17,6 +17,7 @@ create table if not exists requestLog (
 	id bigserial primary key,
 	created timestamp not null default(current_timestamp),
 	sourceId bigint references requestSource(id),
+	etype text not null,
 	query text not null,
 
 	infoRequestMs int4 not null,
@@ -32,11 +33,11 @@ create table if not exists requestLog (
 );
 
 insert into requestLog(
-	created, sourceId, query, infoRequestMs, urlId, ficInfo,
+	created, sourceId, query, etype, infoRequestMs, urlId, ficInfo,
 	exportMs, exportFileName, exportFileHash, url)
 select created
 	, (select id from requestSource where description = 'legacy')
-	, query, infoRequestMs, urlId, ficInfo
+	, 'epub', query, infoRequestMs, urlId, ficInfo
 	, epubCreationMs, epubFileName, hash, url
 from oldRequestLog;
 

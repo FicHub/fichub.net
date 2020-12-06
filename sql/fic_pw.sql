@@ -15,6 +15,7 @@ create table if not exists requestLog (
 	id bigserial primary key,
 	created timestamp not null default(current_timestamp),
 	sourceId bigint references requestSource(id),
+	etype text not null,
 	query text not null,
 
 	infoRequestMs int4 not null,

@@ -95,11 +95,12 @@ class RequestSource:
 		return RequestSource.select(isAutomated, route, description)
 
 class RequestLog:
-	def __init__(self, id_, created_, sourceId_, query_, infoRequestMs_, urlId_,
-			ficInfo_, exportMs_, exportFileName_, exportFileHash_, url_):
+	def __init__(self, id_, created_, sourceId_, etype_, query_, infoRequestMs_,
+			urlId_, ficInfo_, exportMs_, exportFileName_, exportFileHash_, url_):
 		self.id = id_
 		self.created = created_
 		self.sourceId = sourceId_
+		self.etype = etype_
 		self.query = query_
 		self.infoRequestMs = infoRequestMs_
 		self.urlId = urlId_
@@ -125,8 +126,9 @@ class RequestLog:
 						and r.exportFileName like '%.epub'
 					group by r.urlId
 				)
-				select r.id, r.created, r.sourceId, r.query, r.infoRequestMs, r.urlId,
-					r.ficInfo, r.exportMs, r.exportFileName, r.exportFileHash, r.url
+				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,
+					r.urlId, r.ficInfo, r.exportMs, r.exportFileName, r.exportFileHash,
+					r.url
 				from mostRecentPerUrlId mr
 				join requestLog r
 					on r.urlId = mr.urlId
@@ -137,15 +139,15 @@ class RequestLog:
 		return []
 
 	@staticmethod
-	def insert(source: RequestSource, query: str, infoRequestMs: int,
+	def insert(source: RequestSource, etype: str, query: str, infoRequestMs: int,
 			urlId: Optional[str], ficInfo: Optional[str], exportMs: Optional[int],
 			exportFileName: Optional[str], exportFileHash: Optional[str],
 			url: Optional[str]):
 		with oil.open() as db, db, db.cursor() as curs:
 			curs.execute('''
-				insert into requestLog(sourceId, query, infoRequestMs, urlId, ficInfo,
-					exportMs, exportFileName, exportFileHash, url)
-				values(%s, %s, %s, %s, %s, %s, %s, %s, %s)
-				''', (source.id, query, infoRequestMs, urlId, ficInfo, exportMs,
+				insert into requestLog(sourceId, etype, query, infoRequestMs, urlId,
+					ficInfo, exportMs, exportFileName, exportFileHash, url)
+				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				''', (source.id, etype, query, infoRequestMs, urlId, ficInfo, exportMs,
 					exportFileName, exportFileHash, url))
 

@@ -104,7 +104,7 @@ def ensure_export(etype: str, query: str) -> str:
 	meta = ax.lookup(query)
 	if 'error' in meta:
 		endTimeMs = int(time.time() * 1000)
-		RequestLog.insert(source, query, endTimeMs - initTimeMs, None,
+		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, None,
 				json.dumps(meta), None, None, None, None)
 		return meta
 	infoTimeMs = int(time.time() * 1000)
@@ -140,15 +140,15 @@ def ensure_export(etype: str, query: str) -> str:
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs
 
-		RequestLog.insert(source, query, infoRequestMs, urlId, json.dumps(meta),
-				exportMs, exportFileName, exportFileHash, exportUrl)
+		RequestLog.insert(source, etype, query, infoRequestMs, urlId,
+				json.dumps(meta), exportMs, exportFileName, exportFileHash, exportUrl)
 
 		return {'urlId': urlId, 'info': info,
 				f'{etype}_fname': fname, 'hash': exportFileHash, 'url': exportUrl}
 	except Exception as e:
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs
-		RequestLog.insert(source, query, endTimeMs - initTimeMs, urlId,
+		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, urlId,
 				json.dumps(meta), exportMs, None, None, None)
 
 		traceback.print_exc()

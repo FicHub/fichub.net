@@ -1,4 +1,8 @@
 User-agent: *
 Disallow: /epub/*
 Disallow: /html/*
+Disallow: /cache/epub/*
+Disallow: /cache/html/*
+Disallow: /cache/mobi/*
+Disallow: /cache/pdf/*
 

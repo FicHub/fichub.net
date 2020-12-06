@@ -5,6 +5,16 @@
 	</nav>
 	<main>
 	<h1>Cached EPUBs</h1>
+	{% if pageCount > 1 %}
+	<h2>Page {{page}}/{{pageCount}}</h2>
+	<p class="pagList">
+	{% if page > 1 %}
+		<span class="pagEl pagLink"><a href='/cache/{{page - 1}}'>Previous Page</a></span>
+	{% endif %}
+	{% if page < pageCount %}
+		<span class="pagEl pagLink"><a href='/cache/{{page + 1}}'>Next Page</a></span>
+	{% endif %}
+	{% endif %}
 	{% for item in cache %}
 	<p class='cache-entry'>
 		<a href="{{ item.href }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
@@ -23,5 +33,15 @@
 		{% endif %}
 	</p>
 	{%- endfor %}
+	{% if pageCount > 1 %}
+	<h2>Page {{page}}/{{pageCount}}</h2>
+	<p class="pagList">
+	{% if page > 1 %}
+		<span class="pagEl pagLink"><a href='/cache/{{page - 1}}'>Previous Page</a></span>
+	{% endif %}
+	{% if page < pageCount %}
+		<span class="pagEl pagLink"><a href='/cache/{{page + 1}}'>Next Page</a></span>
+	{% endif %}
+	{% endif %}
 	</main>
 {% endblock %}

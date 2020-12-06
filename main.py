@@ -5,6 +5,7 @@ import time
 import traceback
 import json
 import random
+import math
 from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
 	send_from_directory, redirect, url_for
@@ -21,7 +22,7 @@ import ax
 import ebook
 import authentications as a
 
-CACHE_BUSTER=9
+CACHE_BUSTER=10
 
 class WebError(IntEnum):
 	success = 0
@@ -43,8 +44,13 @@ def page_not_found(e):
 def index() -> str:
 	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)
 
-@app.route('/cache/')
-def cache_listing() -> str:
+@app.route('/cache/', defaults={'page': 1})
+@app.route('/cache/<int:page>')
+def cache_listing(page: int) -> str:
+	pageSize = 500
+	if page < 1:
+		return redirect(url_for('cache_listing'))
+
 	fis = {fi.id: fi for fi in FicInfo.select()}
 	rls = RequestLog.mostRecentEpub()
 	items = []
@@ -68,7 +74,15 @@ def cache_listing() -> str:
 
 		items.append({'href':href, 'ficInfo':fi, 'requestLog':rl, 'created':dt,
 			'sourceUrl':sourceUrl})
-	return render_template('cache.html', cache=items)
+
+	pageCount = int(math.floor((len(items) + (pageSize - 1)) / pageSize))
+	if page > pageCount:
+		return redirect(url_for('cache_listing', page=pageCount))
+
+	items = items[(page - 1) * pageSize:page * pageSize]
+
+	return render_template('cache.html', cache=items, pageCount=pageCount,
+			page=page)
 
 def try_ensure_export(etype: str, query: str) -> str:
 	key = f'{etype}_fname'

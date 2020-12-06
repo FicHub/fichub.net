@@ -2,7 +2,15 @@ from typing import Dict, Optional
 import datetime
 import traceback
 import json
+import hashlib
 from oil import oil
+
+def hashFile(fname: str) -> str:
+	digest = 'hash_err'
+	with open(fname, 'rb') as f:
+		data = f.read()
+		digest = hashlib.md5(data).hexdigest()
+	return digest
 
 class FicInfo:
 	def __init__(self, id_, created_, updated_, title_, author_, chapters_,
@@ -111,7 +119,7 @@ class RequestLog:
 		self.url = url_
 
 	@staticmethod
-	def mostRecent():
+	def mostRecentEpub():
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				; with mostRecentPerUrlId as (
@@ -123,7 +131,7 @@ class RequestLog:
 					join requestSource rs
 						on rs.id = r.sourceId
 					where r.exportFileName is not null
-						and r.exportFileName like '%.epub'
+						and r.etype = 'epub'
 					group by r.urlId
 				)
 				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,
@@ -133,10 +141,26 @@ class RequestLog:
 				join requestLog r
 					on r.urlId = mr.urlId
 					and r.created = mr.created
+				order by r.created desc
 				''')
 			ls = [RequestLog(*r) for r in curs.fetchall()]
 			return ls
 		return []
+
+	@staticmethod
+	def mostRecentByUrlId(etype: str, urlId: str):
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,
+					r.urlId, r.ficInfo, r.exportMs, r.exportFileName, r.exportFileHash,
+					r.url
+				from requestLog r
+				where r.etype = %s and r.urlId = %s
+				order by r.created desc
+				limit 1
+				''', (etype, urlId))
+			r = curs.fetchone()
+			return None if r is None else RequestLog(*r)
 
 	@staticmethod
 	def insert(source: RequestSource, etype: str, query: str, infoRequestMs: int,

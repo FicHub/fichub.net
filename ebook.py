@@ -1,18 +1,20 @@
-from typing import Dict
+from typing import Dict, Tuple
 import os
 import traceback
 import datetime
 import re
 import zipfile
 import subprocess
+import random
+import threading
 from dateutil.relativedelta import relativedelta
 from flask import render_template
 from ebooklib import epub
 from ax import Chapter
+import util
 
+TMP_DIR='tmp'
 CACHE_DIR='cache'
-EPUB_CACHE_DIR='cache/epub'
-HTML_CACHE_DIR='cache/html'
 
 EXPORT_TYPES = ['epub', 'html', 'mobi', 'pdf']
 EXPORT_SUFFIXES = {
@@ -39,47 +41,59 @@ def buildFileSlug(title: str, author: str, urlId: str) -> str:
 	return f"{slug}-{urlId}"
 
 
-def createHtmlBundle(info, chapters) -> None:
-	if not os.path.isdir(HTML_CACHE_DIR):
-		os.makedirs(HTML_CACHE_DIR)
+def randomTempFile(extra: str, bits: int = 32) -> str:
+	tdir = os.path.join(TMP_DIR, str(os.getpid()))
+	if not os.path.isdir(tdir):
+		os.makedirs(tdir)
+	rbits = random.getrandbits(bits)
+	fname = f'{threading.get_ident()}_{rbits:x}_{extra}'
+	return os.path.join(tdir, fname)
 
+
+def relocateFinishedExport(etype: str, urlId: str, tname: str
+		) -> Tuple[str, str]:
+	fhash = util.hashFile(tname)
+	fdir = os.path.join(CACHE_DIR, etype, urlId)
+	if not os.path.isdir(fdir):
+		os.makedirs(fdir)
+	suff = EXPORT_SUFFIXES[etype]
+	fname = os.path.join(fdir, f'{fhash}{suff}')
+	os.rename(tname, fname)
+
+	return (fname, fhash)
+
+
+def createHtmlBundle(info, chapters) -> None:
 	urlId = info['urlId']
 	slug = buildFileSlug(info['title'], info['author'], urlId)
-
-	bundle_zip_fname = os.path.join(HTML_CACHE_DIR, slug + '.zip')
 	bundle_fname = slug + '.html'
+
+	tmp_fname = randomTempFile(f'{urlId}.zip')
+
 	nchaps = chapters.values()
 	data = render_template('full_fic.html', info=info, chapters=nchaps)
-	with zipfile.ZipFile(bundle_zip_fname, 'w') as zf:
+	with zipfile.ZipFile(tmp_fname, 'w') as zf:
 		zf.writestr(bundle_fname, data, compress_type=zipfile.ZIP_DEFLATED)
 
-	return slug + '.zip'
+	return relocateFinishedExport('html', urlId, tmp_fname)
 
 
-def convertEpub(info, chapters, etype) -> str:
+def convertEpub(info, chapters, etype) -> Tuple[str, str]:
 	if etype not in EXPORT_TYPES:
 		raise Exception(f'convertEpub: invalid etype: {etype}')
 
-	cdir = os.path.join(CACHE_DIR, etype)
-	if not os.path.isdir(cdir):
-		os.makedirs(cdir)
-
 	urlId = info['urlId']
-	slug = buildFileSlug(info['title'], info['author'], urlId)
-
-	epub_fname = createEpub(info, chapters)
 	suff = EXPORT_SUFFIXES[etype]
-	res_fname = f'{slug}{suff}'
+	tmp_fname = randomTempFile(f'{urlId}{suff}')
 
-	in_fname = os.path.join(EPUB_CACHE_DIR, epub_fname)
-	out_fname = os.path.join(cdir, res_fname)
+	epub_fname, ehash = createEpub(info, chapters)
 
 	try:
-		subprocess.run(['ebook-convert', in_fname, out_fname])
+		subprocess.run(['ebook-convert', epub_fname, tmp_fname])
 	except:
 		raise
 
-	return res_fname
+	return relocateFinishedExport(etype, urlId, tmp_fname)
 
 
 def buildEpubChapters(chapters: Dict[int, Chapter]):
@@ -92,7 +106,7 @@ def buildEpubChapters(chapters: Dict[int, Chapter]):
 		epubChapters[n] = c
 	return epubChapters
 
-def createEpub(info, rawChapters):
+def createEpub(info, rawChapters) -> Tuple[str, str]:
 	print(info)
 
 	book = epub.EpubBook()
@@ -147,14 +161,9 @@ def createEpub(info, rawChapters):
 	urlId = info['urlId']
 	updated = datetime.datetime.utcfromtimestamp(int(info['updated'])/1000)
 
-	slug = buildFileSlug(info['title'], info['author'], urlId)
-	epub_fname = f"{slug}.epub"
-	print(f"creating book with name: {epub_fname}")
-
-	if not os.path.isdir(EPUB_CACHE_DIR):
-		os.makedirs(EPUB_CACHE_DIR)
-	epub.write_epub(os.path.join(EPUB_CACHE_DIR, epub_fname), book,
+	tmp_fname = randomTempFile(f'{urlId}.epub')
+	epub.write_epub(tmp_fname, book,
 			{'mtime':updated, 'play_order':{'enabled':True}})
 
-	return epub_fname
+	return relocateFinishedExport('epub', urlId, tmp_fname)
 

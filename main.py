@@ -1,7 +1,6 @@
-from typing import Any, Dict, Union, Tuple
+from typing import Any, Dict, Union, Tuple, Optional
 import os
 import os.path
-import hashlib
 import time
 import traceback
 import json
@@ -44,32 +43,19 @@ def page_not_found(e):
 def index() -> str:
 	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)
 
-def hashFile(fname: str) -> str:
-	digest = 'hash_err'
-	with open(fname, 'rb') as f:
-		data = f.read()
-		digest = hashlib.md5(data).hexdigest()
-	return digest
-
 @app.route('/cache/')
 def cache_listing() -> str:
 	fis = {fi.id: fi for fi in FicInfo.select()}
-	rls = {rl.urlId: rl for rl in RequestLog.mostRecent()}
+	rls = RequestLog.mostRecentEpub()
 	items = []
-	if not os.path.isdir(ebook.EPUB_CACHE_DIR):
-		os.makedirs(ebook.EPUB_CACHE_DIR)
-	for f in os.listdir(ebook.EPUB_CACHE_DIR):
-		if len(str(f).strip()) < 1:
+	for rl in rls:
+		if not os.path.isfile(rl.exportFileName):
 			continue
-		href = url_for('get_cached_export', etype='epub', fname=f, cv=CACHE_BUSTER)
-		urlId = f.split('-')[-1]
-		if not urlId.endswith('.epub'):
-			continue
-		urlId = urlId[:-len('.epub')]
-		fi = fis[urlId] if urlId in fis else None
-		rl = rls[urlId] if urlId in rls else None
-		if rl is None:
-			continue
+
+		href = url_for(f'get_cached_export', etype=rl.etype, urlId=rl.urlId,
+				fname=f'{rl.exportFileHash}.epub')
+
+		fi = fis[rl.urlId] if rl.urlId in fis else None
 		dt = rl.created
 
 		sourceUrl = ''
@@ -80,10 +66,9 @@ def cache_listing() -> str:
 		except:
 			pass
 
-		items.append({'href':href, 'fname':f, 'ficInfo':fi, 'requestLog':rl,
-			'created':dt, 'sourceUrl':sourceUrl})
-	sitems = sorted(items, key=lambda e: e['created'], reverse=True)
-	return render_template('cache.html', cache=sitems, CACHE_BUSTER=CACHE_BUSTER)
+		items.append({'href':href, 'ficInfo':fi, 'requestLog':rl, 'created':dt,
+			'sourceUrl':sourceUrl})
+	return render_template('cache.html', cache=items)
 
 def try_ensure_export(etype: str, query: str) -> str:
 	key = f'{etype}_fname'
@@ -120,31 +105,29 @@ def ensure_export(etype: str, query: str) -> str:
 		chapters = ax.fetchChapters(meta)
 
 		# actually do the export
-		fname = None
+		fname, fhash = None, None
 		if etype == 'epub':
-			fname = ebook.createEpub(meta, chapters)
+			fname, fhash = ebook.createEpub(meta, chapters)
 		elif etype == 'html':
-			fname = ebook.createHtmlBundle(meta, chapters)
+			fname, fhash = ebook.createHtmlBundle(meta, chapters)
 		elif etype in ['mobi', 'pdf']:
-			fname = ebook.convertEpub(meta, chapters, etype)
+			fname, fhash = ebook.convertEpub(meta, chapters, etype)
 		else:
 			raise Exception('FIXME')
 
-		edir = os.path.join(ebook.CACHE_DIR, etype)
-		exportFileName = os.path.join(edir, fname)
-		# TODO technically this has a race condition...
-		exportFileHash = hashFile(exportFileName)
-		exportUrl = url_for(f'get_cached_export', etype=etype, fname=fname,
-				h=exportFileHash, cv=CACHE_BUSTER)
+		exportFileName = os.path.basename(fname)
+
+		exportUrl = url_for(f'get_cached_export', etype=etype, urlId=urlId,
+				fname=exportFileName, cv=CACHE_BUSTER)
 
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs
 
 		RequestLog.insert(source, etype, query, infoRequestMs, urlId,
-				json.dumps(meta), exportMs, exportFileName, exportFileHash, exportUrl)
+				json.dumps(meta), exportMs, fname, fhash, exportUrl)
 
 		return {'urlId': urlId, 'info': info,
-				f'{etype}_fname': fname, 'hash': exportFileHash, 'url': exportUrl}
+				f'{etype}_fname': fname, 'hash': fhash, 'url': exportUrl}
 	except Exception as e:
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs
@@ -157,37 +140,78 @@ def ensure_export(etype: str, query: str) -> str:
 
 	return {'error': -1, 'msg': 'please report this on discord'}
 
+def legacy_cache_redirect(etype: str, fname: str):
+	fhash = request.args.get('h', None)
+	urlId = fname
+	if urlId.find('-') >= 0:
+		urlId = urlId.split('-')[-1]
+	suff = ebook.EXPORT_SUFFIXES[etype]
+	if urlId.endswith(suff):
+		urlId = urlId[:-len(suff)]
+	if fhash is None:
+		return redirect(url_for('get_cached_export_partial', etype=etype,
+			urlId=urlId, cv=CACHE_BUSTER))
+	return redirect(url_for('get_cached_export', etype=etype, urlId=urlId,
+		fname=f'{fhash}{suff}', cv=CACHE_BUSTER))
+
 @app.route('/epub/<fname>')
 def get_cached_epub_v0(fname: str) -> Any:
-	h = request.args.get('h', str(random.getrandbits(32)))
-	return redirect(url_for('get_cached_export', etype='epub', fname=fname,
-		cv=CACHE_BUSTER, h=h))
+	return legacy_cache_redirect('epub', fname)
 
 @app.route('/html/<fname>')
 def get_cached_html_v0(fname: str) -> Any:
-	h = request.args.get('h', str(random.getrandbits(32)))
-	return redirect(url_for('get_cached_export', etype='html', fname=fname,
-		cv=CACHE_BUSTER, h=h))
+	return legacy_cache_redirect('html', fname)
 
-@app.route('/cache/<etype>/<fname>')
-def get_cached_export(etype: str, fname: str) -> Any:
+@app.route('/cache/<etype>/<urlId>/<fname>')
+def get_cached_export(etype: str, urlId: str, fname: str) -> Any:
 	if etype not in ebook.EXPORT_TYPES:
 		# if this is an unsupported export type, 404
 		return page_not_found(NotFound())
 
 	suff = ebook.EXPORT_SUFFIXES[etype]
-	# if the request is for a specific bundle, try to serve it directly
-	if fname.endswith(suff):
-		return send_from_directory(os.path.join(ebook.CACHE_DIR, etype), fname)
+	if not fname.endswith(suff):
+		# we have a request for the wrong extension, 404
+		return page_not_found(NotFound())
 
-	# otherwise we probably have a urlId, ensure the export exists/get its name
-	fname = try_ensure_export(etype, fname)
+	fhash = request.args.get('h', None)
+	fdir = os.path.join(ebook.CACHE_DIR, etype, urlId)
+	if fhash is not None:
+		# if the request is for a specific slug, try to serve it directly
+		fname = f'{fhash}{suff}'
+		if os.path.isfile(os.path.join(fdir, fname)):
+			return send_from_directory(fdir, fname)
+		# fall through...
+
+	# otherwise find the most recent export and give them that
+	ficInfo = FicInfo.select(urlId)
+	if len(ficInfo) < 1:
+		# entirely unknown fic, 404
+		return page_not_found(NotFound())
+	ficInfo = ficInfo[0]
+	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
+	rl = RequestLog.mostRecentByUrlId(etype, urlId)
+
+	if not os.path.isfile(os.path.join(fdir, f'{rl.exportFileHash}{suff}')):
+		# the most recent export is missing for some reason... 404
+		return page_not_found(NotFound())
+
+	# redirect back to ourself with the correct filename
+	return redirect(url_for('get_cached_export', etype=etype, urlId=urlId,
+		fname=f'{slug}{suff}', h=rl.exportFileHash))
+
+@app.route('/cache/<etype>/<urlId>')
+def get_cached_export_partial(etype: str, urlId: str) -> Any:
+	if etype not in ebook.EXPORT_TYPES:
+		# if this is an unsupported export type, 404
+		return page_not_found(NotFound())
+
+	# otherwise we have a urlId we need to export
+	fname = try_ensure_export(etype, urlId)
 	if fname is None:
 		# if we failed to generate the export, 404
 		return page_not_found(NotFound())
-	# redirect back to ourself with the correct bundle filename
-	return redirect(url_for('get_cached_export', etype=etype, fname=fname,
-		cv=CACHE_BUSTER))
+
+	return get_cached_export(etype, urlId, fname)
 
 
 @app.route('/api/v0/epub', methods=['GET'])
@@ -215,8 +239,8 @@ def api_v0_epub() -> Any:
 
 	# build auto-generating links for all formats
 	for etype in ebook.EXPORT_TYPES:
-		res[f'{etype}_url'] = url_for(f'get_cached_export', etype=etype,
-				fname=eres['urlId'], cv=CACHE_BUSTER, eh=eh)
+		res[f'{etype}_url'] = url_for(f'get_cached_export_partial', etype=etype,
+				urlId=eres['urlId'], cv=CACHE_BUSTER, eh=eh)
 
 	# update epub url to direct download
 	res['epub_url'] = eres['url']

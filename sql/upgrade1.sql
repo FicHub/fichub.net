@@ -7,6 +7,7 @@ create table if not exists requestSource (
 	isAutomated boolean default(false),
 	route text,
 	description text
+	unique(isAutomated, route, description)
 );
 insert into requestSource(isAutomated, route, description)
 values
@@ -33,7 +34,7 @@ create table if not exists requestLog (
 );
 
 insert into requestLog(
-	created, sourceId, query, etype, infoRequestMs, urlId, ficInfo,
+	created, sourceId, etype, query, infoRequestMs, urlId, ficInfo,
 	exportMs, exportFileName, exportFileHash, url)
 select created
 	, (select id from requestSource where description = 'legacy')

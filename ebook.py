@@ -116,8 +116,18 @@ def createEpub(info, rawChapters) -> Tuple[str, str]:
 	book.set_language('en')
 	book.add_author(info['author'])
 
+	# document style
+	doc_style = epub.EpubItem(
+		uid="doc_style",
+		file_name="style/main.css",
+		media_type="text/css",
+		content=open("epub_style.css").read()
+	)
+	book.add_item(doc_style)
+
 	chapters = buildEpubChapters(rawChapters)
 	for _, c in sorted(chapters.items()):
+		c.add_item(doc_style)
 		book.add_item(c)
 
 	sourceUrl = ''
@@ -145,14 +155,6 @@ def createEpub(info, rawChapters) -> Tuple[str, str]:
 	book.add_item(nav_css)
 
 	# basic spine
-	doc_style = epub.EpubItem(
-		uid="doc_style",
-		file_name="style/main.css",
-		media_type="text/css",
-		content=open("epub_style.css").read()
-	)
-	book.add_item(doc_style)
-
 	nav_page = epub.EpubNav(uid='book_toc', file_name='toc.xhtml')
 	nav_page.add_item(doc_style)
 	book.add_item(nav_page)

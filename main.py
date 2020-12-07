@@ -22,7 +22,7 @@ import ax
 import ebook
 import authentications as a
 
-CACHE_BUSTER=10
+CACHE_BUSTER=11
 
 class WebError(IntEnum):
 	success = 0
@@ -182,6 +182,7 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> Any:
 		# if this is an unsupported export type, 404
 		return page_not_found(NotFound())
 
+	mimetype = ebook.EXPORT_MIMETYPES[etype]
 	suff = ebook.EXPORT_SUFFIXES[etype]
 	if not fname.endswith(suff):
 		# we have a request for the wrong extension, 404
@@ -191,9 +192,11 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> Any:
 	fdir = os.path.join(ebook.CACHE_DIR, etype, urlId)
 	if fhash is not None:
 		# if the request is for a specific slug, try to serve it directly
+		rname = fname
 		fname = f'{fhash}{suff}'
 		if os.path.isfile(os.path.join(fdir, fname)):
-			return send_from_directory(fdir, fname)
+			return send_from_directory(fdir, fname, as_attachment=True,
+					attachment_filename=rname, mimetype=mimetype)
 		# fall through...
 
 	# otherwise find the most recent export and give them that

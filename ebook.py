@@ -23,6 +23,12 @@ EXPORT_SUFFIXES = {
 		'mobi': '.mobi',
 		'pdf': '.pdf',
 	}
+EXPORT_MIMETYPES = {
+		'epub': 'application/epub+zip',
+		'html': 'application/zip',
+		'mobi': 'application/x-mobipocket-ebook',
+		'pdf': 'application/pdf',
+	}
 
 def formatRelDatePart(val, which): 
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""

@@ -256,6 +256,8 @@ def api_v0_epub() -> Any:
 
 	# build auto-generating links for all formats
 	for etype in ebook.EXPORT_TYPES:
+		if etype == 'epub':
+			continue # we already exported epub
 		res[f'{etype}_url'] = url_for(f'get_cached_export_partial', etype=etype,
 				urlId=eres['urlId'], cv=CACHE_BUSTER, eh=eh)
 

@@ -3,8 +3,9 @@
 	<head>
 		{% block head %}
 		<title>{% block title %}{% endblock %} Fic.PW</title>
+		<meta name="description" content="Export fics as EPUB, MOBI, or other formats">
 		<link href="/style/_.css?{{ CACHE_BUSTER }}" rel="stylesheet" type="text/css">
-		<script type="text/javascript" src="/js/_.js?{{ CACHE_BUSTER }}"></script>
+		<script type="text/javascript" src="/js/_.js?{{ CACHE_BUSTER }}" defer></script>
 		{% endblock %}
 	</head>
 	<body>

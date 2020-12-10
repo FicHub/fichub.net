@@ -22,7 +22,7 @@ import ax
 import ebook
 import authentications as a
 
-CACHE_BUSTER=11
+CACHE_BUSTER=13
 
 class WebError(IntEnum):
 	success = 0

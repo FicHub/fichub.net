@@ -11,7 +11,14 @@ function working() {
 }
 function error(r) {
 	console.log('uh-oh');
-	info().innerHTML = '<p>an error ocurred :(</p>' +
+	let msg = 'an error ocurred :(';
+	if (q().indexOf('tvtropes.org') >= 0) {
+		msg += '<br/>(note that tvtropes.org is not directly supported; instead, use the url of the actual fic)';
+	}
+	if (q().indexOf('http://') != 0 && q().indexOf('https://') != 0) {
+		msg += '<br/>(please try a full url including http:// or https:// at the start)';
+	}
+	info().innerHTML = '<p>' + msg + '</p>' +
 		'<pre>' + r.responseText + '</pre>';
 }
 function epub() {

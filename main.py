@@ -38,7 +38,7 @@ def getErr(err: WebError) -> Dict[str, Any]:
 
 @app.errorhandler(404)
 def page_not_found(e):
-	return render_template('404.html'), 404
+	return render_template('404.html', CACHE_BUSTER=CACHE_BUSTER), 404
 
 @app.route('/')
 def index() -> str:
@@ -82,7 +82,7 @@ def cache_listing(page: int) -> str:
 	items = items[(page - 1) * pageSize:page * pageSize]
 
 	return render_template('cache.html', cache=items, pageCount=pageCount,
-			page=page)
+			page=page, CACHE_BUSTER=CACHE_BUSTER)
 
 def try_ensure_export(etype: str, query: str) -> str:
 	key = f'{etype}_fname'

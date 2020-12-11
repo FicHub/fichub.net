@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 import os
 import traceback
 import datetime
@@ -9,8 +9,8 @@ import random
 import threading
 from dateutil.relativedelta import relativedelta
 from flask import render_template
-from ebooklib import epub
-from ax import Chapter
+from ebooklib import epub # type ignore
+from ax import Chapter, FicInfo
 import util
 
 TMP_DIR='tmp'
@@ -30,14 +30,34 @@ EXPORT_MIMETYPES = {
 		'pdf': 'application/pdf',
 	}
 
-def formatRelDatePart(val, which): 
+def formatRelDatePart(val: int, which: str) -> str:
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""
-def metaDataString(p):
-	date = datetime.date.fromtimestamp(p['updated']/1000.0)
-	dateString = f"{date.year}/{date.month}/{date.day}"
-	diff = relativedelta(datetime.date.today(), datetime.date.fromtimestamp(p['updated']/1000.0))
-	diffString = f"{formatRelDatePart(diff.years, 'year')}{formatRelDatePart(diff.months, 'month')}{formatRelDatePart(diff.days, 'day')}{formatRelDatePart(diff.hours, 'hour')}" 
-	return f"{p['title']} by {p['author']} \n({p['words']} words, {p['chapters']} chapters, status: {p['status']}, Updated: {dateString} - {diffString} ago.)\n", p['title']
+
+def metaDataString(info: FicInfo) -> str:
+	diff = relativedelta(datetime.datetime.now(), info.ficUpdated)
+	parts = [
+			(diff.years, 'year'),
+			(diff.months, 'month'),
+			(diff.days, 'day'),
+		]
+	diffString = ''
+	for val, which in parts:
+		diffString += formatRelDatePart(val, which)
+	if len(diffString) < 1:
+		diffString = 'today'
+	else:
+		diffString += ' ago'
+
+	return '\n'.join([
+			f"{info.title} by {info.author}",
+			'(' + ', '.join([
+					f"{info.words} words",
+					f"{info.chapters} chapters",
+					f"status: {info.status}",
+					f"Updated: {info.ficUpdated.date()} - {diffString}",
+				]) + ')',
+			'',
+		])
 
 def buildFileSlug(title: str, author: str, urlId: str) -> str:
 	slug = f"{title} by {author}"
@@ -69,28 +89,28 @@ def relocateFinishedExport(etype: str, urlId: str, tname: str
 	return (fname, fhash)
 
 
-def createHtmlBundle(info, chapters) -> None:
-	urlId = info['urlId']
-	slug = buildFileSlug(info['title'], info['author'], urlId)
+def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]
+		) -> Tuple[str, str]:
+	slug = buildFileSlug(info.title, info.author, info.id)
 	bundle_fname = slug + '.html'
 
-	tmp_fname = randomTempFile(f'{urlId}.zip')
+	tmp_fname = randomTempFile(f'{info.id}.zip')
 
 	nchaps = chapters.values()
 	data = render_template('full_fic.html', info=info, chapters=nchaps)
 	with zipfile.ZipFile(tmp_fname, 'w') as zf:
 		zf.writestr(bundle_fname, data, compress_type=zipfile.ZIP_DEFLATED)
 
-	return relocateFinishedExport('html', urlId, tmp_fname)
+	return relocateFinishedExport('html', info.id, tmp_fname)
 
 
-def convertEpub(info, chapters, etype) -> Tuple[str, str]:
+def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
+		) -> Tuple[str, str]:
 	if etype not in EXPORT_TYPES:
 		raise Exception(f'convertEpub: invalid etype: {etype}')
 
-	urlId = info['urlId']
 	suff = EXPORT_SUFFIXES[etype]
-	tmp_fname = randomTempFile(f'{urlId}{suff}')
+	tmp_fname = randomTempFile(f'{info.id}{suff}')
 
 	epub_fname, ehash = createEpub(info, chapters)
 
@@ -99,10 +119,10 @@ def convertEpub(info, chapters, etype) -> Tuple[str, str]:
 	except:
 		raise
 
-	return relocateFinishedExport(etype, urlId, tmp_fname)
+	return relocateFinishedExport(etype, info.id, tmp_fname)
 
 
-def buildEpubChapters(chapters: Dict[int, Chapter]):
+def buildEpubChapters(chapters: Dict[int, Chapter]) -> Dict[int, epub.EpubHtml]:
 	epubChapters = {}
 	for n in chapters:
 		ch = chapters[n]
@@ -112,15 +132,16 @@ def buildEpubChapters(chapters: Dict[int, Chapter]):
 		epubChapters[n] = c
 	return epubChapters
 
-def createEpub(info, rawChapters) -> Tuple[str, str]:
-	print(info)
+def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]
+		) -> Tuple[str, str]:
+	print(info.__dict__)
 
 	book = epub.EpubBook()
 	# set metadata
-	book.set_identifier(info['urlId'])
-	book.set_title(info['title'])
+	book.set_identifier(info.id)
+	book.set_title(info.title)
 	book.set_language('en')
-	book.add_author(info['author'])
+	book.add_author(info.author)
 
 	# document style
 	doc_style = epub.EpubItem(
@@ -136,14 +157,8 @@ def createEpub(info, rawChapters) -> Tuple[str, str]:
 		c.add_item(doc_style)
 		book.add_item(c)
 
-	sourceUrl = ''
-	if 'source' in info:
-		sourceUrl = info['source']
-
-	intro = epub.EpubHtml(title='Introduction', file_name='introduction' + '.xhtml', lang='en')
-	intro.content = render_template('epub_introduction.html',
-			title=info['title'], author=info['author'], desc=info['desc'],
-			sourceUrl=sourceUrl)
+	intro = epub.EpubHtml(title='Introduction', file_name='introduction.xhtml', lang='en')
+	intro.content = render_template('epub_introduction.html', info=info)
 
 	book.add_item(intro)
 	# define Table Of Contents
@@ -155,7 +170,8 @@ def createEpub(info, rawChapters) -> Tuple[str, str]:
 
 	# define CSS style
 	style = 'BODY {color: white;}'
-	nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css", content=style)
+	nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css",
+			media_type="text/css", content=style)
 
 	# add CSS file
 	book.add_item(nav_css)
@@ -166,12 +182,9 @@ def createEpub(info, rawChapters) -> Tuple[str, str]:
 	book.add_item(nav_page)
 	book.spine = [intro, nav_page] + list(chapters.values())
 
-	urlId = info['urlId']
-	updated = datetime.datetime.utcfromtimestamp(int(info['updated'])/1000)
-
-	tmp_fname = randomTempFile(f'{urlId}.epub')
+	tmp_fname = randomTempFile(f'{info.id}.epub')
 	epub.write_epub(tmp_fname, book,
-			{'mtime':updated, 'play_order':{'enabled':True}})
+			{'mtime':info.ficUpdated, 'play_order':{'enabled':True}})
 
-	return relocateFinishedExport('epub', urlId, tmp_fname)
+	return relocateFinishedExport('epub', info.id, tmp_fname)
 

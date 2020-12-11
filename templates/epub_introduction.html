@@ -4,12 +4,12 @@
 	<link rel="stylesheet" href="style/main.css" type="text/css" />
 </head>
 <body>
-	<h1>{{title}}</h1>
-	<p><b>By: {{author}}</b></p>
-	<p>{{desc|safe}}</p>
-	{% if sourceUrl|length %}
+	<h1>{{info.title}}</h1>
+	<p><b>By: {{info.author}}</b></p>
+	<p>{{info.description|safe}}</p>
+	{% if info.source|length %}
 	<p>Original source:
-		<a rel="noopener noreferrer" href="{{sourceUrl}}">{{sourceUrl}}</a>
+		<a rel="noopener noreferrer" href="{{info.source}}">{{info.source}}</a>
 	</p>
 	{% endif %}
 </body>

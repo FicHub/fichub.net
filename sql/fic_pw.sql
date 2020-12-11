@@ -41,6 +41,7 @@ create table if not exists ficInfo (
 	description text not null,
 	ficCreated timestamp not null,
 	ficUpdated timestamp not null,
-	status text not null
+	status text not null,
+	source text not null
 );
 

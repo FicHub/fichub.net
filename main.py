@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union, Tuple, Optional
+from typing import Any, Dict, Union, Tuple, Optional, cast
 import os
 import os.path
 import time
@@ -9,16 +9,16 @@ import math
 from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
 	send_from_directory, redirect, url_for
-from werkzeug.exceptions import NotFound
-from util import FicInfo, RequestLog, RequestSource
-#from oil import oil
-#import weaver.enc as enc
-#from weaver import Web, WebScraper, WebQueue
+import werkzeug.wrappers
+from werkzeug.exceptions import HTTPException, NotFound
 
-#db = oil.open()
 app = Flask(__name__, static_url_path='')
 
+BasicFlaskResponse = Union[Response, werkzeug.wrappers.Response, str]
+FlaskResponse = Union[BasicFlaskResponse, Tuple[BasicFlaskResponse, int]]
+
 import ax
+from ax import FicInfo, RequestLog, RequestSource
 import ebook
 import authentications as a
 
@@ -37,16 +37,16 @@ def getErr(err: WebError) -> Dict[str, Any]:
 	return {'error':int(err),'msg':errorMessages[err]}
 
 @app.errorhandler(404)
-def page_not_found(e):
+def page_not_found(e: HTTPException) -> FlaskResponse:
 	return render_template('404.html', CACHE_BUSTER=CACHE_BUSTER), 404
 
 @app.route('/')
-def index() -> str:
+def index() -> FlaskResponse:
 	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)
 
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
-def cache_listing(page: int) -> str:
+def cache_listing(page: int) -> FlaskResponse:
 	pageSize = 500
 	if page < 1:
 		return redirect(url_for('cache_listing'))
@@ -55,6 +55,8 @@ def cache_listing(page: int) -> str:
 	rls = RequestLog.mostRecentEpub()
 	items = []
 	for rl in rls:
+		if rl.exportFileName is None or rl.ficInfo is None:
+			continue
 		if not os.path.isfile(rl.exportFileName):
 			continue
 
@@ -84,14 +86,17 @@ def cache_listing(page: int) -> str:
 	return render_template('cache.html', cache=items, pageCount=pageCount,
 			page=page, CACHE_BUSTER=CACHE_BUSTER)
 
-def try_ensure_export(etype: str, query: str) -> str:
+def try_ensure_export(etype: str, query: str) -> Optional[str]:
 	key = f'{etype}_fname'
 	res = ensure_export(etype, query)
-	if res is None or 'error' in res or key not in res:
+	if 'error' in res or key not in res:
 		return None
-	return res[key]
+	if res[key] is None or isinstance(res[key], str):
+		return cast(Optional[str], res[key])
+	return None
 
-def ensure_export(etype: str, query: str) -> str:
+def ensure_export(etype: str, query: str) -> Dict[str, Any]:
+	print(f'ensure_export: query: {query}')
 	if etype not in ebook.EXPORT_TYPES:
 		return {'error': -2, 'msg': 'invalid ensure_export etype', 'etype': etype}
 	remoteAddr = request.headers.get('X-Real-IP', 'unknown')
@@ -100,22 +105,19 @@ def ensure_export(etype: str, query: str) -> str:
 	source = RequestSource.upsert(isAutomated, urlRoot, remoteAddr)
 
 	initTimeMs = int(time.time() * 1000)
-	meta = ax.lookup(query)
-	if 'error' in meta:
+	lres = ax.lookup(query)
+	if 'error' in lres:
 		endTimeMs = int(time.time() * 1000)
 		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, None,
-				json.dumps(meta), None, None, None, None)
-		return meta
+				json.dumps(lres), None, None, None, None)
+		return lres
+	meta = FicInfo.parse(lres)
 	infoTimeMs = int(time.time() * 1000)
 	infoRequestMs = infoTimeMs - initTimeMs
 
-	urlId = None
-	if meta is not None and 'urlId' in meta:
-		urlId = meta['urlId']
-
 	try:
 		# TODO we could be timing this too...
-		info, ficName = ebook.metaDataString(meta)
+		metaString = ebook.metaDataString(meta)
 		chapters = ax.fetchChapters(meta)
 
 		# actually do the export
@@ -131,22 +133,22 @@ def ensure_export(etype: str, query: str) -> str:
 
 		exportFileName = os.path.basename(fname)
 
-		exportUrl = url_for(f'get_cached_export', etype=etype, urlId=urlId,
+		exportUrl = url_for(f'get_cached_export', etype=etype, urlId=meta.id,
 				fname=exportFileName, cv=CACHE_BUSTER)
 
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs
 
-		RequestLog.insert(source, etype, query, infoRequestMs, urlId,
-				json.dumps(meta), exportMs, fname, fhash, exportUrl)
+		RequestLog.insert(source, etype, query, infoRequestMs, meta.id,
+				json.dumps(lres), exportMs, fname, fhash, exportUrl)
 
-		return {'urlId': urlId, 'info': info,
+		return {'urlId': meta.id, 'info': metaString,
 				f'{etype}_fname': fname, 'hash': fhash, 'url': exportUrl}
 	except Exception as e:
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs
-		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, urlId,
-				json.dumps(meta), exportMs, None, None, None)
+		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, meta.id,
+				json.dumps(lres), exportMs, None, None, None)
 
 		traceback.print_exc()
 		print(e)
@@ -154,7 +156,7 @@ def ensure_export(etype: str, query: str) -> str:
 
 	return {'error': -1, 'msg': 'please report this on discord'}
 
-def legacy_cache_redirect(etype: str, fname: str):
+def legacy_cache_redirect(etype: str, fname: str) -> FlaskResponse:
 	fhash = request.args.get('h', None)
 	urlId = fname
 	if urlId.find('-') >= 0:
@@ -169,15 +171,15 @@ def legacy_cache_redirect(etype: str, fname: str):
 		fname=f'{fhash}{suff}', cv=CACHE_BUSTER))
 
 @app.route('/epub/<fname>')
-def get_cached_epub_v0(fname: str) -> Any:
+def get_cached_epub_v0(fname: str) -> FlaskResponse:
 	return legacy_cache_redirect('epub', fname)
 
 @app.route('/html/<fname>')
-def get_cached_html_v0(fname: str) -> Any:
+def get_cached_html_v0(fname: str) -> FlaskResponse:
 	return legacy_cache_redirect('html', fname)
 
 @app.route('/cache/<etype>/<urlId>/<fname>')
-def get_cached_export(etype: str, urlId: str, fname: str) -> Any:
+def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 	if etype not in ebook.EXPORT_TYPES:
 		# if this is an unsupported export type, 404
 		return page_not_found(NotFound())
@@ -200,13 +202,15 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> Any:
 		# fall through...
 
 	# otherwise find the most recent export and give them that
-	ficInfo = FicInfo.select(urlId)
-	if len(ficInfo) < 1:
+	allInfo = FicInfo.select(urlId)
+	if len(allInfo) < 1:
 		# entirely unknown fic, 404
 		return page_not_found(NotFound())
-	ficInfo = ficInfo[0]
+	ficInfo = allInfo[0]
 	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
 	rl = RequestLog.mostRecentByUrlId(etype, urlId)
+	if rl is None:
+		return page_not_found(NotFound())
 
 	if not os.path.isfile(os.path.join(fdir, f'{rl.exportFileHash}{suff}')):
 		# the most recent export is missing for some reason... 404
@@ -237,9 +241,8 @@ def api_v0_epub() -> Any:
 	if q is None:
 		return jsonify(getErr(WebError.no_body))
 
+	print(f'api_v0_epub: query: {q}')
 	eres = ensure_export('epub', q)
-	if eres is None:
-		return jsonify({'error': -3, 'msg': 'please report this on discord'})
 	if 'error' in eres:
 		return jsonify(eres)
 	for key in ['epub_fname', 'urlId', 'url']:

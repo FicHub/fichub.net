@@ -57,7 +57,7 @@ def index() -> FlaskResponse:
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
 def cache_listing(page: int) -> FlaskResponse:
-	pageSize = 500
+	pageSize = 250
 	if page < 1:
 		return redirect(url_for('cache_listing'))
 

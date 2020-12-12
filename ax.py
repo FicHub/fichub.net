@@ -197,7 +197,9 @@ class RequestLog:
 def lookup(query: str) -> Dict[str, Any]:
 	link = '/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query)])
 	meta = util.reqJson(link)
-	if 'error' not in meta:
+	if 'error' in meta and 'err' not in meta:
+		meta['err'] = meta.pop('error', None)
+	if 'err' not in meta:
 		FicInfo.save(meta)
 	return meta
 
@@ -206,6 +208,9 @@ class Chapter:
 		self.n = n
 		self.title = title
 		self.content = content
+
+class MissingChapterException(Exception):
+	pass
 
 def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
 	link = '/'.join([a.AX_FIC_ENDPOINT, urlId, 'all'])
@@ -237,7 +242,7 @@ def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
 		if i not in chapters:
 			print(f'requestAllChapters: err: {i} not in chapters')
 			print(list(chapters.keys()))
-			raise Exception(f'requestAllChapters: err: {i} not in chapters')
+			raise MissingChapterException(f'err: missing chapter: {i}/{expected}')
 
 	# log the chapter titles
 	print(f'titles: {titles}')
@@ -251,6 +256,6 @@ def fetchChapters(info: FicInfo) -> Dict[int, Chapter]:
 	except Exception as e:
 		traceback.print_exc()
 		print(e)
-		print('^ something went wrong :/')
+		print('fetchChapters: ^ something went wrong :/')
 		raise
 

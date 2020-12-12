@@ -17,7 +17,10 @@ def reqJson(link: str, retryCount: int = 5) -> Dict[Any, Any]:
 		p = r.json()
 	except ValueError:
 		if retryCount < 1:
-			return {'error': f"Page responded with status code: {str(r.status_code)}"}
+			return {
+					'err': -1,
+					'msg': f"reqJson: received status code: {str(r.status_code)}"
+				}
 		else:
 			return reqJson(link, retryCount - 1)
 	return cast(Dict[Any, Any], p)

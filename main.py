@@ -22,19 +22,29 @@ from ax import FicInfo, RequestLog, RequestSource
 import ebook
 import authentications as a
 
-CACHE_BUSTER=13
+CACHE_BUSTER=14
 
 class WebError(IntEnum):
 	success = 0
-	no_body = -1
+	no_query = -1
+	invalid_etype = -2
+	export_failed = -3
+	ensure_failed = -4
 
 errorMessages = {
 		WebError.success: 'success',
-		WebError.no_body: 'no body',
+		WebError.no_query: 'no query',
+		WebError.invalid_etype: 'invalid etype',
+		WebError.export_failed: 'export failed',
+		WebError.ensure_failed: 'ensure failed',
 	}
 
-def getErr(err: WebError) -> Dict[str, Any]:
-	return {'error':int(err),'msg':errorMessages[err]}
+def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
+		) -> Dict[str, Any]:
+	base = {'err':int(err),'msg':errorMessages[err]}
+	if extra is not None:
+		base.update(extra)
+	return base
 
 @app.errorhandler(404)
 def page_not_found(e: HTTPException) -> FlaskResponse:
@@ -98,16 +108,20 @@ def cache_listing(page: int) -> FlaskResponse:
 def try_ensure_export(etype: str, query: str) -> Optional[str]:
 	key = f'{etype}_fname'
 	res = ensure_export(etype, query)
-	if 'error' in res or key not in res:
+	if 'err' in res or key not in res:
 		return None
 	if res[key] is None or isinstance(res[key], str):
 		return cast(Optional[str], res[key])
 	return None
 
+class InvalidEtypeException(Exception):
+	pass
+
 def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 	print(f'ensure_export: query: {query}')
 	if etype not in ebook.EXPORT_TYPES:
-		return {'error': -2, 'msg': 'invalid ensure_export etype', 'etype': etype}
+		return getErr(WebError.invalid_etype,
+				{'fn': 'ensure_export', 'etype': etype})
 	remoteAddr = request.headers.get('X-Real-IP', 'unknown')
 	urlRoot = request.headers.get('X-Real-Root', request.url_root)
 	isAutomated = (request.args.get('automated', None) == 'true')
@@ -115,15 +129,17 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 
 	initTimeMs = int(time.time() * 1000)
 	lres = ax.lookup(query)
-	if 'error' in lres:
+	if 'err' in lres:
 		endTimeMs = int(time.time() * 1000)
 		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, None,
 				json.dumps(lres), None, None, None, None)
+		lres['upstream'] = True
 		return lres
 	meta = FicInfo.parse(lres)
 	infoTimeMs = int(time.time() * 1000)
 	infoRequestMs = infoTimeMs - initTimeMs
 
+	etext = None
 	try:
 		# TODO we could be timing this too...
 		metaString = ebook.metaDataString(meta)
@@ -138,7 +154,7 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 		elif etype in ['mobi', 'pdf']:
 			fname, fhash = ebook.convertEpub(meta, chapters, etype)
 		else:
-			raise Exception('FIXME')
+			raise InvalidEtypeException(f'err: unknown etype: {etype}')
 
 		exportFileName = os.path.basename(fname)
 
@@ -159,11 +175,30 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, meta.id,
 				json.dumps(lres), exportMs, None, None, None)
 
+		if e.args is not None and len(e.args) > 0:
+			if isinstance(e, ax.MissingChapterException):
+				etext = e.args[0]
+			elif isinstance(e, InvalidEtypeException):
+				etext = e.args[0]
+
 		traceback.print_exc()
 		print(e)
-		print('^ something went wrong :/')
+		print('ensure_export: ^ something went wrong :/')
 
-	return {'error': -1, 'msg': 'please report this on discord'}
+	return getErr(WebError.export_failed, {
+			'msg': f'{etype} export failed; please report this on discord',
+			'etext': etext,
+			'meta': {
+					'id': meta.id,
+					'title': meta.title,
+					'author': meta.author,
+					'chapters': meta.chapters,
+					'created': meta.ficCreated,
+					'updated': meta.ficUpdated,
+					'status': meta.status,
+					'source': meta.source,
+				},
+		})
 
 def legacy_cache_redirect(etype: str, fname: str) -> FlaskResponse:
 	fhash = request.args.get('h', None)
@@ -248,24 +283,25 @@ def get_cached_export_partial(etype: str, urlId: str) -> Any:
 @app.route('/api/v0/epub', methods=['GET'])
 def api_v0_epub() -> Any:
 	q = request.args.get('q', None)
-	if q is None:
-		return jsonify(getErr(WebError.no_body))
+	if q is None or len(q.strip()) < 1:
+		return jsonify(getErr(WebError.no_query))
 
 	print(f'api_v0_epub: query: {q}')
 	eres = ensure_export('epub', q)
-	if 'error' in eres:
+	if 'err' in eres:
 		return jsonify(eres)
 	for key in ['epub_fname', 'urlId', 'url']:
 		if key not in eres:
-			return jsonify({'error': -4, 'key': key,
-				'msg': f'please report this on discord'})
+			return jsonify(getErr(WebError.ensure_failed, {
+					'key': key, 'msg': 'please report this on discord'
+				}))
 
 	info = '[missing metadata; please report this on discord]'
 	if 'info' in eres:
 		info = eres['info']
 	eh = eres['hash'] if 'hash' in eres else str(random.getrandbits(32))
 
-	res = { 'error':0, 'info':info, 'urlId':eres['urlId'], }
+	res = { 'err':0, 'info':info, 'urlId':eres['urlId'], }
 
 	# build auto-generating links for all formats
 	for etype in ebook.EXPORT_TYPES:

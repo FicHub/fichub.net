@@ -9,17 +9,31 @@ function info() {
 function working() {
 	info().innerHTML = '<p>working...</p>';
 }
-function error(r) {
+function contentEncode(str) {
+	var p = document.createElement("p");
+	p.textContent = str;
+	return p.innerHTML;
+}
+function error(msg, r, obj) {
 	console.log('uh-oh');
-	let msg = 'an error ocurred :(';
 	if (q().indexOf('tvtropes.org') >= 0) {
 		msg += '<br/>(note that tvtropes.org is not directly supported; instead, use the url of the actual fic)';
 	}
 	if (q().indexOf('http://') != 0 && q().indexOf('https://') != 0) {
 		msg += '<br/>(please try a full url including http:// or https:// at the start)';
 	}
-	info().innerHTML = '<p>' + msg + '</p>' +
-		'<pre>' + r.responseText + '</pre>';
+	msg = '<p>' + msg + '</p>';
+
+	if (obj) {
+		if ('msg' in obj) {
+			msg += '<pre>msg: ' + contentEncode(obj.msg) + '\n</pre>';
+		}
+		msg += '<pre>' + contentEncode(JSON.stringify(obj, null, 2)) + '</pre>';
+	} else if (r) {
+		msg += '<pre>' + contentEncode(r.responseText) + '</pre>';
+	}
+
+	info().innerHTML = msg;
 }
 function epub() {
 	console.log('epub');
@@ -28,8 +42,10 @@ function epub() {
 	exportReq.addEventListener("load", function () {
 		try {
 			var res = JSON.parse(this.responseText);
-			if (!res || res.error != 0) {
-				return error(this);
+			if (!res
+					|| ('error' in res && res.error != 0)
+					|| ('err' in res && res.err != 0)) {
+				return error('an error ocurred :(', this, res);
 			}
 			let htmlRes = '<p><a href="' + res.epub_url + '">Download EPUB</a></p>' +
 				'<p>' + res.info.replace('\n', '<br/>') + '</p>';
@@ -44,7 +60,7 @@ function epub() {
 			}
 			info().innerHTML = htmlRes;
 		} catch (e) {
-			return error("response was not valid :/");
+			return error("response was not valid :/", this, null);
 		}
 	});
 	var data = null;

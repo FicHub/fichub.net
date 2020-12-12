@@ -158,8 +158,10 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 
 		exportFileName = os.path.basename(fname)
 
+		slug = ebook.buildFileSlug(meta.title, meta.author, meta.id)
+		suff = ebook.EXPORT_SUFFIXES[etype]
 		exportUrl = url_for(f'get_cached_export', etype=etype, urlId=meta.id,
-				fname=exportFileName, cv=CACHE_BUSTER)
+				fname=f'{slug}{suff}', h=fhash)
 
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs

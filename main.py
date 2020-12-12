@@ -60,19 +60,28 @@ def cache_listing(page: int) -> FlaskResponse:
 		if not os.path.isfile(rl.exportFileName):
 			continue
 
-		href = url_for(f'get_cached_export', etype=rl.etype, urlId=rl.urlId,
+		href = url_for(f'get_cached_export', etype='epub', urlId=rl.urlId,
 				fname=f'{rl.exportFileHash}.epub')
 
 		fi = fis[rl.urlId] if rl.urlId in fis else None
 		dt = rl.created
 
+		# if we have FicInfo, generate a more direct link to the epub
+		if fi is not None:
+			slug = ebook.buildFileSlug(fi.title, fi.author, fi.id)
+			href = url_for('get_cached_export', etype='epub', urlId=fi.id,
+					fname=f'{slug}.epub', h=rl.exportFileHash)
+
 		sourceUrl = ''
-		try:
-			info = json.loads(rl.ficInfo)
-			if 'source' in info:
-				sourceUrl = info['source']
-		except:
-			pass
+		if fi is not None and fi.source is not None:
+			sourceUrl = fi.source
+		else:
+			try:
+				info = json.loads(rl.ficInfo)
+				if 'source' in info:
+					sourceUrl = info['source']
+			except:
+				pass
 
 		items.append({'href':href, 'ficInfo':fi, 'requestLog':rl, 'created':dt,
 			'sourceUrl':sourceUrl})

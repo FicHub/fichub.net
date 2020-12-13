@@ -1,11 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
 	<main>
-	<h1>EPUB/MOBI/etc Export</h1>
-	<p>Enter a fic url and click the <span class='btn-ref'>Export</span> button,
-		or view the list of previously exported fics by going to the
-		<a href="{{ url_for('cache_listing') }}">Cache</a>. Additional formats can
-		be selected to download after initial <span class='btn-ref'>Export</button>.
+	<h1 class='center'>FanFiction Export</h1>
+	<p>Enter a URL and click <span class='btn-ref'>Export</span> to generate an
+		EPUB or download in an alternate format. View previously exported works by
+		going to the <a href="{{ url_for('cache_listing') }}">Cache</a>.
 	</p>
 	<form action="javascript:void(0);">
 		<label for="q" class="visuallyhidden">Fic URL:</label>

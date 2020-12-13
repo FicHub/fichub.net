@@ -3,15 +3,16 @@
 	<main>
 	<h1>EPUB/MOBI/etc Export</h1>
 	<p>Enter a fic url and click the <span class='btn-ref'>Export</span> button,
-	or view the list of previously exported fics by going to the
-	<a href="{{ url_for('cache_listing') }}">Cache</a>. Additional formats can
-	be selected after initial <span class='btn-ref'>Export</button>.</p>
+		or view the list of previously exported fics by going to the
+		<a href="{{ url_for('cache_listing') }}">Cache</a>. Additional formats can
+		be selected to download after initial <span class='btn-ref'>Export</button>.
+	</p>
 	<form action="javascript:void(0);">
 		<label for="q" class="visuallyhidden">Fic URL:</label>
 		<input type="text" size=60 name="q" id="q"
-			{% if request.args.get('q', '')|length %}
+			{% if request.args.get('q', '')|length -%}
 			value="{{ request.args.get('q', '') }}"
-			{% endif %}
+			{%- endif %}
 			/>
 		<br />
 		<button onclick="epub()">Export</button>
@@ -21,13 +22,8 @@
 	<section>
 		<h1>Supported Sites</h1>
 		<ul>
-			<li>XenForo based sites (SB, SV, QQ)</li>
-				<!--<ul>
-					<li>SpaceBattles</li>
-					<li>SufficientVelocity</li>
-					<li>QuestionableQuesting</li>
-				</ul>-->
-			</li>
+			<li>XenForo based sites (SpaceBattles, SufficientVelocity,
+				QuestionableQuesting)</li>
 			<li>FanFiction.net</li>
 			<li>FictionPress</li>
 			<li>Archive Of Our Own</li>

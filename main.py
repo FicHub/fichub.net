@@ -22,7 +22,7 @@ from ax import FicInfo, RequestLog, RequestSource
 import ebook
 import authentications as a
 
-CACHE_BUSTER=15
+CACHE_BUSTER=17
 
 class WebError(IntEnum):
 	success = 0

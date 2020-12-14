@@ -14,6 +14,22 @@ function contentEncode(str) {
 	p.textContent = str;
 	return p.innerHTML;
 }
+function repeat(str, cnt) {
+	let res = '';
+	for (let i = 0; i < cnt; ++i)
+		res += str;
+	return res;
+}
+function buildCodeBlockContent(str) {
+	str = contentEncode(str);
+	let lines = str.split('\n');
+	let ret = '';
+	for (let i = 0; i < lines.length; ++i) {
+		let spaceCount = lines[i].search(/[^ ]/);
+		ret += repeat('&nbsp;', spaceCount) + lines[i].substr(spaceCount) + '<br/>';
+	}
+	return ret;
+}
 function error(msg, r, obj) {
 	console.log('uh-oh');
 	if (q().indexOf('tvtropes.org') >= 0) {
@@ -26,11 +42,11 @@ function error(msg, r, obj) {
 
 	if (obj) {
 		if ('msg' in obj) {
-			msg += '<pre>msg: ' + contentEncode(obj.msg) + '\n</pre>';
+			msg += '<p><code>msg: ' + buildCodeBlockContent(obj.msg) + '\n</code></p>';
 		}
-		msg += '<pre>' + contentEncode(JSON.stringify(obj, null, 2)) + '</pre>';
+		msg += '<p><code>' + buildCodeBlockContent(JSON.stringify(obj, null, 2)) + '</code></p>';
 	} else if (r) {
-		msg += '<pre>' + contentEncode(r.responseText) + '</pre>';
+		msg += '<p><code>' + buildCodeBlockContent(r.responseText) + '</code></p>';
 	}
 
 	info().innerHTML = msg;

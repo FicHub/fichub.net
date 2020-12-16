@@ -63,13 +63,17 @@ def cache_listing(page: int) -> FlaskResponse:
 
 	fis = {fi.id: fi for fi in FicInfo.select()}
 	rls = RequestLog.mostRecentEpub()
+
+	pageCount = int(math.floor((len(rls) + (pageSize - 1)) / pageSize))
+	if page > pageCount:
+		return redirect(url_for('cache_listing', page=pageCount))
+
+	# trim to entries on requested page
+	rls = rls[(page - 1) * pageSize:page * pageSize]
+
+
 	items = []
 	for rl in rls:
-		if rl.exportFileName is None or rl.ficInfo is None:
-			continue
-		if not os.path.isfile(rl.exportFileName):
-			continue
-
 		href = url_for(f'get_cached_export', etype='epub', urlId=rl.urlId,
 				fname=f'{rl.exportFileHash}.epub')
 
@@ -95,12 +99,6 @@ def cache_listing(page: int) -> FlaskResponse:
 
 		items.append({'href':href, 'ficInfo':fi, 'requestLog':rl, 'created':dt,
 			'sourceUrl':sourceUrl})
-
-	pageCount = int(math.floor((len(items) + (pageSize - 1)) / pageSize))
-	if page > pageCount:
-		return redirect(url_for('cache_listing', page=pageCount))
-
-	items = items[(page - 1) * pageSize:page * pageSize]
 
 	return render_template('cache.html', cache=items, pageCount=pageCount,
 			page=page, CACHE_BUSTER=CACHE_BUSTER)

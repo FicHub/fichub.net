@@ -22,7 +22,10 @@ from ax import FicInfo, RequestLog, RequestSource
 import ebook
 import authentications as a
 
-CACHE_BUSTER=18
+CACHE_BUSTER='25'
+CSS_CACHE_BUSTER=CACHE_BUSTER
+JS_CACHE_BUSTER=CACHE_BUSTER
+CURRENT_CSS=None
 
 class WebError(IntEnum):
 	success = 0
@@ -48,11 +51,11 @@ def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
 
 @app.errorhandler(404)
 def page_not_found(e: HTTPException) -> FlaskResponse:
-	return render_template('404.html', CACHE_BUSTER=CACHE_BUSTER), 404
+	return render_template('404.html'), 404
 
 @app.route('/')
 def index() -> FlaskResponse:
-	return render_template('index.html', CACHE_BUSTER=CACHE_BUSTER)
+	return render_template('index.html')
 
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
@@ -101,7 +104,7 @@ def cache_listing(page: int) -> FlaskResponse:
 			'sourceUrl':sourceUrl})
 
 	return render_template('cache.html', cache=items, pageCount=pageCount,
-			page=page, CACHE_BUSTER=CACHE_BUSTER)
+			page=page)
 
 def try_ensure_export(etype: str, query: str) -> Optional[str]:
 	key = f'{etype}_fname'
@@ -315,6 +318,31 @@ def api_v0_epub() -> Any:
 
 	return jsonify(res)
 
+@app.context_processor
+def inject_cache_buster() -> Dict[str, str]:
+	return {'CACHE_BUSTER': CACHE_BUSTER, 'CURRENT_CSS': CURRENT_CSS,
+			'JS_CACHE_BUSTER': JS_CACHE_BUSTER, 'CSS_CACHE_BUSTER': CSS_CACHE_BUSTER}
+
 if __name__ == '__main__':
 	app.run(debug=True)
+
+print()
+print(__name__)
+if __name__ == 'uwsgi_file___main':
+	CSS_CACHE_BUSTER = str(time.time())
+	JS_CACHE_BUSTER = CSS_CACHE_BUSTER
+	print(f'reset JS/CSS CACHE_BUSTER: {JS_CACHE_BUSTER}')
+
+	if os.path.isfile('./static/style/_.css'):
+		with open('./static/style/_.css') as f:
+			CURRENT_CSS = f.read().strip()
+		print(f'reset CURRENT_CSS to len {len(CURRENT_CSS)}')
+
+	if os.path.isfile('./static/js/_.js'):
+		import util
+		jshash = util.hashFile('./static/js/_.js')
+		if len(jshash) == 32:
+			JS_CACHE_BUSTER = jshash
+		print(f'reset JS_CACHE_BUSTER: {JS_CACHE_BUSTER}')
+	print()
 

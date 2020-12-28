@@ -1,36 +1,48 @@
 html
-  font-size: 24px
+  font-size: 1rem
   font-family: sans-serif
   overflow-wrap: break-word
 
+@media (min-width: 20rem)
+  html
+    font-size: 1.125rem
+
+@media (min-width: 40rem)
+  html
+    font-size: 1.25rem
+
+@media (min-width: 60rem)
+  html
+    font-size: 1.5rem
+
 button, input
   font-size: 1.1em
-  margin-top: .3em
-  margin-bottom: .3em
+  margin: .3em 0
   padding: .3em
 
-.cache-entry
+.e
   padding: 1em .2em
 
 #q
   width: 98%
 
-.btn-ref
+.b
   font-family: monospace
   font-weight: bold
+  font-size: 1.3rem
 
-#content
+#m
   width: 90%
   max-width: 960px
   margin: 0 auto
 
-#info
+#i
   min-height: 40px
 
-#info p
+#i p
   padding: .4em .1em
 
-.visuallyhidden
+.h
   border: 0
   clip: rect(0 0 0 0)
   height: 1px
@@ -40,9 +52,9 @@ button, input
   position: absolute
   width: 1px
 
-.pagEl
+.n
   padding: 0.15em
 
-.center
+.c
   text-align: center
 

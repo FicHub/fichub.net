@@ -4,7 +4,7 @@ function q() {
 	return qe.value;
 }
 function info() {
-	return document.getElementById('info');
+	return document.getElementById('i');
 }
 function working() {
 	info().innerHTML = '<p>working...</p>';

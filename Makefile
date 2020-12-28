@@ -14,7 +14,7 @@ dirs:
 static/js/_.js: frontend/_.ts | dirs
 	tsc --out $@ $<
 static/style/_.css: frontend/_.sass | dirs
-	sassc -t nested $< > $@
+	sassc -t compressed $< > $@
 
 .PHONY: clean dirs beta prod
 

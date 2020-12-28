@@ -9,38 +9,38 @@
 	<h2>Page {{page}}/{{pageCount}}</h2>
 	<p class="pagList">
 	{% if page > 1 %}
-		<span class="pagEl pagLink"><a href='/cache/{{page - 1}}'>Previous Page</a></span>
+		<span class=n><a href='/cache/{{page - 1}}'>Previous Page</a></span>
 	{% endif %}
 	{% if page < pageCount %}
-		<span class="pagEl pagLink"><a href='/cache/{{page + 1}}'>Next Page</a></span>
+		<span class=n><a href='/cache/{{page + 1}}'>Next Page</a></span>
 	{% endif %}
 	{% endif %}
 	{% for item in cache %}
-	<p class='cache-entry'>
+	<p class=e>
 		<a href="{{ item.href }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
-		{% if (item.ficInfo.description|striptags).strip()
+		{%- if (item.ficInfo.description|striptags).strip()
 			!= item.ficInfo.title ~ " by " ~ item.ficInfo.author %}
 		<br />
 		{{ item.ficInfo.description|striptags }}
-		{% endif %}
+		{% endif -%}
 		<br />
 		{{ item.ficInfo.words }} words in {{ item.ficInfo.chapters }} chapters
 		<br />
 		requested {{ item.created.strftime('%Y-%m-%d %H:%M UTC') }}
-		{% if item.sourceUrl|length > 0 %}
+		{%- if item.sourceUrl|length > 0 %}
 		<br />
 		source: <a rel="noopener noreferrer" href="{{item.sourceUrl}}">{{item.sourceUrl}}</a>
-		{% endif %}
+		{%- endif %}
 	</p>
 	{%- endfor %}
 	{% if pageCount > 1 %}
 	<h2>Page {{page}}/{{pageCount}}</h2>
 	<p class="pagList">
 	{% if page > 1 %}
-		<span class="pagEl pagLink"><a href='/cache/{{page - 1}}'>Previous Page</a></span>
+		<span class=n><a href='/cache/{{page - 1}}'>Previous Page</a></span>
 	{% endif %}
 	{% if page < pageCount %}
-		<span class="pagEl pagLink"><a href='/cache/{{page + 1}}'>Next Page</a></span>
+		<span class=n><a href='/cache/{{page + 1}}'>Next Page</a></span>
 	{% endif %}
 	{% endif %}
 	</main>

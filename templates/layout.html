@@ -1,18 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang=en>
 	<head>
 		<meta charset="utf-8">
-		{% block head %}
+		{%- block head %}
 		<title>{% block title %}{% endblock %} Fic.PW</title>
 		<meta name="description" content="Export and download fanfiction as EPUB, MOBI, or other formats">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link href="/style/_.css?{{ CACHE_BUSTER }}" rel="stylesheet" type="text/css">
-		<script type="text/javascript" src="/js/_.js?{{ CACHE_BUSTER }}" defer></script>
-		{% endblock %}
+		{% if CURRENT_CSS|length > 0 and CURRENT_CSS|length < 2048 -%}
+		<style type="text/css">{{ CURRENT_CSS }}</style>
+		{%- else -%}
+		<link href="/style/_.css?{{ CSS_CACHE_BUSTER }}" rel="stylesheet" type="text/css">
+		{%- endif %}
+		<script type="text/javascript" src="/js/_.js?{{ JS_CACHE_BUSTER }}" defer></script>
+		{%- endblock %}
 	</head>
-	<body>
-		<div id="content">
-			{% block content %}{% endblock %}
-		</div>
+	<body id=m>
+		{% block content %}{% endblock %}
 	</body>
 </html>

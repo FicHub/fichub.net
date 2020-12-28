@@ -64,6 +64,11 @@ def buildFileSlug(title: str, author: str, urlId: str) -> str:
 	slug = re.sub('[^\w\-_]+', '_', slug)
 	slug = re.sub('_+', '_', slug)
 	slug = slug.strip('_')
+	try:
+		t = slug.encode('utf-8').decode('ascii', 'ignore')
+		slug = t
+	except:
+		pass
 	return f"{slug}-{urlId}"
 
 

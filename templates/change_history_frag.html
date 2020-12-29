@@ -1,6 +1,7 @@
-<section>
 <h1>Change History</h1>
 <ul>
+	<li>2020-12-28: Redesign.</li>
+{% if fullHistory %}
 	<li>2020-12-12: Improve error reporting.</li>
 	<li>2020-12-05: Add MOBI and PDF export.</li>
 	<li>2020-12-01: Include change history on home page.</li>
@@ -22,8 +23,10 @@
 		<a href='/cache/'>cache page</a>; sort by descending
 		request date.</li>
 	<li>2020-08-19: Include list of supported sites on home page.</li>
+{% else %}
+	<li>... see <a href='/changes'>full change history</a></li>
+{% endif %}
 	<li>2020-08-06: Omnibuser is down doesn't seem to be coming back: initial
 		site launch as potential replacement. Support for a variety of sites
 		including the big three XenForo based sites (SB, SV, QQ).</li>
 </ul>
-</section>

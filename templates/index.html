@@ -15,12 +15,15 @@
 	<div id=i></div>
 	</main>
 	<section>
+		<h1>About</h1>
+		<p>After entering a URL and clicking <span class=b>Export</span> basic fic
+			metadata and a link to download as EPUB will appear. Additionally, links
+			to generate and download the work as MOBI, PDF, or Zipped HTML will
+			show.</p>
 		<h1>Supported Sites</h1>
 		<ul>
-			<li>XenForo based sites (SpaceBattles, SufficientVelocity,
-				QuestionableQuesting)</li>
-			<li>FanFiction.net (temporarily backing into archive)</li>
-			<li>FictionPress</li>
+			<li>SpaceBattles, SufficientVelocity, QuestionableQuesting (XenForo)</li>
+			<li>FanFiction.net, FictionPress (temporarily backing into archive)</li>
 			<li>Archive Of Our Own</li>
 			<li>Royal Road</li>
 			<li>Harry Potter Fanfic Archive</li>
@@ -40,6 +43,10 @@
 			<li>Harry Potter Fanfiction (archive from pre-revival)</li>
 		</ul>
 	</section>
-{% include 'contact.html' %}
-{% include 'change_history.html' %}
+<section>
+{% include 'contact_frag.html' %}
+</section>
+<section>
+{% include 'change_history_frag.html' %}
+</section>
 {% endblock %}

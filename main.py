@@ -57,6 +57,10 @@ def page_not_found(e: HTTPException) -> FlaskResponse:
 def index() -> FlaskResponse:
 	return render_template('index.html')
 
+@app.route('/changes')
+def changes() -> FlaskResponse:
+	return render_template('changes.html', fullHistory=True)
+
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
 def cache_listing(page: int) -> FlaskResponse:

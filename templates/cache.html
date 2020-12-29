@@ -37,9 +37,7 @@
 {%- endmacro %}
 
 {% block content %}
-	<nav>
-		<h2><a href=/>Home</a></h2>
-	</nav>
+{% include 'nav_frag.html' %}
 	<main>
 	<h1>Cached EPUBs</h1>
 	{{ cache_nav() }}

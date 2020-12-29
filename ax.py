@@ -139,7 +139,34 @@ class RequestLog:
 		self.url = url_
 
 	@staticmethod
-	def mostRecentEpub() -> List['RequestLog']:
+	def prevDay(date: datetime.date) -> Optional[datetime.date]:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select max(date(r.created))
+				from requestLog r
+				where date(r.created) < %s
+					and r.exportFileName is not null
+					and r.etype = 'epub'
+				''', (date,))
+			r = curs.fetchone()
+			return r[0] if r is not None else None
+
+	@staticmethod
+	def nextDay(date: datetime.date) -> Optional[datetime.date]:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select min(date(r.created))
+				from requestLog r
+				where date(r.created) > %s
+					and r.exportFileName is not null
+					and r.etype = 'epub'
+				''', (date,))
+			r = curs.fetchone()
+			return r[0] if r is not None else None
+
+	@staticmethod
+	def mostRecentEpub(date: Optional[datetime.date] = None
+			) -> List['RequestLog']:
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				; with mostRecentPerUrlId as (
@@ -152,6 +179,7 @@ class RequestLog:
 						on rs.id = r.sourceId
 					where r.exportFileName is not null
 						and r.etype = 'epub'
+						and (%s is null or date(r.created) = date(%s))
 					group by r.urlId
 				)
 				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,
@@ -162,7 +190,7 @@ class RequestLog:
 					on r.urlId = mr.urlId
 					and r.created = mr.created
 				order by r.created desc
-				''')
+				''', (date, date))
 			ls = [RequestLog(*r) for r in curs.fetchall()]
 			return ls
 

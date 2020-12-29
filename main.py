@@ -6,6 +6,7 @@ import traceback
 import json
 import random
 import math
+import datetime
 from enum import IntEnum
 from flask import Flask, Response, jsonify, request, render_template, \
 	send_from_directory, redirect, url_for
@@ -63,21 +64,41 @@ def changes() -> FlaskResponse:
 
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
-def cache_listing(page: int) -> FlaskResponse:
-	pageSize = 250
+def cache_listing_deprecated(page: int) -> FlaskResponse:
+	return redirect(url_for('cache_listing_today'))
+
+@app.route('/cache/today/', defaults={'page': 1})
+@app.route('/cache/today/<int:page>')
+def cache_listing_today(page: int) -> FlaskResponse:
+	today = datetime.date.today()
+	return cache_listing(today.year, today.month, today.day, page)
+
+@app.route('/cache/<int:year>/<int:month>/<int:day>/', defaults={'page': 1})
+@app.route('/cache/<int:year>/<int:month>/<int:day>/<int:page>')
+def cache_listing(year: int, month: int, day: int, page: int) -> FlaskResponse:
+	date = None
+	try:
+		date = datetime.date(year, month, day)
+	except Exception as e:
+		return redirect(url_for('cache_listing_today'))
+
 	if page < 1:
-		return redirect(url_for('cache_listing'))
+		return redirect(url_for('cache_listing', year=year, month=month, day=day))
 
 	fis = {fi.id: fi for fi in FicInfo.select()}
-	rls = RequestLog.mostRecentEpub()
+	rls = RequestLog.mostRecentEpub(date)
+	prevDay = RequestLog.prevDay(date)
+	nextDay = RequestLog.nextDay(date)
 
+	pageSize = 300 if len(rls) < 300 else 200
 	pageCount = int(math.floor((len(rls) + (pageSize - 1)) / pageSize))
-	if page > pageCount:
-		return redirect(url_for('cache_listing', page=pageCount))
+
+	if page > pageCount and page > 1:
+		return redirect(url_for('cache_listing', year=year, month=month, day=day,
+				page=pageCount))
 
 	# trim to entries on requested page
 	rls = rls[(page - 1) * pageSize:page * pageSize]
-
 
 	items = []
 	for rl in rls:
@@ -108,7 +129,7 @@ def cache_listing(page: int) -> FlaskResponse:
 			'sourceUrl':sourceUrl})
 
 	return render_template('cache.html', cache=items, pageCount=pageCount,
-			page=page)
+			page=page, prevDay=prevDay, nextDay=nextDay, date=date)
 
 def try_ensure_export(etype: str, query: str) -> Optional[str]:
 	key = f'{etype}_fname'

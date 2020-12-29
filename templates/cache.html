@@ -1,20 +1,49 @@
 {% extends "layout.html" %}
+{% macro cache_nav() -%}
+	<h2>{{date}}</h2>
+
+	<nav>
+	{% if prevDay is not none or nextDay is not none -%}
+	<p>
+	<span class=n>
+	{%- if prevDay is not none -%}
+	<a href='{{ url_for('cache_listing', year=prevDay.year, month=prevDay.month, day=prevDay.day) }}'>{{prevDay}}</a>
+	{%- else -%}
+	(nothing older)
+	{%- endif -%}
+	</span>
+	<span class=n>
+	{%- if nextDay is not none -%}
+	<a href='{{ url_for('cache_listing', year=nextDay.year, month=nextDay.month, day=nextDay.day) }}'>{{nextDay}}</a>
+	{%- else -%}
+	(nothing newer)
+	{%- endif -%}
+	</span>
+	</p>
+	{%- endif %}
+
+	{% if pageCount > 1 -%}
+	<h3>Page {{page}}/{{pageCount}}</h3>
+	<p>
+	{%- if page > 1 -%}
+	<span class=n><a href='{{ url_for('cache_listing', year=date.year, month=date.month, day=date.day, page=page - 1) }}'>Previous Page</a></span>
+	{%- endif -%}
+	{%- if page < pageCount -%}
+	<span class=n><a href='{{ url_for('cache_listing', year=date.year, month=date.month, day=date.day, page=page + 1) }}'>Next Page</a></span>
+	{%- endif -%}
+	</p>
+	{%- endif %}
+	</nav>
+{%- endmacro %}
+
 {% block content %}
 	<nav>
 		<h2><a href=/>Home</a></h2>
 	</nav>
 	<main>
 	<h1>Cached EPUBs</h1>
-	{% if pageCount > 1 %}
-	<h2>Page {{page}}/{{pageCount}}</h2>
-	<p class="pagList">
-	{% if page > 1 %}
-		<span class=n><a href='/cache/{{page - 1}}'>Previous Page</a></span>
-	{% endif %}
-	{% if page < pageCount %}
-		<span class=n><a href='/cache/{{page + 1}}'>Next Page</a></span>
-	{% endif %}
-	{% endif %}
+	{{ cache_nav() }}
+
 	{% for item in cache %}
 	<p class=e>
 		<a href="{{ item.href }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
@@ -33,15 +62,7 @@
 		{%- endif %}
 	</p>
 	{%- endfor %}
-	{% if pageCount > 1 %}
-	<h2>Page {{page}}/{{pageCount}}</h2>
-	<p class="pagList">
-	{% if page > 1 %}
-		<span class=n><a href='/cache/{{page - 1}}'>Previous Page</a></span>
-	{% endif %}
-	{% if page < pageCount %}
-		<span class=n><a href='/cache/{{page + 1}}'>Next Page</a></span>
-	{% endif %}
-	{% endif %}
+
+	{{ cache_nav() }}
 	</main>
 {% endblock %}

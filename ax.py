@@ -223,7 +223,7 @@ class RequestLog:
 					exportFileName, exportFileHash, url))
 
 def lookup(query: str) -> Dict[str, Any]:
-	link = '/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query)])
+	link = '/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query, safe='')])
 	meta = util.reqJson(link)
 	if 'error' in meta and 'err' not in meta:
 		meta['err'] = meta.pop('error', None)

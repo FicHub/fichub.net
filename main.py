@@ -62,6 +62,36 @@ def index() -> FlaskResponse:
 def changes() -> FlaskResponse:
 	return render_template('changes.html', fullHistory=True)
 
+@app.route('/fic/<urlId>')
+def fic_info(urlId: str) -> FlaskResponse:
+	fis = FicInfo.select(urlId)
+	if len(fis) != 1:
+		return page_not_found(NotFound())
+	ficInfo = fis[0]
+
+	mostRecentRequest = None
+	previousExports = []
+	for etype in ebook.EXPORT_TYPES:
+		suff = ebook.EXPORT_SUFFIXES[etype]
+		e = RequestLog.mostRecentByUrlId(etype, urlId)
+		if e is None or e.exportFileHash is None:
+			continue
+		if mostRecentRequest is None:
+			mostRecentRequest = e.created
+		else:
+			mostRecentRequest = max(e.created, mostRecentRequest)
+		fdir = os.path.join(ebook.CACHE_DIR, etype, urlId)
+		fhash = e.exportFileHash
+		fname = f'{fhash}{suff}'
+		if not os.path.isfile(os.path.join(fdir, fname)):
+			continue
+		previousExports.append(e)
+
+	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
+
+	return render_template('fic_info.html', ficInfo=ficInfo,
+			mostRecentRequest=mostRecentRequest, slug=slug, previousExports=previousExports)
+
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
 def cache_listing_deprecated(page: int) -> FlaskResponse:
@@ -347,6 +377,10 @@ def api_v0_epub() -> Any:
 def inject_cache_buster() -> Dict[str, str]:
 	return {'CACHE_BUSTER': CACHE_BUSTER, 'CURRENT_CSS': CURRENT_CSS,
 			'JS_CACHE_BUSTER': JS_CACHE_BUSTER, 'CSS_CACHE_BUSTER': CSS_CACHE_BUSTER}
+
+@app.context_processor
+def inject_ebook_suffixes() -> Dict[str, Any]:
+	return {'EXPORT_SUFFIXES': ebook.EXPORT_SUFFIXES}
 
 if __name__ == '__main__':
 	app.run(debug=True)

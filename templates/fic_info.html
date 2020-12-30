@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+{% include 'nav_frag.html' %}
+	<main>
+	<h1>{{ ficInfo.title }} by {{ ficInfo.author }}</h1>
+
+	{%- if (ficInfo.description|striptags).strip()
+		!= ficInfo.title ~ " by " ~ ficInfo.author %}
+	<p>{{ ficInfo.description|striptags }}</p>
+	{% endif -%}
+	<p>{{ ficInfo.words }} words in {{ ficInfo.chapters }} chapters</p>
+	<p>requested {{ mostRecentRequest.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+	{%- if ficInfo.source|length > 0 -%}
+	<p>source:
+		<a rel="noopener noreferrer" href="{{ficInfo.source}}">{{ficInfo.source}}</a>
+	</p>
+	{%- endif -%}
+	<ul>
+	{% for e in previousExports -%}
+	{% set fname = slug + EXPORT_SUFFIXES[e.etype] %}
+	<li class=e><a href='{{
+		url_for('get_cached_export', etype=e.etype, urlId=e.urlId, fname=fname, h=e.exportFileHash)
+	}}'>Download as {{e.etype}}</a></li>
+	{%- endfor %}
+	</ul>
+	</main>
+{% endblock %}

@@ -44,7 +44,7 @@
 
 	{% for item in cache %}
 	<p class=e>
-		<a href="{{ item.href }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
+		<a href="{{ url_for('fic_info', urlId=item.ficInfo.id) }}">{{ item.ficInfo.title }} by {{ item.ficInfo.author }}</a>
 		{%- if (item.ficInfo.description|striptags).strip()
 			!= item.ficInfo.title ~ " by " ~ item.ficInfo.author %}
 		<br />
@@ -52,6 +52,8 @@
 		{% endif -%}
 		<br />
 		{{ item.ficInfo.words }} words in {{ item.ficInfo.chapters }} chapters
+		<br />
+		<span class=e>[<a href="{{ item.href }}">EPUB</a>]</span>
 		<br />
 		requested {{ item.created.strftime('%Y-%m-%d %H:%M UTC') }}
 		{%- if item.sourceUrl|length > 0 %}

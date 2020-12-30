@@ -5,8 +5,7 @@ __pycache__/
 cache/
 
 master.pid
-fic_pw_uwsgi.log
-b_fic_pw_uwsgi.log
+*_uwsgi.log
 
 static/js/_.js
 static/style/_.css

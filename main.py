@@ -340,8 +340,8 @@ def get_cached_export_partial(etype: str, urlId: str) -> Any:
 
 @app.route('/api/v0/epub', methods=['GET'])
 def api_v0_epub() -> Any:
-	q = request.args.get('q', None)
-	if q is None or len(q.strip()) < 1:
+	q = request.args.get('q', '').strip()
+	if len(q.strip()) < 1:
 		return jsonify(getErr(WebError.no_query))
 
 	print(f'api_v0_epub: query: {q}')

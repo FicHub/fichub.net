@@ -15,6 +15,13 @@
 	<div id=i></div>
 	</main>
 	<section>
+		{% if from_pw|length > 0 %}
+		<div class='a c'>
+			<p><b>Attention:</b> Fic.PW has been renamed to <a href=/>FicHub.net</a>.
+				Please update any bookmarks and use the new domain name when linking
+				to the site.</p>
+		</div>
+		{% endif %}
 		<h1>About</h1>
 		<p><a href=/>FicHub</a> is a growing set of tools for reading (and
 			eventually finding) fanfiction. After entering a URL and clicking

@@ -23,7 +23,7 @@ from ax import FicInfo, RequestLog, RequestSource
 import ebook
 import authentications as a
 
-CACHE_BUSTER='25'
+CACHE_BUSTER='26'
 CSS_CACHE_BUSTER=CACHE_BUSTER
 JS_CACHE_BUSTER=CACHE_BUSTER
 CURRENT_CSS=None
@@ -56,7 +56,8 @@ def page_not_found(e: HTTPException) -> FlaskResponse:
 
 @app.route('/')
 def index() -> FlaskResponse:
-	return render_template('index.html')
+	from_pw = request.args.get('from_pw', '').strip()
+	return render_template('index.html', from_pw=from_pw)
 
 @app.route('/changes')
 def changes() -> FlaskResponse:

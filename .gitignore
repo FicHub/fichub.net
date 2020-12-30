@@ -4,7 +4,7 @@ authentications.py
 __pycache__/
 cache/
 
-master.pid
+master*.pid
 *_uwsgi.log
 
 static/js/_.js

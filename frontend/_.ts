@@ -38,6 +38,12 @@ function error(msg, r, obj) {
 	if (q().indexOf('http://') != 0 && q().indexOf('https://') != 0) {
 		msg += '<br/>(please try a full url including http:// or https:// at the start)';
 	}
+	if (q().indexOf('fanfiction.net') >= 0) {
+		msg += '<br/>fanfiction.net is fragile at the moment; please try again later or check the discord';
+	}
+	if (q().indexOf('fictionpress.com') >= 0) {
+		msg += '<br/>fictionpress.com is fragile at the moment; please try again later or check the discord';
+	}
 	msg = '<p>' + msg + '</p>';
 
 	if (obj) {

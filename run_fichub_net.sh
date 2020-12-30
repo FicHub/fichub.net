@@ -6,10 +6,10 @@ if [[ ! -f authentications.py ]]; then
 	exit 1
 fi
 
-export OIL_DB_DBNAME=b_fic_pw
+export OIL_DB_DBNAME=fic_pw
 
-exec uwsgi --plugin python3 --http-socket 127.0.0.1:9092 --enable-threads \
-	--daemonize2 ./b_fic_pw_uwsgi.log \
-	--pidfile master.pid --master --processes 1 --threads 3 \
+exec uwsgi --plugin python3 --http-socket 127.0.0.1:9091 --enable-threads \
+	--daemonize2 ./b_fichub_net_uwsgi.log \
+	--pidfile master.pid --master --processes 4 --threads 4 \
 	--wsgi-file ./main.py --callable app
 

@@ -2,10 +2,10 @@
 default: beta
 
 beta: dirs static/js/_.js static/style/_.css
-	rsync -aPvc --delete static/ /var/www/b.fic.pw/
+	rsync -aPvc --delete static/ /var/www/b.fichub.net/
 
 prod: dirs static/js/_.js static/style/_.css
-	rsync -aPvc --delete static/ /var/www/fic.pw/
+	rsync -aPvc --delete static/ /var/www/fichub.net/
 
 dirs:
 	mkdir -p static/js static/style

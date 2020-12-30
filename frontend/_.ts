@@ -1,3 +1,6 @@
+function x() {
+	return <HTMLButtonElement>document.getElementById('x');
+}
 function q() {
 	let qe = (<HTMLInputElement>document.getElementById('q'));
 	if(!qe) return '';
@@ -7,7 +10,7 @@ function info() {
 	return document.getElementById('i');
 }
 function working() {
-	info().innerHTML = '<p>working...</p>';
+	info().innerHTML = '<p class=w>Working <img class=l src="/img/loading.gif"></p>';
 }
 function contentEncode(str) {
 	var p = document.createElement("p");
@@ -57,7 +60,11 @@ function error(msg, r, obj) {
 
 	info().innerHTML = msg;
 }
+
 function epub() {
+	if(x().disabled)
+		return;
+	x().disabled = true;
 	console.log('epub');
 	working();
 	var exportReq = new XMLHttpRequest();
@@ -84,6 +91,7 @@ function epub() {
 		} catch (e) {
 			return error("response was not valid :/", this, null);
 		}
+		x().disabled = false;
 	});
 	var data = null;
 	exportReq.open('GET', '/api/v0/epub?q=' + q());
@@ -94,7 +102,6 @@ window['epub'] = epub;
 
 window.onload = setup;
 function setup() {
-	console.log('setup');
 	console.log(q());
 	if(q()) { epub(); }
 }

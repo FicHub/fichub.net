@@ -25,7 +25,7 @@ import ebook
 CACHE_BUSTER='26'
 CSS_CACHE_BUSTER=CACHE_BUSTER
 JS_CACHE_BUSTER=CACHE_BUSTER
-CURRENT_CSS=None
+CURRENT_CSS='' # note: empty string is treated as None
 
 class WebError(IntEnum):
 	success = 0
@@ -69,7 +69,7 @@ def fic_info(urlId: str) -> FlaskResponse:
 		return page_not_found(NotFound())
 	ficInfo = fis[0]
 
-	mostRecentRequest = None
+	mostRecentRequest: Optional[datetime.datetime] = None
 	previousExports = []
 	for etype in ebook.EXPORT_TYPES:
 		suff = ebook.EXPORT_SUFFIXES[etype]
@@ -147,7 +147,7 @@ def cache_listing(year: int, month: int, day: int, page: int) -> FlaskResponse:
 		sourceUrl = ''
 		if fi is not None and fi.source is not None:
 			sourceUrl = fi.source
-		else:
+		elif rl.ficInfo is not None:
 			try:
 				info = json.loads(rl.ficInfo)
 				if 'source' in info:

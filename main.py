@@ -21,7 +21,6 @@ FlaskResponse = Union[BasicFlaskResponse, Tuple[BasicFlaskResponse, int]]
 import ax
 from ax import FicInfo, RequestLog, RequestSource
 import ebook
-import authentications as a
 
 CACHE_BUSTER='26'
 CSS_CACHE_BUSTER=CACHE_BUSTER

@@ -223,8 +223,8 @@ class RequestLog:
 					exportFileName, exportFileHash, url))
 
 def lookup(query: str) -> Dict[str, Any]:
-	link = '/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query, safe='')])
-	meta = util.reqJson(link)
+	url = '/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query, safe='')])
+	meta = util.reqJson(url)
 	if 'error' in meta and 'err' not in meta:
 		meta['err'] = meta.pop('error', None)
 	if 'err' not in meta:
@@ -241,8 +241,8 @@ class MissingChapterException(Exception):
 	pass
 
 def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
-	link = '/'.join([a.AX_FIC_ENDPOINT, urlId, 'all'])
-	res = util.reqJson(link)
+	url = '/'.join([a.AX_FIC_ENDPOINT, urlId, 'all'])
+	res = util.reqJson(url)
 	chapters = {}
 	titles = []
 	for ch in res['chapters']:
@@ -251,7 +251,7 @@ def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
 		# extract chapter content
 		content = str(ch['content']).strip()
 		if len(content) == 0:
-			print(f'note: {link} {n} has an empty content body')
+			print(f'note: {url} {n} has an empty content body')
 			content = '<p></p>'
 
 		# generate a chapter name if its missing

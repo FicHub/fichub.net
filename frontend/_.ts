@@ -74,6 +74,7 @@ function epub() {
 			if (!res
 					|| ('error' in res && res.error != 0)
 					|| ('err' in res && res.err != 0)) {
+				x().disabled = false;
 				return error('an error ocurred :(', this, res);
 			}
 			let htmlRes = '<p><a href="' + res.epub_url + '">Download EPUB</a></p>' +
@@ -89,6 +90,7 @@ function epub() {
 			}
 			info().innerHTML = htmlRes;
 		} catch (e) {
+			x().disabled = false;
 			return error("response was not valid :/", this, null);
 		}
 		x().disabled = false;

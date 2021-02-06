@@ -44,6 +44,9 @@ function error(msg, r, obj) {
 	if (q().indexOf('fanfiction.net') >= 0) {
 		msg += '<br/>fanfiction.net is fragile at the moment; please try again later or check the discord';
 	}
+	if (q().indexOf('fanfiction.net/u/') >= 0) {
+		msg += '<br/>user pages on fanfiction.net are not currently supported -- please try a specific story';
+	}
 	if (q().indexOf('fictionpress.com') >= 0) {
 		msg += '<br/>fictionpress.com is fragile at the moment; please try again later or check the discord';
 	}

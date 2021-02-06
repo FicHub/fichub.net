@@ -244,7 +244,7 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 		print('ensure_export: ^ something went wrong :/')
 
 	return getErr(WebError.export_failed, {
-			'msg': f'{etype} export failed; please report this on discord',
+			'msg': f'{etype} export failed\nplease try again in a few minutes, or report this on discord if the issue persists',
 			'etext': etext,
 			'meta': {
 					'id': meta.id,

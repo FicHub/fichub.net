@@ -22,14 +22,21 @@
 				to the site.</p>
 		</div>
 		{% endif %}
-		<h1>About</h1>
-		<p><a href=/>FicHub</a> is a growing set of tools for reading (and
-			eventually finding) fanfiction. After entering a URL and clicking
-			<span class=b>Export</span> basic fic metadata and a link to download as
-			EPUB will appear.  Additionally, links to generate and download the work
-			as MOBI, PDF, or Zipped HTML will show.
+		<h1 id=about>About</h1>
+		<p><a href=/>FicHub</a> is a growing set of accessibility tools for reading
+			(and eventually finding) fanfiction and original works. FicHub can be
+			used to turn fics into more standardized formats. After entering a URL
+			and clicking <span class=b>Export</span>, basic fic metadata and a link
+			to download as EPUB will appear. Additionally, links to generate and
+			download the work as MOBI, PDF, or Zipped HTML will show.
 		</p>
-		<h1>Supported Sites</h1>
+		<p>We currently recommend the EPUB format, as many EPUB readers have
+			options to change font, font size, colors, and other options to enhance
+			readability. This includes the option to change to a dyslexia friendly
+			font. If you are interested in using an alternate export format with
+			special fonts or styling please let us know.
+		</p>
+		<h1 id=sites>Supported Sites</h1>
 		<ul>
 			<li>SpaceBattles, SufficientVelocity, QuestionableQuesting (XenForo)</li>
 			<li>FanFiction.net, FictionPress (temporarily fragile)</li>
@@ -46,11 +53,39 @@
 				Fanfic Paradise)</li>
 			<li>Fiction Alley</li>
 			<li>Fiction Hunt</li>
-			<li>Fanfics.me</li>
+			<!--<li>Fanfics.me</li>-->
 			<li>The Sugar Quill (largely untested)</li>
 			<li>FanficAuthors (minimal)</li>
 			<li>Harry Potter Fanfiction (archive from pre-revival)</li>
 		</ul>
+		<h2 id=bookmarklet>Bookmarklet</h2>
+		<p>A <a href='https://en.wikipedia.org/wiki/Bookmarklet'>bookmarklet</a>
+			is a small piece of code that can be saved as a bookmark to provide
+			extra functionality when clicked. While viewing a fic, click the FicHub
+			bookmarklet to be navigated to FicHub and automatically export the fic
+			you were just looking at. You may be able drag the following link to
+			your bookmarks, or right click it to save as a bookmark:
+			<a href="javascript:location.href='https://fichub.net/?b=1&q='+encodeURIComponent(location.href)">Export on FicHub</a>.
+		</p>
+		<p>Alternatively, copy and paste the following code as the destination of
+			a new bookmark:</p>
+		<p class=c><code>javascript:location.href='https://fichub.net/?b=1&amp;q='+encodeURIComponent(location.href)</code></p>
+		<h2 id=help>If you run into issues</h2>
+		<p>In order to be a good citizen of the web, FicHub caches content and
+			throttles the request rate on upstream sources. This means that some
+			fics may take a while to export. Better reporting of the current state
+			of an export is planned -- but until then, please give it some time
+			before trying to re-export a fic if you encounter an issue.</p>
+		<p>Content may be stale at times, but an automated background task
+			<i>should</i> catch all updates eventually. If a fic is stale and you'd
+			like to request it to be refetched immediately, please ask in the
+			discord for now. A more integrated or automated refresh request feature
+			is planned.</p>
+		<p>Eventually FicHub may grow other features such as centralized reading
+			lists, recommendations, or story search. The current bookmarklet may be
+			extended into an entire browser extension for ease of use. If you're
+			interested in any extended features, please feel free to provide
+			feedback.</p>
 	</section>
 <section>
 {% include 'contact_frag.html' %}

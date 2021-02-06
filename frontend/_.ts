@@ -99,7 +99,7 @@ function epub() {
 		x().disabled = false;
 	});
 	var data = null;
-	exportReq.open('GET', '/api/v0/epub?q=' + q());
+	exportReq.open('GET', '/api/v0/epub?q=' + encodeURIComponent(q()));
 	exportReq.send(data);
 }
 

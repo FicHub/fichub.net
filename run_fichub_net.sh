@@ -19,6 +19,6 @@ exec uwsgi --plugin python3 --enable-threads \
 	--reuse-port --http-socket 127.0.0.1:9291 \
 	--daemonize2 ./fichub_net_uwsgi.log \
 	--pidfile master_${instance}.pid \
-	--master --processes 3 --threads 4 \
+	--master --processes 3 --threads 3 \
 	--wsgi-file ./main.py --callable app
 

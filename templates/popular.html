@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block title %}Popular |{% endblock %}
+{% macro page_nav() -%}
+	{% if pageCount > 1 -%}
+	<h3>Page {{page}}/{{pageCount}}</h3>
+	<p>
+	{%- if page > 1 -%}
+	<span class=n><a href='{{ url_for('popular_listing', page=page - 1) }}'>Previous Page</a></span>
+	{%- endif -%}
+	{%- if page < pageCount -%}
+	<span class=n><a href='{{ url_for('popular_listing', page=page + 1) }}'>Next Page</a></span>
+	{%- endif -%}
+	</p>
+	{%- endif %}
+	</nav>
+{%- endmacro %}
+
+{% block content %}
+{% include 'nav_frag.html' %}
+	<main>
+	<h1>Popular Exports</h1>
+	{{ page_nav() }}
+
+	{% for p in items %}
+	{% set ficInfo = p[2] %}
+	<p class=e>
+		#{{ p[0] }} [<strong>{{ p[1] }}</strong>]
+		<a href="{{ url_for('fic_info', urlId=ficInfo.id) }}">{{ ficInfo.title }} by {{ ficInfo.author }}</a>
+		{%- if (ficInfo.description|striptags).strip()
+			!= ficInfo.title ~ " by " ~ ficInfo.author %}
+		<br />
+		{{ ficInfo.description|striptags }}
+		{% endif -%}
+		<br />
+		{{ ficInfo.words }} words in {{ ficInfo.chapters }} chapters
+	</p>
+	{%- endfor %}
+
+	{{ page_nav() }}
+	</main>
+{% endblock %}

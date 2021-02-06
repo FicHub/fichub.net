@@ -161,6 +161,21 @@ def cache_listing(year: int, month: int, day: int, page: int) -> FlaskResponse:
 	return render_template('cache.html', cache=items, pageCount=pageCount,
 			page=page, prevDay=prevDay, nextDay=nextDay, date=date)
 
+@app.route('/popular/', defaults={'page': 1})
+@app.route('/popular/<int:page>')
+def popular_listing(page: int) -> FlaskResponse:
+	pageSize = 100
+	popular = RequestLog.mostPopular(pageSize, (page - 1) * pageSize)
+	items = [
+			(pageSize * (page - 1) + i + 1,) + popular[i]
+			for i in range(len(popular))
+		]
+	total = RequestLog.totalPopular()
+	pageCount = int(math.floor((total + pageSize - 1) / pageSize))
+	return render_template('popular.html', items=items, pageCount=pageCount,
+			page=page)
+
+
 def try_ensure_export(etype: str, query: str) -> Optional[str]:
 	key = f'{etype}_fname'
 	res = ensure_export(etype, query)

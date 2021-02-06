@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 import datetime
 import traceback
 import urllib.parse
@@ -208,6 +208,45 @@ class RequestLog:
 				''', (etype, urlId))
 			r = curs.fetchone()
 			return None if r is None else RequestLog(*r)
+
+	@staticmethod
+	def mostPopular(limit: int = 10, offset: int = 0) -> List[Tuple[int, FicInfo]]:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				; with popular as (
+					select count(1) as cnt, urlId
+					from requestLog rl
+					where rl.urlId is not null
+						and rl.exportFileHash is not null
+					group by rl.urlId
+					order by count(1) desc
+					limit %s
+					offset %s
+				)
+				select p.cnt, fi.*
+				from popular p
+				join ficInfo fi on fi.id = p.urlId
+				order by p.cnt desc
+				''', (limit, offset))
+			return [(int(r[0]), FicInfo.fromRow(r[1:])) for r in curs.fetchall()]
+
+	@staticmethod
+	def totalPopular() -> int:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				; with popular as (
+					select count(1) as cnt, urlId
+					from requestLog rl
+					where rl.urlId is not null
+						and rl.exportFileHash is not null
+					group by rl.urlId
+					order by count(1) desc
+				)
+				select count(1)
+				from popular p
+				''')
+			r = curs.fetchone()
+			return 0 if r is None else int(r[0])
 
 	@staticmethod
 	def insert(source: RequestSource, etype: str, query: str, infoRequestMs: int,

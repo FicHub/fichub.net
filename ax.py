@@ -180,6 +180,7 @@ class RequestLog:
 					where r.exportFileName is not null
 						and r.etype = 'epub'
 						and (%s is null or date(r.created) = date(%s))
+						and rs.isAutomated = false
 					group by r.urlId
 				)
 				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,

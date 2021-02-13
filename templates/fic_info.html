@@ -11,7 +11,7 @@
 	{% endif -%}
 	<p>{{ ficInfo.words }} words in {{ ficInfo.chapters }} chapters</p>
 	<p>requested {{ mostRecentRequest.strftime('%Y-%m-%d %H:%M UTC') }}</p>
-	{%- if ficInfo.source|length > 0 -%}
+	{%- if ficInfo.source is not none and ficInfo.source|length > 0 -%}
 	<p>source:
 		<a rel="noopener noreferrer" href="{{ficInfo.source}}">{{ficInfo.source}}</a>
 	</p>

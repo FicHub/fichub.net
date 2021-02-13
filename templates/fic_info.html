@@ -15,7 +15,7 @@
 	<p>source:
 		<a rel="noopener noreferrer" href="{{ficInfo.source}}">{{ficInfo.source}}</a>
 	</p>
-	<p><a rel="nofollow" href="/?q={{ficInfo.source}}">Re-Export</a></p>
+	<p><a rel="nofollow" href="/?q={{ficInfo.source|urlencode|replace("/", "%2F")}}">Re-Export</a></p>
 	{%- endif -%}
 	<ul>
 	{% for e in previousExports -%}

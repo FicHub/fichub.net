@@ -14,11 +14,14 @@ if [[ ! -f authentications.py ]]; then
 fi
 
 export OIL_DB_DBNAME=fic_pw
+mkdir -p ./logs/
 
 exec uwsgi --plugin python3 --enable-threads \
-	--reuse-port --http-socket 127.0.0.1:9291 \
-	--daemonize2 ./fichub_net_uwsgi.log \
+	--reuse-port --uwsgi-socket 127.0.0.1:9293 \
+	--plugin logfile \
+	--logger file:logfile=./logs/fichub_net.log,maxsize=2000000 \
 	--pidfile master_${instance}.pid \
-	--master --processes 3 --threads 3 \
+	--master --processes 2 --threads 4 \
+	--daemonize2 /dev/null \
 	--wsgi-file ./main.py --callable app
 

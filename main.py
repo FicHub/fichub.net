@@ -185,15 +185,16 @@ def try_ensure_export(etype: str, query: str) -> Optional[str]:
 class InvalidEtypeException(Exception):
 	pass
 
+def get_request_source() -> RequestSource:
+	automated = (request.args.get('automated', None) == 'true')
+	return RequestSource.upsert(automated, request.url_root, request.remote_addr)
+
 def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 	print(f'ensure_export: query: {query}')
 	if etype not in ebook.EXPORT_TYPES:
 		return getErr(WebError.invalid_etype,
 				{'fn': 'ensure_export', 'etype': etype})
-	remoteAddr = request.headers.get('X-Real-IP', 'unknown')
-	urlRoot = request.headers.get('X-Real-Root', request.url_root)
-	isAutomated = (request.args.get('automated', None) == 'true')
-	source = RequestSource.upsert(isAutomated, urlRoot, remoteAddr)
+	source = get_request_source()
 
 	initTimeMs = int(time.time() * 1000)
 	lres = ax.lookup(query)
@@ -384,6 +385,11 @@ def api_v0_epub() -> Any:
 	res['epub_url'] = eres['url']
 
 	return jsonify(res)
+
+@app.route('/api/v0/remote', methods=['GET'])
+def api_v0_remote() -> FlaskResponse:
+	source = get_request_source()
+	return jsonify(source.__dict__)
 
 @app.context_processor
 def inject_cache_buster() -> Dict[str, str]:

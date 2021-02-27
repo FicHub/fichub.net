@@ -7,6 +7,15 @@
 	<h1>{{info.title}}</h1>
 	<p><b>By: {{info.author}}</b></p>
 	<p>{{info.description|safe}}</p>
+	<p>Status: {{info.status}}</p>
+	<p>Published: {{info.ficCreated.date()}}</p>
+	{% if info.ficCreated != info.ficUpdated %}
+	<p>Updated: {{info.ficUpdated.date()}}</p>
+	{% endif %}
+	<p>Words: {{info.words}}</p>
+	{% if info.chapters > 1 %}
+	<p>Chapters: {{info.chapters}}</p>
+	{% endif %}
 	{% if info.source|length %}
 	<p>Original source:
 		<a rel="noopener noreferrer" href="{{info.source}}">{{info.source}}</a>

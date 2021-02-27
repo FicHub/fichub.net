@@ -64,27 +64,24 @@ def changes() -> FlaskResponse:
 
 @app.route('/fic/<urlId>')
 def fic_info(urlId: str) -> FlaskResponse:
-	fis = FicInfo.select(urlId)
-	if len(fis) != 1:
+	ficInfo, rls = RequestLog.mostRecentsByUrlId(urlId)
+	if ficInfo is None:
 		return page_not_found(NotFound())
-	ficInfo = fis[0]
+
+	mostRecent = {rl.etype: rl for rl in rls}
 
 	mostRecentRequest: Optional[datetime.datetime] = None
 	previousExports = []
 	for etype in ebook.EXPORT_TYPES:
-		suff = ebook.EXPORT_SUFFIXES[etype]
-		e = RequestLog.mostRecentByUrlId(etype, urlId)
+		if etype not in mostRecent:
+			continue
+		e = mostRecent[etype]
 		if e is None or e.exportFileHash is None:
 			continue
 		if mostRecentRequest is None:
 			mostRecentRequest = e.created
 		else:
 			mostRecentRequest = max(e.created, mostRecentRequest)
-		fdir = os.path.join(ebook.CACHE_DIR, etype, urlId)
-		fhash = e.exportFileHash
-		fname = f'{fhash}{suff}'
-		if not os.path.isfile(os.path.join(fdir, fname)):
-			continue
 		previousExports.append(e)
 
 	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
@@ -331,8 +328,8 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		return page_not_found(NotFound())
 
 	if not os.path.isfile(os.path.join(fdir, f'{rl.exportFileHash}{suff}')):
-		# the most recent export is missing for some reason... 404
-		return page_not_found(NotFound())
+		# the most recent export is missing for some reason... regenerate it
+		return get_cached_export_partial(etype, urlId)
 
 	# redirect back to ourself with the correct filename
 	return redirect(url_for('get_cached_export', etype=etype, urlId=urlId,

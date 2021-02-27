@@ -211,6 +211,32 @@ class RequestLog:
 			return None if r is None else RequestLog(*r)
 
 	@staticmethod
+	def mostRecentsByUrlId(urlId: str) -> Tuple[FicInfo, List['RequestLog']]:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				; with recent as (
+					select max(rl.id) as id, rl.urlId
+					from requestLog rl
+					where rl.urlId is not null and rl.exportFileHash is not null
+						and rl.urlId = %s
+					group by rl.etype, rl.urlId
+				)
+				select fi.*,
+					rl.id, rl.created, rl.sourceId, rl.etype, rl.query,
+					rl.infoRequestMs, rl.urlId, rl.ficInfo, rl.exportMs,
+					rl.exportFileName, rl.exportFileHash, rl.url
+				from ficInfo fi
+				join recent l on l.urlId = fi.id
+				join requestLog rl on rl.id = l.id
+				where fi.id = %s
+				''', (urlId, urlId,))
+			rs = [(FicInfo.fromRow(r[:12]), RequestLog(*r[12:]))
+					for r in curs.fetchall()]
+			if len(rs) < 1:
+				return (None, [])
+			return (rs[0][0], [e[1] for e in rs])
+
+	@staticmethod
 	def mostPopular(limit: int = 10, offset: int = 0) -> List[Tuple[int, FicInfo]]:
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''

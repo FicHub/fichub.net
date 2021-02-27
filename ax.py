@@ -165,8 +165,7 @@ class RequestLog:
 			return r[0] if r is not None else None
 
 	@staticmethod
-	def mostRecentEpub(date: Optional[datetime.date] = None
-			) -> List['RequestLog']:
+	def mostRecentEpubCount(date: datetime.date) -> int:
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				; with mostRecentPerUrlId as (
@@ -179,21 +178,54 @@ class RequestLog:
 						on rs.id = r.sourceId
 					where r.exportFileName is not null
 						and r.etype = 'epub'
-						and (%s is null or date(r.created) = date(%s))
+						and date(r.created) = date(%s)
+						and rs.isAutomated = false
+					group by r.urlId
+				)
+				select count(1)
+				from mostRecentPerUrlId mr
+				join requestLog r
+					on r.urlId = mr.urlId
+					and r.created = mr.created
+				join ficInfo fi on fi.id = r.urlId
+				''', (date,))
+			r = curs.fetchone()
+			return 0 if r is None else int(r[0])
+
+	@staticmethod
+	def mostRecentEpub(date: datetime.date, limit: int, offset: int
+			) -> List[Tuple['RequestLog', FicInfo]]:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				; with mostRecentPerUrlId as (
+					select coalesce(
+						max(case when rs.isAutomated = true then null else r.created end),
+						max(r.created)) as created,
+						r.urlId
+					from requestLog r
+					join requestSource rs
+						on rs.id = r.sourceId
+					where r.exportFileName is not null
+						and r.etype = 'epub'
+						and date(r.created) = date(%s)
 						and rs.isAutomated = false
 					group by r.urlId
 				)
 				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,
 					r.urlId, r.ficInfo, r.exportMs, r.exportFileName, r.exportFileHash,
-					r.url
+					r.url,
+					fi.*
 				from mostRecentPerUrlId mr
 				join requestLog r
 					on r.urlId = mr.urlId
 					and r.created = mr.created
+				join ficInfo fi on fi.id = r.urlId
 				order by r.created desc
-				''', (date, date))
-			ls = [RequestLog(*r) for r in curs.fetchall()]
-			return ls
+				limit %s
+				offset %s
+				''', (date, limit, offset))
+			return [(RequestLog(*r[:12]), FicInfo.fromRow(r[12:]))
+					for r in curs.fetchall()]
 
 	@staticmethod
 	def mostRecentByUrlId(etype: str, urlId: str) -> Optional['RequestLog']:

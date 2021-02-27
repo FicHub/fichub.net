@@ -30,6 +30,12 @@ create table if not exists requestLog (
 	url text
 );
 
+create index if not exists requestLog_urlId_etype_created
+	on requestLog(urlId, etype, created);
+create index if not exists requestLog_epub_date
+	on requestLog(date(created))
+	where exportFileName is not null and etype = 'epub';
+
 create table if not exists ficInfo (
 	id varchar(128) primary key,
 	created timestamp not null default(current_timestamp),

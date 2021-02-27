@@ -112,27 +112,23 @@ def cache_listing(year: int, month: int, day: int, page: int) -> FlaskResponse:
 	if page < 1:
 		return redirect(url_for('cache_listing', year=year, month=month, day=day))
 
-	fis = {fi.id: fi for fi in FicInfo.select()}
-	rls = RequestLog.mostRecentEpub(date)
-	prevDay = RequestLog.prevDay(date)
-	nextDay = RequestLog.nextDay(date)
-
-	pageSize = 300 if len(rls) < 300 else 200
-	pageCount = int(math.floor((len(rls) + (pageSize - 1)) / pageSize))
+	cnt = RequestLog.mostRecentEpubCount(date)
+	pageSize = 300 if cnt < 300 else 200
+	pageCount = int(math.floor((cnt + (pageSize - 1)) / pageSize))
 
 	if page > pageCount and page > 1:
 		return redirect(url_for('cache_listing', year=year, month=month, day=day,
 				page=pageCount))
 
-	# trim to entries on requested page
-	rls = rls[(page - 1) * pageSize:page * pageSize]
+	rlfi = RequestLog.mostRecentEpub(date, pageSize, (page - 1) * pageSize)
+	prevDay = RequestLog.prevDay(date)
+	nextDay = RequestLog.nextDay(date)
 
 	items = []
-	for rl in rls:
+	for rl, fi in rlfi:
 		href = url_for(f'get_cached_export', etype='epub', urlId=rl.urlId,
 				fname=f'{rl.exportFileHash}.epub')
 
-		fi = fis[rl.urlId] if rl.urlId in fis else None
 		dt = rl.created
 
 		# if we have FicInfo, generate a more direct link to the epub

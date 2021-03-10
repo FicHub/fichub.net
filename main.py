@@ -22,6 +22,7 @@ import ax
 from ax import FicInfo, RequestLog, RequestSource
 import ebook
 
+NODE_NAME='orion'
 CACHE_BUSTER='26'
 CSS_CACHE_BUSTER=CACHE_BUSTER
 JS_CACHE_BUSTER=CACHE_BUSTER
@@ -390,7 +391,8 @@ def api_v0_remote() -> FlaskResponse:
 @app.context_processor
 def inject_cache_buster() -> Dict[str, str]:
 	return {'CACHE_BUSTER': CACHE_BUSTER, 'CURRENT_CSS': CURRENT_CSS,
-			'JS_CACHE_BUSTER': JS_CACHE_BUSTER, 'CSS_CACHE_BUSTER': CSS_CACHE_BUSTER}
+			'JS_CACHE_BUSTER': JS_CACHE_BUSTER, 'CSS_CACHE_BUSTER': CSS_CACHE_BUSTER,
+			'NODE_NAME': NODE_NAME}
 
 @app.context_processor
 def inject_ebook_suffixes() -> Dict[str, Any]:

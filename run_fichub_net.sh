@@ -13,7 +13,8 @@ if [[ ! -f authentications.py ]]; then
 	exit 1
 fi
 
-export OIL_DB_DBNAME=fic_pw
+export PYTHONPATH=/home/fichub_net/pylib
+export OIL_DB_DBNAME=fichub_net
 mkdir -p ./logs/
 
 exec uwsgi --plugin python3 --enable-threads \
@@ -21,7 +22,7 @@ exec uwsgi --plugin python3 --enable-threads \
 	--plugin logfile \
 	--logger file:logfile=./logs/fichub_net.log,maxsize=2000000 \
 	--pidfile master_${instance}.pid \
-	--master --processes 2 --threads 4 \
+	--master --processes 3 --threads 4 \
 	--daemonize2 /dev/null \
 	--wsgi-file ./main.py --callable app
 

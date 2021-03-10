@@ -346,20 +346,19 @@ def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
 	for ch in res['chapters']:
 		n = int(ch['chapterId'])
 
-		# extract chapter content
-		content = str(ch['content']).strip()
-		if len(content) == 0:
-			print(f'note: {url} {n} has an empty content body')
-			content = '<p></p>'
-
 		# generate a chapter name if its missing
 		title = str(ch['title']).strip() if 'title' in ch else None
 		titles.append(title)
 		if title is None or len(title) < 1:
 			title = f'Chapter {n}'
 
-		# prepend content with chapter title header
-		content = f'<h2>{title}</h2>' + content
+		# extract chapter content and prepend with chapter title header
+		titleHeader = f'<h2>{title}</h2>'
+		content = titleHeader + str(ch['content']).strip()
+		if len(content) <= len(titleHeader):
+			print(f'note: {url} {n} has an empty content body')
+			content += '<p></p>'
+		ch['content'] = None
 
 		chapters[n] = Chapter(n, title, content)
 

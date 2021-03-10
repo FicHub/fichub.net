@@ -6,9 +6,11 @@ cache/
 
 master*.pid
 *_uwsgi.log
+logs/
 
 static/js/_.js
 static/style/_.css
 
 bak/
 
+janus.log

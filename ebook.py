@@ -7,7 +7,6 @@ import zipfile
 import subprocess
 import random
 import threading
-import resource
 from dateutil.relativedelta import relativedelta
 from flask import render_template
 from ebooklib import epub # type ignore
@@ -110,12 +109,6 @@ def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]
 	return relocateFinishedExport('html', info.id, tmp_fname)
 
 
-def limitVirtualMemory() -> None:
-	MAX_VIRTUAL_MEMORY = 1024 * 1024 * 600 # 600 MiB
-	resource.setrlimit(resource.RLIMIT_AS,
-			(MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
-
-
 def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
 		) -> Tuple[str, str]:
 	if etype not in EXPORT_TYPES:
@@ -127,8 +120,12 @@ def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
 	epub_fname, ehash = createEpub(info, chapters)
 
 	try:
-		subprocess.run(['ebook-convert', epub_fname, tmp_fname],
-				preexec_fn=limitVirtualMemory)
+		res = subprocess.run(\
+				['/home/fichub_net/fichub.net/janus.py', epub_fname, tmp_fname],
+				timeout=60*5,
+			)
+		if res.returncode != 0:
+			raise Exception(f'convertEpub: error: return code {res.returncode} != 0')
 	except:
 		raise
 

@@ -370,9 +370,6 @@ def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
 			print(list(chapters.keys()))
 			raise MissingChapterException(f'err: missing chapter: {i}/{expected}')
 
-	# log the chapter titles
-	print(f'titles: {titles}')
-
 	return chapters
 
 def fetchChapters(info: FicInfo) -> Dict[int, Chapter]:

@@ -8,7 +8,7 @@
 	</p>
 	<form action="javascript:void(0);">
 		<label for=q class=h>Fic URL:</label>
-		<input type="text" size=60 name=q id=q value="{{ request.args.get('q', '') }}" />
+		<input type="text" size=60 name=q id=q placeholder="https://..." value="{{ request.args.get('q', '') }}" />
 		<br />
 		<button id=x onclick="epub()">Export</button>
 	</form>
@@ -36,7 +36,7 @@
 			font. If you are interested in using an alternate export format with
 			special fonts or styling please let us know.
 		</p>
-		<h1 id=sites>Supported Sites</h1>
+		<h2 id=sites>Supported Sites</h2>
 		<ul>
 			<li>SpaceBattles, SufficientVelocity, QuestionableQuesting (XenForo)</li>
 			<li>FanFiction.net, FictionPress (temporarily fragile)</li>

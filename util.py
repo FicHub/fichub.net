@@ -12,7 +12,8 @@ def hashFile(fname: str) -> str:
 
 def reqJson(link: str, retryCount: int = 5) -> Dict[Any, Any]:
 	cookies = {'session': a.SESSION}
-	r = requests.get(link, cookies = cookies)
+	headers = {'User-Agent': 'fichub.net/0.1.0'}
+	r = requests.get(link, cookies=cookies, headers=headers)
 	try:
 		p = r.json()
 	except ValueError:

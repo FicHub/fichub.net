@@ -1,3 +1,6 @@
+function f() {
+	return <HTMLFormElement>document.getElementById('f');
+}
 function x() {
 	return <HTMLButtonElement>document.getElementById('x');
 }
@@ -98,6 +101,9 @@ window['epub'] = epub;
 window.onload = setup;
 function setup() {
 	console.log(q());
+	if(f()) {
+		f().action = 'javascript:void(0);';
+	}
 	if(q()) { epub(); }
 }
 

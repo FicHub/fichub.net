@@ -404,10 +404,23 @@ def api_v0_epub() -> Any:
 
 	return res
 
+
+@app.route('/legacy/epub_export', methods=['GET'])
+def legacy_epub_export() -> FlaskResponse:
+	res = api_v0_epub()
+	q = request.args.get('q', '').strip() if 'q' not in res else res['q']
+	fixits = [] if 'fixits' not in res else res['fixits']
+	if 'err' not in res or int(res['err']) == 0 and 'urlId' in res:
+		return redirect(url_for('fic_info', urlId=res['urlId']))
+	fixits = ['an error ocurred :('] + fixits + [json.dumps(res)]
+	return render_template('index.html', q=q, fixits=fixits)
+
+
 @app.route('/api/v0/remote', methods=['GET'])
 def api_v0_remote() -> FlaskResponse:
 	source = get_request_source()
 	return source.__dict__
+
 
 @app.context_processor
 def inject_cache_buster() -> Dict[str, str]:

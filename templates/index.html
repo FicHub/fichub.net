@@ -6,13 +6,24 @@
 		or download in an alternate format. View previously exported works by
 		going to the <a href="{{ url_for('cache_listing_today') }}">Cache</a>.
 	</p>
-	<form action="javascript:void(0);">
+	<form id=f action="/legacy/epub_export" method=get>
 		<label for=q class=h>Fic URL:</label>
 		<input type="text" size=60 name=q id=q placeholder="https://..." value="{{ request.args.get('q', '') }}" />
 		<br />
 		<button id=x onclick="epub()">Export</button>
 	</form>
-	<div id=i></div>
+	<div id=i>
+		{%- if fixits is not none -%}
+		<p>
+		{%- for fixit in fixits -%}
+		{{fixit}}<br/>
+		{%- endfor -%}
+		</p>
+		{%- endif -%}
+		{%- if request.args.get('i', '')|length > 0 -%}
+		<p>{{request.args.get('i', '')}}</p>
+		{%- endif -%}
+	</div>
 	</main>
 	<section>
 		{% if from_pw|length > 0 %}

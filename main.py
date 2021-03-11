@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union, Tuple, Optional, cast
+from typing import List, Any, Dict, Union, Tuple, Optional, cast
 import os
 import os.path
 import time
@@ -8,7 +8,7 @@ import random
 import math
 import datetime
 from enum import IntEnum
-from flask import Flask, Response, jsonify, request, render_template, \
+from flask import Flask, Response, request, render_template, \
 	send_from_directory, redirect, url_for
 import werkzeug.wrappers
 from werkzeug.exceptions import HTTPException, NotFound
@@ -348,28 +348,49 @@ def get_cached_export_partial(etype: str, urlId: str) -> Any:
 	return get_cached_export(etype, urlId, fname)
 
 
+def get_fixits(q: str) -> List[str]:
+	fixits = []
+	if q.find('tvtropes.org') >= 0:
+		fixits += ['(note that tvtropes.org is not directly supported; instead, use the url of the actual fic)']
+	if q.find('http://') != 0 and q.find('https://') != 0:
+		fixits += ['(please try a full url including http:// or https:// at the start)']
+	if q.find('fanfiction.net') >= 0:
+		fixits += ['fanfiction.net is fragile at the moment; please try again later or check the discord']
+	if q.find('fanfiction.net/u/') >= 0:
+		fixits += ['user pages on fanfiction.net are not currently supported -- please try a specific story']
+	if q.find('fictionpress.com') >= 0:
+		fixits += ['fictionpress.com is fragile at the moment; please try again later or check the discord']
+	return fixits
+
+
 @app.route('/api/v0/epub', methods=['GET'])
 def api_v0_epub() -> Any:
 	q = request.args.get('q', '').strip()
+	fixits = get_fixits(q)
 	if len(q.strip()) < 1:
-		return jsonify(getErr(WebError.no_query))
+		return getErr(WebError.no_query, {'q':q,'fixits': fixits,})
 
 	print(f'api_v0_epub: query: {q}')
 	eres = ensure_export('epub', q)
 	if 'err' in eres:
-		return jsonify(eres)
+		if 'q' not in eres:
+			eres['q'] = q
+		if 'fixits' not in eres:
+			eres['fixits'] = fixits
+		return eres
 	for key in ['epub_fname', 'urlId', 'url']:
 		if key not in eres:
-			return jsonify(getErr(WebError.ensure_failed, {
-					'key': key, 'msg': 'please report this on discord'
-				}))
+			return getErr(WebError.ensure_failed, {
+					'key': key, 'msg': 'please report this on discord',
+					'q':q, 'fixits': fixits,
+				})
 
 	info = '[missing metadata; please report this on discord]'
 	if 'info' in eres:
 		info = eres['info']
 	eh = eres['hash'] if 'hash' in eres else str(random.getrandbits(32))
 
-	res = { 'err':0, 'info':info, 'urlId':eres['urlId'], }
+	res = { 'q':q, 'err':0, 'fixits':[], 'info':info, 'urlId':eres['urlId'], }
 
 	# build auto-generating links for all formats
 	for etype in ebook.EXPORT_TYPES:
@@ -381,12 +402,12 @@ def api_v0_epub() -> Any:
 	# update epub url to direct download
 	res['epub_url'] = eres['url']
 
-	return jsonify(res)
+	return res
 
 @app.route('/api/v0/remote', methods=['GET'])
 def api_v0_remote() -> FlaskResponse:
 	source = get_request_source()
-	return jsonify(source.__dict__)
+	return source.__dict__
 
 @app.context_processor
 def inject_cache_buster() -> Dict[str, str]:

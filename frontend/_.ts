@@ -35,20 +35,10 @@ function buildCodeBlockContent(str) {
 }
 function error(msg, r, obj) {
 	console.log('uh-oh');
-	if (q().indexOf('tvtropes.org') >= 0) {
-		msg += '<br/>(note that tvtropes.org is not directly supported; instead, use the url of the actual fic)';
-	}
-	if (q().indexOf('http://') != 0 && q().indexOf('https://') != 0) {
-		msg += '<br/>(please try a full url including http:// or https:// at the start)';
-	}
-	if (q().indexOf('fanfiction.net') >= 0) {
-		msg += '<br/>fanfiction.net is fragile at the moment; please try again later or check the discord';
-	}
-	if (q().indexOf('fanfiction.net/u/') >= 0) {
-		msg += '<br/>user pages on fanfiction.net are not currently supported -- please try a specific story';
-	}
-	if (q().indexOf('fictionpress.com') >= 0) {
-		msg += '<br/>fictionpress.com is fragile at the moment; please try again later or check the discord';
+	if (obj && obj.fixits && obj.fixits.length > 0) {
+		for (let i = 0; i < obj.fixits.length; ++i) {
+			msg += '<br/>' + obj.fixits[i];
+		}
 	}
 	msg = '<p>' + msg + '</p>';
 

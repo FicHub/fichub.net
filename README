@@ -1,0 +1,12 @@
+fichub.net is a website providing an ebook generating web frontend over
+existing metadata and content services.
+
+
+There are some pieces missing to make this repository work until further
+subprojects can be opened, but the majority should be here and the gaps should
+be obvious in their intention.
+
+
+If a new database is created for a new instance, the OIL_DB_DBNAME env
+variable likely needs updated in the run and dump_db scripts.
+

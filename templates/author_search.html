@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block title %}Author Search | {{q}} |{% endblock %}
+{% block content %}
+{% include 'nav_frag.html' %}
+	<main>
+	<h1>Author Search | {{q}}</h1>
+
+	{% for ficInfo in results %}
+	<p class=e>
+		<a href="{{ url_for('fic_info', urlId=ficInfo.id) }}">{{ ficInfo.title }} by {{ ficInfo.author }}</a>
+		{%- if (ficInfo.description|striptags).strip()
+			!= ficInfo.title ~ " by " ~ ficInfo.author %}
+		<br />
+		{{ ficInfo.description|striptags }}
+		{% endif -%}
+		<br />
+		{{ ficInfo.words }} words in {{ ficInfo.chapters }} chapters
+	</p>
+	{%- endfor %}
+	</main>
+{% endblock %}

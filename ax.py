@@ -48,6 +48,14 @@ class FicInfo:
 			return [FicInfo.fromRow(r) for r in curs.fetchall()]
 
 	@staticmethod
+	def searchByAuthor(q: str) -> List['FicInfo']:
+		with oil.open() as db, db, db.cursor() as curs:
+			curs.execute('''
+				select * from ficInfo where author = %s order by title asc
+			''', (q,))
+			return [FicInfo(*r) for r in curs.fetchall()]
+
+	@staticmethod
 	def save(ficInfo: Dict[str, str]) -> None:
 		with oil.open() as db, db, db.cursor() as curs:
 			curs.execute('''

@@ -170,6 +170,12 @@ def popular_listing(page: int) -> FlaskResponse:
 			page=page)
 
 
+@app.route('/search/author/<q>')
+def search_author(q: str) -> FlaskResponse:
+	results = FicInfo.searchByAuthor(q)
+	return render_template('author_search.html', q=q, results=results)
+
+
 def try_ensure_export(etype: str, query: str) -> Optional[str]:
 	key = f'{etype}_fname'
 	res = ensure_export(etype, query)

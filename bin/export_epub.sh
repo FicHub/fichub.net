@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (re-)export an epub for a given query
 
 id="$1"
 

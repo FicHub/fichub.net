@@ -3,6 +3,7 @@ authentications.py
 
 __pycache__/
 cache/
+tmp/
 
 master*.pid
 logs/

@@ -251,7 +251,8 @@ class RequestLog:
 			return None if r is None else RequestLog(*r)
 
 	@staticmethod
-	def mostRecentsByUrlId(urlId: str) -> Tuple[FicInfo, List['RequestLog']]:
+	def mostRecentsByUrlId(urlId: str
+			) -> Tuple[Optional[FicInfo], List['RequestLog']]:
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				; with recent as (

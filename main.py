@@ -15,7 +15,7 @@ from werkzeug.exceptions import HTTPException, NotFound
 
 app = Flask(__name__, static_url_path='')
 
-BasicFlaskResponse = Union[Response, werkzeug.wrappers.Response, str]
+BasicFlaskResponse = Union[Response, werkzeug.wrappers.Response, str, Dict[str, Any]]
 FlaskResponse = Union[BasicFlaskResponse, Tuple[BasicFlaskResponse, int]]
 
 import ax
@@ -355,7 +355,7 @@ def get_cached_export_partial(etype: str, urlId: str) -> Any:
 
 
 def get_fixits(q: str) -> List[str]:
-	fixits = []
+	fixits: List[str] = []
 	if q.find('tvtropes.org') >= 0:
 		fixits += ['(note that tvtropes.org is not directly supported; instead, use the url of the actual fic)']
 	if q.find('http://') != 0 and q.find('https://') != 0:

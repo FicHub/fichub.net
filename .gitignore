@@ -1,16 +1,14 @@
-ebooklib
 authentications.py
 
-__pycache__/
 cache/
 tmp/
 
 master*.pid
 logs/
+janus.log
 
 static/js/_.js
 static/style/_.css
 
 bak/
 
-janus.log

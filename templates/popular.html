@@ -23,12 +23,14 @@
 
 	{% for p in items %}
 	{% set ficInfo = p[2] %}
-	<p class=e>
+	<div class=e>
+	<h4>
 		#{{ p[0] }} [<strong>{{ p[1] }}</strong>]
 		<a href="{{ url_for('fic_info', urlId=ficInfo.id) }}">{{ ficInfo.title }} by {{ ficInfo.author }}</a>
+	</h4>
+	<p>
 		{%- if (ficInfo.description|striptags).strip()
 			!= ficInfo.title ~ " by " ~ ficInfo.author %}
-		<br />
 		{{ ficInfo.description|striptags }}
 		{% endif -%}
 		<br />
@@ -36,6 +38,7 @@
 		<br />
 		source: <a rel="noopener noreferrer" href="{{ficInfo.source}}">{{ficInfo.source}}</a>
 	</p>
+	</div>
 	{%- endfor %}
 
 	{{ page_nav() }}

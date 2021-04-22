@@ -24,6 +24,7 @@ def waitForOurTurn(key: str) -> None:
 	usPid = os.getpid()
 	usCreated = None
 	for i in range(int(180 / delta)):
+		cnt = 0
 		minPid = None
 		minCreated = None
 		for p in psutil.process_iter():
@@ -34,6 +35,7 @@ def waitForOurTurn(key: str) -> None:
 					or cmdl[0] != 'python3' \
 					or cmdl[1] != '/home/fichub_net/fichub.net/janus.py':
 				continue
+			cnt += 1
 			if getWaitKey(cmdl) != key:
 				continue
 			if minPid is None:
@@ -44,6 +46,9 @@ def waitForOurTurn(key: str) -> None:
 				minCreated = p.create_time()
 		if minCreated is not None and usCreated is not None \
 				and minPid != usPid and minCreated < usCreated:
+			if cnt >= 4:
+				plog(f'janus|{usPid}|there are at least 3 other waiting; aborting')
+				sys.exit(103)
 			plog(f'janus|{usPid}|previous export still running: {minPid} {minCreated} < {usCreated}')
 			time.sleep(delta)
 		else:

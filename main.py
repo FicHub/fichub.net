@@ -348,8 +348,8 @@ def get_cached_export_partial(etype: str, urlId: str) -> Any:
 	# otherwise we have a urlId we need to export
 	fname = try_ensure_export(etype, urlId)
 	if fname is None:
-		# if we failed to generate the export, 404
-		return page_not_found(NotFound())
+		# if we failed to generate the export, 503
+		return render_template('503_janus.html'), 503
 
 	return get_cached_export(etype, urlId, fname)
 

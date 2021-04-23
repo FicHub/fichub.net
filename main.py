@@ -8,6 +8,7 @@ import random
 import math
 import datetime
 from enum import IntEnum
+import flask
 from flask import Flask, Response, request, render_template, \
 	send_from_directory, redirect, url_for
 import werkzeug.wrappers
@@ -366,6 +367,15 @@ def get_fixits(q: str) -> List[str]:
 		fixits += ['user pages on fanfiction.net are not currently supported -- please try a specific story']
 	if q.find('fictionpress.com') >= 0:
 		fixits += ['fictionpress.com is fragile at the moment; please try again later or check the discord']
+	try:
+		import es
+		import urllib.parse
+		fis = es.search(q, limit=15)
+		for fi in fis:
+			u = urllib.parse.quote(fi.source, safe='')
+			fixits += [f'<br/>did you mean <a href=/?q={u}>{fi.title} by {fi.author}</a>?']
+	except:
+		pass
 	return fixits
 
 
@@ -418,7 +428,9 @@ def legacy_epub_export() -> FlaskResponse:
 	fixits = [] if 'fixits' not in res else res['fixits']
 	if 'err' not in res or int(res['err']) == 0 and 'urlId' in res:
 		return redirect(url_for('fic_info', urlId=res['urlId']))
-	fixits = ['an error ocurred :('] + fixits + [json.dumps(res)]
+	if 'fixits' in res:
+		del res['fixits']
+	fixits = ['an error ocurred :('] + fixits + ['', flask.escape(json.dumps(res))]
 	return render_template('index.html', q=q, fixits=fixits)
 
 

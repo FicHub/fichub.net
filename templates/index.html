@@ -16,7 +16,7 @@
 		{%- if fixits is not none -%}
 		<p>
 		{%- for fixit in fixits -%}
-		{{fixit}}<br/>
+		{{fixit|safe}}<br/>
 		{%- endfor -%}
 		</p>
 		{%- endif -%}

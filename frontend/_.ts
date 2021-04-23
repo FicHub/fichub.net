@@ -42,6 +42,7 @@ function error(msg, r, obj) {
 		for (let i = 0; i < obj.fixits.length; ++i) {
 			msg += '<br/>' + obj.fixits[i];
 		}
+		obj.fixits = undefined;
 	}
 	msg = '<p>' + msg + '</p>';
 

@@ -3,6 +3,7 @@ import datetime
 import traceback
 import urllib.parse
 from db import FicInfo
+import es
 import util
 import authentications as a
 
@@ -13,6 +14,13 @@ def lookup(query: str) -> Dict[str, Any]:
 		meta['err'] = meta.pop('error', None)
 	if 'err' not in meta:
 		FicInfo.save(meta)
+		try:
+			fis = FicInfo.select(meta['urlId'])
+			es.save(fis[0])
+		except Exception as e:
+			traceback.print_exc()
+			print(e)
+			print('lookup: ^ something went wrong saving es data :/')
 	return meta
 
 class Chapter:

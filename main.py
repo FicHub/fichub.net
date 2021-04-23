@@ -19,7 +19,7 @@ BasicFlaskResponse = Union[Response, werkzeug.wrappers.Response, str, Dict[str, 
 FlaskResponse = Union[BasicFlaskResponse, Tuple[BasicFlaskResponse, int]]
 
 import ax
-from ax import FicInfo, RequestLog, RequestSource
+from db import FicInfo, RequestLog, RequestSource
 import ebook
 
 NODE_NAME='orion'

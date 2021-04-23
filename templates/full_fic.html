@@ -21,6 +21,9 @@
 		</p>
 		<p>Chapters: {{info.chapters}}</p>
 		<p>Words: {{info.words}}</p>
+		{% if info.extraMeta is not none and info.extraMeta|length %}
+		<p>{{info.extraMeta}}</p>
+		{% endif %}
 		<p>Exported with the assistance of
 			<a href='https://fichub.net'>FicHub.net</a></p>
 		<nav id="contents-list"> <ul>

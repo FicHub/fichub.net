@@ -6,7 +6,8 @@ class FicInfo:
 	def __init__(self, id_: str, created_: datetime.datetime,
 			updated_: datetime.datetime, title_: str, author_: str, chapters_: int,
 			words_: int, description_: str, ficCreated_: datetime.datetime,
-			ficUpdated_: datetime.datetime, status_: str, source_: str) -> None:
+			ficUpdated_: datetime.datetime, status_: str, source_: str,
+			extraMeta_: Optional[str]) -> None:
 		self.id = id_
 		self.created = created_
 		self.updated = updated_
@@ -19,6 +20,7 @@ class FicInfo:
 		self.ficUpdated = ficUpdated_
 		self.status = status_
 		self.source = source_
+		self.extraMeta = extraMeta_
 	@staticmethod
 	def fromRow(row: Any) -> 'FicInfo':
 		return FicInfo(
@@ -34,6 +36,7 @@ class FicInfo:
 				ficUpdated_ = row[9],
 				status_ = row[10],
 				source_ = row[11],
+				extraMeta_ = row[12],
 			)
 	@staticmethod
 	def select(urlId: Optional[str] = None) -> List['FicInfo']:
@@ -54,26 +57,33 @@ class FicInfo:
 	@staticmethod
 	def save(ficInfo: Dict[str, str]) -> None:
 		with oil.open() as db, db, db.cursor() as curs:
+			extraMeta = ficInfo['extraMeta'] if 'extraMeta' in ficInfo else None
+			if extraMeta is not None and len(extraMeta.strip()) < 1:
+				extraMeta = None
 			curs.execute('''
 				insert into ficInfo(
 					id, title, author, chapters, words, description, ficCreated,
-					ficUpdated, status, source)
-				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+					ficUpdated, status, source, extraMeta)
+				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				on conflict(id) do
 				update set updated = current_timestamp,
 					title = EXCLUDED.title, author = EXCLUDED.author,
 					chapters = EXCLUDED.chapters, words = EXCLUDED.words,
 					description = EXCLUDED.description,
 					ficCreated = EXCLUDED.ficCreated, ficUpdated = EXCLUDED.ficUpdated,
-					status = EXCLUDED.status, source = EXCLUDED.source
+					status = EXCLUDED.status, source = EXCLUDED.source,
+					extraMeta = EXCLUDED.extraMeta
 				''', (ficInfo['urlId'], ficInfo['title'], ficInfo['author'],
 					int(ficInfo['chapters']), int(ficInfo['words']), ficInfo['desc'],
 					datetime.datetime.fromtimestamp(int(ficInfo['published'])/1000.0),
 					datetime.datetime.fromtimestamp(int(ficInfo['updated'])/1000.0),
-					ficInfo['status'], ficInfo['source']))
+					ficInfo['status'], ficInfo['source'], extraMeta))
 
 	@staticmethod
 	def parse(ficInfo: Dict[str, str]) -> 'FicInfo':
+		extraMeta = ficInfo['extraMeta'] if 'extraMeta' in ficInfo else None
+		if extraMeta is not None and len(extraMeta.strip()) < 1:
+			extraMeta = None
 		return FicInfo(ficInfo['urlId'],
 				datetime.datetime.now(), datetime.datetime.now(),
 				ficInfo['title'], ficInfo['author'],
@@ -83,6 +93,7 @@ class FicInfo:
 				datetime.datetime.fromtimestamp(int(ficInfo['updated'])/1000.0),
 				ficInfo['status'],
 				ficInfo['source'],
+				extraMeta
 			)
 
 class RequestSource:
@@ -267,7 +278,7 @@ class RequestLog:
 				join requestLog rl on rl.id = l.id
 				where fi.id = %s
 				''', (urlId, urlId,))
-			rs = [(FicInfo.fromRow(r[:12]), RequestLog(*r[12:]))
+			rs = [(FicInfo.fromRow(r[:13]), RequestLog(*r[13:]))
 					for r in curs.fetchall()]
 			if len(rs) < 1:
 				return (None, [])

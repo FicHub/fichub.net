@@ -16,11 +16,14 @@
 	{% if info.chapters > 1 %}
 	<p>Chapters: {{info.chapters}}</p>
 	{% endif %}
+	{% if info.extraMeta is not none and info.extraMeta|length %}
+	<p>{{info.extraMeta}}</p>
+	{% endif %}
 	{% if info.source|length %}
 	<p>Original source:
 		<a rel="noopener noreferrer" href="{{info.source}}">{{info.source}}</a></p>
+	{% endif %}
 	<p>Exported with the assistance of
 		<a href='https://fichub.net'>FicHub.net</a></p>
-	{% endif %}
 </body>
 </html>

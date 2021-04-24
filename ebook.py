@@ -94,6 +94,13 @@ def relocateFinishedExport(etype: str, urlId: str, tname: str
 	return (fname, fhash)
 
 
+ZipDateTime = Tuple[int, int, int, int, int, int]
+
+
+def datetimeToZipDateTime(ts: datetime.datetime) -> ZipDateTime:
+		return (ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second)
+
+
 def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]
 		) -> Tuple[str, str]:
 	slug = buildFileSlug(info.title, info.author, info.id)
@@ -104,7 +111,9 @@ def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]
 	nchaps = chapters.values()
 	data = render_template('full_fic.html', info=info, chapters=nchaps)
 	with zipfile.ZipFile(tmp_fname, 'w') as zf:
-		zf.writestr(bundle_fname, data, compress_type=zipfile.ZIP_DEFLATED)
+		zinfo = zipfile.ZipInfo(bundle_fname,
+				datetimeToZipDateTime(info.ficUpdated))
+		zf.writestr(zinfo, data, compress_type=zipfile.ZIP_DEFLATED)
 
 	return relocateFinishedExport('html', info.id, tmp_fname)
 

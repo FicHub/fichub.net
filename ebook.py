@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, Optional
 import os
 import traceback
 import datetime
@@ -11,11 +11,13 @@ from dateutil.relativedelta import relativedelta
 from flask import render_template
 from ebooklib import epub # type: ignore
 from ax import Chapter, FicInfo
+from db import ExportLog
 import util
 
 TMP_DIR='tmp'
 CACHE_DIR='cache'
 
+EXPORT_VERSION=1
 EXPORT_TYPES = ['epub', 'html', 'mobi', 'pdf']
 EXPORT_SUFFIXES = {
 		'epub': '.epub',
@@ -81,17 +83,49 @@ def randomTempFile(extra: str, bits: int = 32) -> str:
 	return os.path.join(tdir, fname)
 
 
-def relocateFinishedExport(etype: str, urlId: str, tname: str
-		) -> Tuple[str, str]:
-	fhash = util.hashFile(tname)
+def buildExportName(etype: str, urlId: str, fhash: str) -> str:
 	fdir = os.path.join(CACHE_DIR, etype, urlId)
 	if not os.path.isdir(fdir):
 		os.makedirs(fdir)
 	suff = EXPORT_SUFFIXES[etype]
-	fname = os.path.join(fdir, f'{fhash}{suff}')
+	return os.path.join(fdir, f'{fhash}{suff}')
+
+
+def finalizeExport(etype: str, urlId: str, ihash: str, tname: str
+		) -> Tuple[str, str]:
+	fhash = util.hashFile(tname)
+	fname = buildExportName(etype, urlId, fhash)
 	os.rename(tname, fname)
 
+	# record this result so we can immediately return it next time, assuming the
+	# input hash and export version have not changed
+	try:
+		n = datetime.datetime.now()
+		el = ExportLog(urlId, EXPORT_VERSION, etype, ihash, fhash, n)
+		el.upsert()
+	except Exception as e:
+		traceback.print_exc()
+		print(e)
+		print('finalizeExport: ^ something went wrong :/')
+
 	return (fname, fhash)
+
+
+def findExistingExport(etype: str, urlId: str, ihash: str
+		) -> Optional[Tuple[str, str]]:
+	try:
+		el = ExportLog.lookup(urlId, EXPORT_VERSION, etype, ihash)
+		if el is None:
+			return None
+		fname = buildExportName(etype, urlId, el.exportHash)
+		if not os.path.isfile(fname):
+			return None
+		return (fname, el.exportHash)
+	except Exception as e:
+		traceback.print_exc()
+		print(e)
+		print('findExistingExport: ^ something went wrong :/')
+	return None
 
 
 ZipDateTime = Tuple[int, int, int, int, int, int]
@@ -106,6 +140,11 @@ def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]
 	slug = buildFileSlug(info.title, info.author, info.id)
 	bundle_fname = slug + '.html'
 
+	_, ehash = createEpub(info, chapters)
+	ee = findExistingExport('html', info.id, ehash)
+	if ee is not None:
+		return ee
+
 	tmp_fname = randomTempFile(f'{info.id}.zip')
 
 	nchaps = chapters.values()
@@ -115,7 +154,7 @@ def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]
 				datetimeToZipDateTime(info.ficUpdated))
 		zf.writestr(zinfo, data, compress_type=zipfile.ZIP_DEFLATED)
 
-	return relocateFinishedExport('html', info.id, tmp_fname)
+	return finalizeExport('html', info.id, ehash, tmp_fname)
 
 
 def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
@@ -127,6 +166,9 @@ def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
 	tmp_fname = randomTempFile(f'{info.id}{suff}')
 
 	epub_fname, ehash = createEpub(info, chapters)
+	ee = findExistingExport(etype, info.id, ehash)
+	if ee is not None:
+		return ee
 
 	try:
 		res = subprocess.run(\
@@ -138,7 +180,7 @@ def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
 	except:
 		raise
 
-	return relocateFinishedExport(etype, info.id, tmp_fname)
+	return finalizeExport(etype, info.id, ehash, tmp_fname)
 
 
 def buildEpubChapters(chapters: Dict[int, Chapter]) -> Dict[int, epub.EpubHtml]:
@@ -205,5 +247,5 @@ def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]
 	epub.write_epub(tmp_fname, book,
 			{'mtime':info.ficUpdated, 'play_order':{'enabled':True}})
 
-	return relocateFinishedExport('epub', info.id, tmp_fname)
+	return finalizeExport('epub', info.id, 'upstream', tmp_fname)
 

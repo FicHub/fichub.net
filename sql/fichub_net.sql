@@ -52,3 +52,14 @@ create table if not exists ficInfo (
 	extraMeta text
 );
 
+create table if not exists exportLog (
+	urlId varchar(128) references ficInfo(id),
+	version int not null,
+	etype text not null,
+	inputHash text not null,
+	exportHash text not null,
+	created timestamp not null default(current_timestamp),
+
+	unique(urlId, version, etype, inputHash)
+);
+

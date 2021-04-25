@@ -2,6 +2,47 @@ from typing import Dict, Any, Optional, List, Tuple
 import datetime
 from oil import oil
 
+class ExportLog:
+	fieldCount = 6
+	def __init__(self, urlId_: str, version_: int, etype_: str, inputHash_: str,
+			exportHash_: str, created_: datetime.datetime) -> None:
+		self.urlId = urlId_
+		self.version = version_
+		self.etype = etype_
+		self.inputHash = inputHash_
+		self.exportHash = exportHash_
+		self.created = created_
+
+	@staticmethod
+	def lookup(urlId: str, version: int, etype: str, inputHash: str
+			) -> Optional['ExportLog']:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select *
+				from exportLog e
+				where e.urlId = %s
+					and e.version = %s
+					and e.etype = %s
+					and e.inputHash = %s
+				''', (urlId, version, etype, inputHash))
+			r = curs.fetchone()
+			return ExportLog(*r[:ExportLog.fieldCount]) if r is not None else None
+
+	def upsert(self) -> 'ExportLog':
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				insert into exportLog(urlId, version, etype, inputHash, exportHash)
+				values(%s, %s, %s, %s, %s)
+				on conflict(urlId, version, etype, inputHash) do
+				update set exportHash = EXCLUDED.exportHash
+				where exportLog.created < EXCLUDED.created
+				''', (self.urlId, self.version, self.etype, self.inputHash,
+					self.exportHash))
+		l = ExportLog.lookup(self.urlId, self.version, self.etype, self.inputHash)
+		self.exportHash = l.exportHash
+		self.created = l.created
+		return self
+
 class FicInfo:
 	def __init__(self, id_: str, created_: datetime.datetime,
 			updated_: datetime.datetime, title_: str, author_: str, chapters_: int,

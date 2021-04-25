@@ -8,7 +8,7 @@ fi
 
 instance="beta"
 export PYTHONPATH=/home/fichub_net/pylib
-export OIL_DB_DBNAME=fichub_net
+export OIL_DB_DBNAME=b_fichub_net
 mkdir -p ./logs/
 
 exec uwsgi --plugin python3 --enable-threads \

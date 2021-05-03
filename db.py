@@ -66,14 +66,15 @@ class FicInfo:
 	def toJson(self) -> Dict['str', Any]:
 		return {
 				'id': self.id,
+				'created': self.ficCreated.isoformat(),
+				'updated': self.ficUpdated.isoformat(),
 				'title': self.title,
 				'author': self.author,
 				'chapters': self.chapters,
-				'created': self.ficCreated.isoformat(),
-				'updated': self.ficUpdated.isoformat(),
+				'words': self.words,
+				'description': self.description,
 				'status': self.status,
 				'source': self.source,
-				'description': self.description,
 				'extraMeta': self.extraMeta,
 			}
 

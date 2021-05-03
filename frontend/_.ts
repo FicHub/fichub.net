@@ -58,6 +58,29 @@ function error(msg, r, obj) {
 	info().innerHTML = msg;
 }
 
+function extractUrls(res) {
+	let urls = {};
+	if (res.epub_url && res.epub_url.length)
+		urls['epub'] = res.epub_url;
+	if (res.html_url && res.html_url.length)
+		urls['html'] = res.html_url;
+	if (res.mobi_url && res.mobi_url.length)
+		urls['mobi'] = res.mobi_url;
+	if (res.pdf_url && res.pdf_url.length)
+		urls['pdf'] = res.pdf_url;
+
+	if (!res.urls)
+		return urls;
+
+	let types = ['epub', 'html', 'mobi', 'pdf'];
+	for (let i = 0; i < types.length; ++i) {
+		if (res.urls[types[i]]) {
+			urls[types[i]] = res.urls[types[i]];
+		}
+	}
+	return urls;
+}
+
 function epub() {
 	if(x().disabled)
 		return;
@@ -74,16 +97,17 @@ function epub() {
 				x().disabled = false;
 				return error('an error ocurred :(', this, res);
 			}
-			let htmlRes = '<p><a href="' + res.epub_url + '">Download EPUB</a></p>' +
+			let urls = extractUrls(res);
+			let htmlRes = '<p><a href="' + urls['epub'] + '">Download EPUB</a></p>' +
 				'<p>' + res.info.replace('\n', '<br/>') + '</p>';
-			if (res.html_url) {
-				htmlRes += '<p><a href="' + res.html_url + '">Download as zipped HTML</a></p>';
+			if ('html' in urls) {
+				htmlRes += '<p><a href="' + urls['html'] + '">Download as zipped HTML</a></p>';
 			}
-			if (res.mobi_url) {
-				htmlRes += '<p><a href="' + res.mobi_url + '">Download as MOBI (may take time to start)</a></p>';
+			if ('mobi' in urls) {
+				htmlRes += '<p><a href="' + urls['mobi'] + '">Download as MOBI (may take time to start)</a></p>';
 			}
-			if (res.pdf_url) {
-				htmlRes += '<p><a href="' + res.pdf_url + '">Download as PDF (may take time to start)</a></p>';
+			if ('pdf' in urls) {
+				htmlRes += '<p><a href="' + urls['pdf'] + '">Download as PDF (may take time to start)</a></p>';
 			}
 			info().innerHTML = htmlRes;
 		} catch (e) {

@@ -245,7 +245,8 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 				json.dumps(lres), exportMs, fname, fhash, exportUrl)
 
 		return {'urlId': meta.id, 'info': metaString,
-				f'{etype}_fname': fname, 'hash': fhash, 'url': exportUrl}
+				f'{etype}_fname': fname, 'hash': fhash, 'url': exportUrl,
+				'meta': metaDict, 'slug': slug, 'hashes': {etype: fhash}}
 	except Exception as e:
 		endTimeMs = int(time.time() * 1000)
 		exportMs = endTimeMs - infoTimeMs
@@ -400,13 +401,19 @@ def api_v0_epub() -> Any:
 	eh = eres['hash'] if 'hash' in eres else str(random.getrandbits(32))
 
 	res = { 'q':q, 'err':0, 'fixits':[], 'info':info, 'urlId':eres['urlId'], }
+	res['urls'] = {'epub':eres['url']}
+	for key in ['meta', 'slug', 'hashes']:
+		if key in eres:
+			res[key] = eres[key]
 
 	# build auto-generating links for all formats
 	for etype in ebook.EXPORT_TYPES:
 		if etype == 'epub':
 			continue # we already exported epub
-		res[f'{etype}_url'] = url_for(f'get_cached_export_partial', etype=etype,
+		url = url_for(f'get_cached_export_partial', etype=etype,
 				urlId=eres['urlId'], cv=CACHE_BUSTER, eh=eh)
+		res[f'{etype}_url'] = url
+		res['urls'][etype] = url
 
 	# update epub url to direct download
 	res['epub_url'] = eres['url']

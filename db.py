@@ -62,30 +62,14 @@ class FicInfo:
 		self.status = status_
 		self.source = source_
 		self.extraMeta = extraMeta_
-	@staticmethod
-	def fromRow(row: Any) -> 'FicInfo':
-		return FicInfo(
-				id_ = row[0],
-				created_ = row[1],
-				updated_ = row[2],
-				title_ = row[3],
-				author_ = row[4],
-				chapters_ = row[5],
-				words_ = row[6],
-				description_ = row[7],
-				ficCreated_ = row[8],
-				ficUpdated_ = row[9],
-				status_ = row[10],
-				source_ = row[11],
-				extraMeta_ = row[12],
-			)
+
 	@staticmethod
 	def select(urlId: Optional[str] = None) -> List['FicInfo']:
 		with oil.open() as db, db, db.cursor() as curs:
 			curs.execute('''
 				select * from ficInfo where %s is null or id = %s
 			''', (urlId, urlId))
-			return [FicInfo.fromRow(r) for r in curs.fetchall()]
+			return [FicInfo(*r) for r in curs.fetchall()]
 
 	@staticmethod
 	def searchByAuthor(q: str) -> List['FicInfo']:
@@ -280,7 +264,7 @@ class RequestLog:
 				limit %s
 				offset %s
 				''', (date, limit, offset))
-			return [(RequestLog(*r[:12]), FicInfo.fromRow(r[12:]))
+			return [(RequestLog(*r[:12]), FicInfo(*r[12:]))
 					for r in curs.fetchall()]
 
 	@staticmethod
@@ -319,7 +303,7 @@ class RequestLog:
 				join requestLog rl on rl.id = l.id
 				where fi.id = %s
 				''', (urlId, urlId,))
-			rs = [(FicInfo.fromRow(r[:13]), RequestLog(*r[13:]))
+			rs = [(FicInfo(*r[:13]), RequestLog(*r[13:]))
 					for r in curs.fetchall()]
 			if len(rs) < 1:
 				return (None, [])
@@ -344,7 +328,7 @@ class RequestLog:
 				join ficInfo fi on fi.id = p.urlId
 				order by p.cnt desc
 				''', (limit, offset))
-			return [(int(r[0]), FicInfo.fromRow(r[1:])) for r in curs.fetchall()]
+			return [(int(r[0]), FicInfo(*r[1:])) for r in curs.fetchall()]
 
 	@staticmethod
 	def totalPopular() -> int:

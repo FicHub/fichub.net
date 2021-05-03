@@ -209,6 +209,8 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 		lres['upstream'] = True
 		return lres
 	meta = FicInfo.parse(lres)
+	metaDict = meta.toJson()
+
 	infoTimeMs = int(time.time() * 1000)
 	infoRequestMs = infoTimeMs - initTimeMs
 
@@ -263,16 +265,7 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 	return getErr(WebError.export_failed, {
 			'msg': f'{etype} export failed\nplease try again in a few minutes, or report this on discord if the issue persists',
 			'etext': etext,
-			'meta': {
-					'id': meta.id,
-					'title': meta.title,
-					'author': meta.author,
-					'chapters': meta.chapters,
-					'created': meta.ficCreated,
-					'updated': meta.ficUpdated,
-					'status': meta.status,
-					'source': meta.source,
-				},
+			'meta': metaDict,
 		})
 
 def legacy_cache_redirect(etype: str, fname: str) -> FlaskResponse:

@@ -63,6 +63,20 @@ class FicInfo:
 		self.source = source_
 		self.extraMeta = extraMeta_
 
+	def toJson(self) -> Dict['str', Any]:
+		return {
+				'id': self.id,
+				'title': self.title,
+				'author': self.author,
+				'chapters': self.chapters,
+				'created': self.ficCreated.isoformat(),
+				'updated': self.ficUpdated.isoformat(),
+				'status': self.status,
+				'source': self.source,
+				'description': self.description,
+				'extraMeta': self.extraMeta,
+			}
+
 	@staticmethod
 	def select(urlId: Optional[str] = None) -> List['FicInfo']:
 		with oil.open() as db, db, db.cursor() as curs:

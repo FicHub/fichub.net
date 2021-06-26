@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, Any, Optional
 import os
+import shutil
 import traceback
 import datetime
 import re
@@ -95,7 +96,7 @@ def finalizeExport(etype: str, urlId: str, ihash: str, tname: str
 		) -> Tuple[str, str]:
 	fhash = util.hashFile(tname)
 	fname = buildExportName(etype, urlId, fhash)
-	os.rename(tname, fname)
+	shutil.move(tname, fname)
 
 	# record this result so we can immediately return it next time, assuming the
 	# input hash and export version have not changed

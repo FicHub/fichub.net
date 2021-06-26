@@ -35,6 +35,8 @@ class WebError(IntEnum):
 	invalid_etype = -2
 	export_failed = -3
 	ensure_failed = -4
+	lookup_failed = -5
+	ax_dead = -6
 
 errorMessages = {
 		WebError.success: 'success',
@@ -42,6 +44,8 @@ errorMessages = {
 		WebError.invalid_etype: 'invalid etype',
 		WebError.export_failed: 'export failed',
 		WebError.ensure_failed: 'ensure failed',
+		WebError.lookup_failed: 'lookup failed',
+		WebError.ax_dead: 'backend api is down',
 	}
 
 def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
@@ -200,15 +204,28 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 				{'fn': 'ensure_export', 'etype': etype})
 	source = get_request_source()
 
+	if not ax.alive():
+		print('ensure_export: ax is not alive :(')
+		return getErr(WebError.ax_dead)
+
 	initTimeMs = int(time.time() * 1000)
-	lres = ax.lookup(query)
-	if 'err' in lres:
-		endTimeMs = int(time.time() * 1000)
-		RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, None,
-				json.dumps(lres), None, None, None, None)
-		lres['upstream'] = True
-		return lres
-	meta = FicInfo.parse(lres)
+	meta = None
+	try:
+		lres = ax.lookup(query)
+		if 'err' in lres:
+			endTimeMs = int(time.time() * 1000)
+			RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, None,
+					json.dumps(lres), None, None, None, None)
+			lres['upstream'] = True
+			return lres
+		meta = FicInfo.parse(lres)
+	except Exception as e:
+		traceback.print_exc()
+		print(e)
+		print('ensure_export: ^ something went wrong doing ax.lookup :/')
+
+		return getErr(WebError.lookup_failed)
+
 	metaDict = meta.toJson()
 
 	infoTimeMs = int(time.time() * 1000)
@@ -367,7 +384,7 @@ def get_fixits(q: str) -> List[str]:
 		fis = es.search(q, limit=15)
 		for fi in fis:
 			u = urllib.parse.quote(fi.source, safe='')
-			fixits += [f'<br/>did you mean <a href=/?q={u}>{fi.title} by {fi.author}</a>?']
+			fixits += [f'<br/>did you mean <a href=/fic/{fi.id}>{fi.title} by {fi.author}</a>?']
 	except:
 		pass
 	return fixits

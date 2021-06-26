@@ -26,6 +26,15 @@
 	</div>
 	</main>
 	<section>
+		{% if false %}
+		<div class='a c'>
+			<p><b>Attention:</b> A backend service is currently offline and we are
+			working with our provider to get it up and running. Until then exports
+			likely won't work. Please either try again later or take a look through
+			<a href="{{ url_for('cache_listing_today') }}">the cache</a> or
+			<a href=/popular>the popular page</a> to find existing exports.  </p>
+		</div>
+		{% endif %}
 		{% if from_pw|length > 0 %}
 		<div class='a c'>
 			<p><b>Attention:</b> Fic.PW has been renamed to <a href=/>FicHub.net</a>.

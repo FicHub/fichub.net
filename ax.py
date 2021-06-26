@@ -7,9 +7,17 @@ import es
 import util
 import authentications as a
 
-def lookup(query: str) -> Dict[str, Any]:
+def alive() -> bool:
+	try:
+		url = '/'.join([a.AX_LOOKUP_ENDPOINT])
+		m = util.reqJson(url, timeout=5.0)
+	except:
+		return False
+	return True
+
+def lookup(query: str, timeout: float = 280.0) -> Dict[str, Any]:
 	url = '/'.join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query, safe='')])
-	meta = util.reqJson(url)
+	meta = util.reqJson(url, timeout=timeout)
 	if 'error' in meta and 'err' not in meta:
 		meta['err'] = meta.pop('error', None)
 	if 'err' not in meta:

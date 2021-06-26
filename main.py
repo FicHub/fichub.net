@@ -70,45 +70,45 @@ def changes() -> FlaskResponse:
 
 @app.route('/fic/<urlId>')
 def fic_info(urlId: str) -> FlaskResponse:
-	ficInfo, rls = RequestLog.mostRecentsByUrlId(urlId)
-	if ficInfo is None:
+	allInfo = FicInfo.select(urlId)
+	if len(allInfo) < 1:
+		# entirely unknown fic, 404
+		return page_not_found(NotFound())
+	ficInfo = allInfo[0]
+
+	epubRL = RequestLog.mostRecentByUrlId('epub', urlId)
+	if epubRL is None:
+		# we always generate the epub first, so if we don't have it something went
+		# horribly wrong
 		return page_not_found(NotFound())
 
-	mostRecent = {rl.etype: rl for rl in rls}
-
-	mostRecentRequest: Optional[datetime.datetime] = None
-	previousExports = []
-	needsGenerated = []
-	eh = 'unknown'
-	for etype in ebook.EXPORT_TYPES:
-		if etype not in mostRecent:
-			needsGenerated.append(etype)
-			continue
-		e = mostRecent[etype]
-		if e is None or e.exportFileHash is None:
-			needsGenerated.append(etype)
-			continue
-		if etype == 'epub':
-			eh = e.exportFileHash
-		if mostRecentRequest is None:
-			mostRecentRequest = e.created
-		else:
-			mostRecentRequest = max(e.created, mostRecentRequest)
-		previousExports.append(e)
-
-	# for any etype that hasn't already been exported, create a generate link
-	generateLinks = []
-	for etype in needsGenerated:
-		link = url_for(f'get_cached_export_partial', etype=etype, urlId=urlId,
-				cv=CACHE_BUSTER, eh=eh)
-		generateLinks.append((ebook.EXPORT_DESCRIPTIONS[etype], link))
-
 	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
+	mostRecentRequest = epubRL.created
+	eh = epubRL.exportFileHash
+	epubUrl = url_for('get_cached_export', etype='epub', urlId=urlId,
+			fname=f'{slug}.epub', h=eh)
+
+	links = [('epub', True, epubUrl)]
+	for etype in ebook.EXPORT_TYPES:
+		if etype == 'epub':
+			continue
+		pe = ebook.findExistingExport(etype, urlId, eh)
+		if pe is None:
+			# for any etype that hasn't already been exported or is out of date,
+			# create a (re)generate link
+			link = url_for(f'get_cached_export_partial', etype=etype, urlId=urlId,
+					cv=CACHE_BUSTER, eh=eh)
+			links.append((etype, False, link))
+		else:
+			# otherwise build the direct link
+			fname = slug + ebook.EXPORT_SUFFIXES[etype]
+			fhash = pe[1]
+			link = url_for('get_cached_export', etype=etype, urlId=urlId,
+					fname=fname, h=fhash)
+			links.append((etype, True, link))
 
 	return render_template('fic_info.html', ficInfo=ficInfo,
-			mostRecentRequest=mostRecentRequest, slug=slug,
-			previousExports=previousExports,
-			generateLinks=generateLinks)
+			mostRecentRequest=mostRecentRequest, links=links)
 
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')

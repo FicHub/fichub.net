@@ -18,16 +18,12 @@
 	<p><a rel="nofollow" href="/?q={{ficInfo.source|urlencode|replace("/", "%2F")}}">Re-Export</a></p>
 	{%- endif -%}
 	<ul>
-	{% for e in previousExports -%}
-	{% set fname = slug + EXPORT_SUFFIXES[e.etype] %}
-	<li class=e><a href='{{
-		url_for('get_cached_export', etype=e.etype, urlId=e.urlId, fname=fname, h=e.exportFileHash)
-	}}'>Download as {{EXPORT_DESCRIPTIONS[e.etype]}}</a></li>
-	{%- endfor %}
 
-	{% for e in generateLinks -%}
-	<li class=e><a href='{{e[1]}}'>Generate and download as {{e[0]}}</li>
-	{%- endfor %}
+	{% for etype, alreadyGenerated, link in links -%}
+	<li class=e><a href='{{link}}'>
+	{%- if alreadyGenerated -%}Download {% else -%}Generate and download {% endif -%}
+		as {{EXPORT_DESCRIPTIONS[etype]}}</a></li>
+	{% endfor %}
 	</ul>
 	</main>
 {% endblock %}

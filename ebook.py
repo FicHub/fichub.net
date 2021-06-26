@@ -32,6 +32,13 @@ EXPORT_MIMETYPES = {
 		'mobi': 'application/x-mobipocket-ebook',
 		'pdf': 'application/pdf',
 	}
+# TODO the frontend should not have its own copy here
+EXPORT_DESCRIPTIONS = {
+		'epub': 'EPUB',
+		'html': 'zipped HTML',
+		'mobi': 'MOBI',
+		'pdf': 'PDF',
+	}
 
 def formatRelDatePart(val: int, which: str) -> str:
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""

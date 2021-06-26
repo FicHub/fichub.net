@@ -22,7 +22,11 @@
 	{% set fname = slug + EXPORT_SUFFIXES[e.etype] %}
 	<li class=e><a href='{{
 		url_for('get_cached_export', etype=e.etype, urlId=e.urlId, fname=fname, h=e.exportFileHash)
-	}}'>Download as {{e.etype}}</a></li>
+	}}'>Download as {{EXPORT_DESCRIPTIONS[e.etype]}}</a></li>
+	{%- endfor %}
+
+	{% for e in generateLinks -%}
+	<li class=e><a href='{{e[1]}}'>Generate and download as {{e[0]}}</li>
 	{%- endfor %}
 	</ul>
 	</main>

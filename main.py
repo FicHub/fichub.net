@@ -78,22 +78,37 @@ def fic_info(urlId: str) -> FlaskResponse:
 
 	mostRecentRequest: Optional[datetime.datetime] = None
 	previousExports = []
+	needsGenerated = []
+	eh = 'unknown'
 	for etype in ebook.EXPORT_TYPES:
 		if etype not in mostRecent:
+			needsGenerated.append(etype)
 			continue
 		e = mostRecent[etype]
 		if e is None or e.exportFileHash is None:
+			needsGenerated.append(etype)
 			continue
+		if etype == 'epub':
+			eh = e.exportFileHash
 		if mostRecentRequest is None:
 			mostRecentRequest = e.created
 		else:
 			mostRecentRequest = max(e.created, mostRecentRequest)
 		previousExports.append(e)
 
+	# for any etype that hasn't already been exported, create a generate link
+	generateLinks = []
+	for etype in needsGenerated:
+		link = url_for(f'get_cached_export_partial', etype=etype, urlId=urlId,
+				cv=CACHE_BUSTER, eh=eh)
+		generateLinks.append((ebook.EXPORT_DESCRIPTIONS[etype], link))
+
 	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
 
 	return render_template('fic_info.html', ficInfo=ficInfo,
-			mostRecentRequest=mostRecentRequest, slug=slug, previousExports=previousExports)
+			mostRecentRequest=mostRecentRequest, slug=slug,
+			previousExports=previousExports,
+			generateLinks=generateLinks)
 
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
@@ -464,8 +479,9 @@ def inject_cache_buster() -> Dict[str, str]:
 			'NODE_NAME': NODE_NAME}
 
 @app.context_processor
-def inject_ebook_suffixes() -> Dict[str, Any]:
-	return {'EXPORT_SUFFIXES': ebook.EXPORT_SUFFIXES}
+def inject_suffix_info() -> Dict[str, Any]:
+	return {'EXPORT_SUFFIXES': ebook.EXPORT_SUFFIXES,
+			'EXPORT_DESCRIPTIONS': ebook.EXPORT_DESCRIPTIONS}
 
 if __name__ == '__main__':
 	app.run(debug=True)

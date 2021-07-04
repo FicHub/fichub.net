@@ -1,9 +1,14 @@
-fichub.net is a web frontend for generating ebooks from fanfic based on
-existing metadata and content services.
+FicHub.net is a frontend for generating ebooks from web fiction (fanfic and
+web serials) based on pre-existing external metadata and content services.
 
+This project is licensed under AGPL-3.0-or-later. See the LICENSE file for
+complete details.
+
+
+# Setup
 
 There are several additional components needed that are not currently covered
-by requirements.txt if you want a fully functioning instance of fichub, though
+by requirements.txt if you want a fully functioning instance of FicHub, though
 several of these may be omitted:
 
 	python-oil:
@@ -36,4 +41,24 @@ several of these may be omitted:
 
 See https://github.com/FicHub/infra-dev if you're interested in using Docker
 to run a dev instance.
+
+
+# Licensing
+
+FicHub.net is a frontend for generating ebooks from web fiction (fanfic and
+web serials) based on pre-existing external metadata and content services.
+Copyright (C) 2020-2021  iris
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 

@@ -1,4 +1,5 @@
-from typing import List, Any, Dict, Union, Tuple, Optional, cast
+from typing import \
+	Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
 import os
 import os.path
 import time
@@ -12,12 +13,33 @@ import flask
 from flask import Flask, Response, request, render_template, \
 	send_from_directory, redirect, url_for
 import werkzeug.wrappers
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.datastructures import Headers
+from werkzeug.exceptions import NotFound
+
+FlaskHeaderValue = Union[str, List[str], Tuple[str, ...]]
+FlaskHeaders = Union[
+		Headers,
+		Dict[str, FlaskHeaderValue],
+		List[Tuple[str, FlaskHeaderValue]]
+	]
+BasicFlaskResponse = Union[
+		Response,
+		Any,
+		Dict[str, Any],
+		Generator[Any, None, None]
+	]
+FlaskResponse = Union[
+		BasicFlaskResponse,
+		Tuple[
+			BasicFlaskResponse,
+			FlaskHeaders
+		],
+		Tuple[BasicFlaskResponse, int],
+		Tuple[BasicFlaskResponse, int, FlaskHeaders],
+		Callable[[Dict[str, Any], BasicFlaskResponse], Iterable[bytes]]
+	]
 
 app = Flask(__name__, static_url_path='')
-
-BasicFlaskResponse = Union[Response, werkzeug.wrappers.Response, str, Dict[str, Any]]
-FlaskResponse = Union[BasicFlaskResponse, Tuple[BasicFlaskResponse, int]]
 
 import ax
 from db import FicInfo, RequestLog, RequestSource
@@ -56,7 +78,7 @@ def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
 	return base
 
 @app.errorhandler(404)
-def page_not_found(e: HTTPException) -> FlaskResponse:
+def page_not_found(e: Exception) -> FlaskResponse:
 	return render_template('404.html'), 404
 
 @app.route('/')

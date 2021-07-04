@@ -1,0 +1,18 @@
+certifi==2021.5.30
+chardet==4.0.0
+click==8.0.1
+EbookLib @ git+git://github.com/FicHub/ebooklib@1dbc0d53d9e24d5da2c71f1907ebde1bc6821551
+elasticsearch==7.13.1
+Flask==2.0.1
+idna==2.10
+itsdangerous==2.0.1
+Jinja2==3.0.1
+lxml==4.6.3
+MarkupSafe==2.0.1
+psutil==5.8.0
+psycopg2==2.9.1
+python-dateutil==2.8.1
+requests==2.25.1
+six==1.16.0
+urllib3==1.26.6
+Werkzeug==2.0.1

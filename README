@@ -1,12 +1,39 @@
-fichub.net is a website providing an ebook generating web frontend over
+fichub.net is a web frontend for generating ebooks from fanfic based on
 existing metadata and content services.
 
 
-There are some pieces missing to make this repository work until further
-subprojects can be opened, but the majority should be here and the gaps should
-be obvious in their intention.
+There are several additional components needed that are not currently covered
+by requirements.txt if you want a fully functioning instance of fichub, though
+several of these may be omitted:
+
+	python-oil:
+		grab from https://github.com/FanFicDev/python-oil
+
+	typescript:
+		used for frontend js
+
+	sass:
+		used for frontend styling
+
+	alexandria api access:
+		used to lookup fic metadata and fetch content
+
+		copy authentications.ex.py to authentications.py and fill in credentials
+		to self host, see https://github.com/FanFicDev/hermes
+
+	postgres:
+		used to store all metadata
+
+		If a new database is created for a new instance, the OIL_DB_DBNAME env
+		variable likely needs updated in the run and dump_db scripts.
+
+	elasticsearch:
+		used for search fallback when a fic is not found
+
+	calibre:
+		used to generate mobi and pdf formats
 
 
-If a new database is created for a new instance, the OIL_DB_DBNAME env
-variable likely needs updated in the run and dump_db scripts.
+See https://github.com/FicHub/infra-dev if you're interested in using Docker
+to run a dev instance.
 

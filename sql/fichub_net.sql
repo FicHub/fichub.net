@@ -9,7 +9,8 @@ create table if not exists requestSource (
 insert into requestSource(isAutomated, route, description)
 values
 	(true, 'backend', 'backend'),
-	(false, 'https://fichub.net', 'legacy');
+	(false, 'https://fichub.net', 'legacy')
+on conflict do nothing;
 
 create table if not exists requestLog (
 	id bigserial primary key,

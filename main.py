@@ -505,6 +505,20 @@ def inject_suffix_info() -> Dict[str, Any]:
 	return {'EXPORT_SUFFIXES': ebook.EXPORT_SUFFIXES,
 			'EXPORT_DESCRIPTIONS': ebook.EXPORT_DESCRIPTIONS}
 
+# ensure the db and es have a schema
+from oil import oil
+with oil.open() as db, db.cursor() as curs:
+	sql = open('./sql/fichub_net.sql', 'r').read()
+	for l in sql.split(';'):
+		sqll = l.strip()
+		if len(sqll) < 1:
+			continue
+		curs.execute(l)
+
+import es
+with es.connect() as conn:
+	es.createIndex(conn)
+
 if __name__ == '__main__':
 	app.run(debug=True)
 

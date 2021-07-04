@@ -14,6 +14,9 @@ def plog(msg: str) -> None:
 	global logFileName
 	print(f'{int(time.time())}|{msg}')
 
+def connect() -> Any:
+	return Elasticsearch(hosts=["es"], http_auth=('elastic', 'espass'))
+
 def dropIndex(es: Any) -> None:
 	try:
 		es.indices.delete(index='fi')
@@ -52,7 +55,7 @@ def createIndex(es: Any) -> None:
 
 def search(q: str, limit: int = 10) -> List[FicInfo]:
 	try:
-		es = Elasticsearch(hosts=["localhost"])
+		es = connect()
 		res = es.search(index="fi", body={
 				"query": {
 					"multi_match": {
@@ -75,7 +78,7 @@ def search(q: str, limit: int = 10) -> List[FicInfo]:
 		return [] # TODO
 
 def save(fi: FicInfo) -> None:
-	es = Elasticsearch(hosts=["localhost"])
+	es = connect()
 	r = handleFicInfo(fi)
 	_id = r.pop('_id', fi.id)
 	es.index(index='fi', id=_id, body=r)
@@ -96,7 +99,7 @@ def main(argv: List[str]) -> int:
 		print(f"usage: {sys.argv[0]}")
 		return 1
 
-	es = Elasticsearch(hosts=["localhost"])
+	es = connect()
 	plog(f"using log {logFileName}")
 	#dropIndex(es)
 	createIndex(es)

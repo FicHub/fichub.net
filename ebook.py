@@ -179,8 +179,12 @@ def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
 		return ee
 
 	try:
-		res = subprocess.run(\
-				['/home/fichub_net/fichub.net/janus.py', epub_fname, tmp_fname],
+		res = subprocess.run([
+					'/home/fichub_net/fichub.net/venv/bin/python',
+					'/home/fichub_net/fichub.net/janus.py',
+					epub_fname,
+					tmp_fname,
+				],
 				timeout=60*5,
 			)
 		if res.returncode != 0:

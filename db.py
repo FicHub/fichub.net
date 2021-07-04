@@ -80,7 +80,7 @@ class FicInfo:
 
 	@staticmethod
 	def select(urlId: Optional[str] = None) -> List['FicInfo']:
-		with oil.open() as db, db, db.cursor() as curs:
+		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				select * from ficInfo where %s is null or id = %s
 			''', (urlId, urlId))
@@ -88,7 +88,7 @@ class FicInfo:
 
 	@staticmethod
 	def searchByAuthor(q: str) -> List['FicInfo']:
-		with oil.open() as db, db, db.cursor() as curs:
+		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				select * from ficInfo where author = %s order by title asc
 			''', (q,))
@@ -96,7 +96,7 @@ class FicInfo:
 
 	@staticmethod
 	def save(ficInfo: Dict[str, str]) -> None:
-		with oil.open() as db, db, db.cursor() as curs:
+		with oil.open() as db, db.cursor() as curs:
 			extraMeta = ficInfo['extraMeta'] if 'extraMeta' in ficInfo else None
 			if extraMeta is not None and len(extraMeta.strip()) < 1:
 				extraMeta = None
@@ -163,7 +163,7 @@ class RequestSource:
 		existing = RequestSource.select(isAutomated, route, description)
 		if existing is not None:
 			return existing
-		with oil.open() as db, db, db.cursor() as curs:
+		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				insert into requestSource(isAutomated, route, description)
 				values (%s, %s, %s)
@@ -368,7 +368,7 @@ class RequestLog:
 			urlId: Optional[str], ficInfo: Optional[str], exportMs: Optional[int],
 			exportFileName: Optional[str], exportFileHash: Optional[str],
 			url: Optional[str]) -> None:
-		with oil.open() as db, db, db.cursor() as curs:
+		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
 				insert into requestLog(sourceId, etype, query, infoRequestMs, urlId,
 					ficInfo, exportMs, exportFileName, exportFileHash, url)

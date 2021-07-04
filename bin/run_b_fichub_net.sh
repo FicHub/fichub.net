@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-if [[ ! -f authentications.py ]]; then
-	echo "error: no authentications.py file"
-	echo "       don't forget about ebooklib either"
-	exit 1
+if ! ./bin/check_setup.sh; then
+	exit $?
 fi
 
 instance="beta"

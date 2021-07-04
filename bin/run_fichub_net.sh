@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 
+if ! ./bin/check_setup.sh; then
+	exit $?
+fi
+
 if [[ -z "${1}" ]]; then
 	echo "error: must specify instance name"
 	exit 1
 fi
 
 instance="${1}"
-
-if [[ ! -f authentications.py ]]; then
-	echo "error: no authentications.py file"
-	echo "       don't forget about ebooklib either"
-	exit 1
-fi
-
 export PYTHONPATH=/home/fichub_net/pylib
 export OIL_DB_DBNAME=fichub_net
 mkdir -p ./logs/

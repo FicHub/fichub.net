@@ -44,18 +44,18 @@
 		{% endif %}
 		<h1 id=about>About</h1>
 		<p><a href=/>FicHub</a> is a growing set of accessibility tools for reading
-			(and eventually finding) fanfiction and original works. FicHub can be
-			used to turn fics into more standardized formats. After entering a URL
-			and clicking <span class=b>Export</span>, basic fic metadata and a link
-			to download as EPUB will appear. Additionally, links to generate and
-			download the work as MOBI, PDF, or Zipped HTML will show.
-		</p>
-		<p>We currently recommend the EPUB format, as many EPUB readers have
-			options to change font, font size, colors, and other options to enhance
+			(and eventually finding) fanfiction and original works. After entering a
+			URL and clicking <span class=b>Export</span>, basic fic metadata and a
+			link to download as a standard EPUB will appear. Additionally, links to
+			generate and download MOBI, PDF, or Zipped HTML versions will show.</p>
+		<p>The EPUB format is recommended, as many EPUB readers have options to
+			change font, font size, colors, and have other options to enhance
 			readability. This includes the option to change to a dyslexia friendly
-			font. If you are interested in using an alternate export format with
-			special fonts or styling please let us know.
-		</p>
+			font.</p>
+		<p>Feel free to <a href=#contact>get in touch</a>. If you'd like to
+			support <b>iris</b> the creator, they
+			<a href='https://www.patreon.com/irides'>have a patreon</a>.</p>
+
 		<h2 id=sites>Supported Sites</h2>
 		<ul>
 			<li>SpaceBattles, SufficientVelocity, QuestionableQuesting (XenForo)</li>
@@ -67,6 +67,7 @@
 			<li>AdultFanfiction.org</li>
 			<li>Worm, Ward</li>
 		</ul>
+
 		<h2>Partial support (or not tested recently):</h2>
 		<ul>
 			<li>XenForo based sites (Bulbagarden Forums, The Fanfiction Forum,
@@ -78,6 +79,22 @@
 			<li>FanficAuthors (minimal)</li>
 			<li>Harry Potter Fanfiction (archive from pre-revival)</li>
 		</ul>
+
+		<h2 id=help>If you run into issues</h2>
+		<p>In order to be a good citizen of the web, FicHub caches content and
+			throttles the request rate on upstream sources. This means that some
+			fics may take a while to export. Better progress reporting is in the
+			works. Until then, please give it some time before trying to re-export a
+			fic if you encounter an issue.</p>
+		<p>Content may be stale at times, but an automated background task
+			<i>should</i> catch all updates eventually. If a fic is stale and you'd
+			like to request it to be refreshed immediately, please ask
+			<a href=#contact>in the discord or on IRC</a>.</p>
+		<p>Eventually FicHub may grow other features such as centralized reading
+			lists, recommendations, or story search. The current bookmarklet may be
+			extended into an entire browser extension for ease of use. If you're
+			interested in any extended features, please provide feedback.</p>
+
 		<h2 id=bookmarklet>Bookmarklet</h2>
 		<p>A <a href='https://en.wikipedia.org/wiki/Bookmarklet'>bookmarklet</a>
 			is a small piece of code that can be saved as a bookmark to provide
@@ -90,31 +107,7 @@
 		<p>Alternatively, copy and paste the following code as the destination of
 			a new bookmark:</p>
 		<p class=c><code>javascript:location.href='https://fichub.net/?b=1&amp;q='+encodeURIComponent(location.href)</code></p>
-		<h2 id=help>If you run into issues</h2>
-		<p>In order to be a good citizen of the web, FicHub caches content and
-			throttles the request rate on upstream sources. This means that some
-			fics may take a while to export. Better reporting of the current state
-			of an export is planned -- but until then, please give it some time
-			before trying to re-export a fic if you encounter an issue.</p>
-		<p>Content may be stale at times, but an automated background task
-			<i>should</i> catch all updates eventually. If a fic is stale and you'd
-			like to request it to be refetched immediately, please ask in the
-			discord for now. A more integrated or automated refresh request feature
-			is planned.</p>
-		<p>Eventually FicHub may grow other features such as centralized reading
-			lists, recommendations, or story search. The current bookmarklet may be
-			extended into an entire browser extension for ease of use. If you're
-			interested in any extended features, please feel free to provide
-			feedback.</p>
-		<h2 id=source>Downstream tools, API, open source</h2>
-		<p>If you have an idea for a tool built on top of FicHub feel free to get
-			in touch. We are friendly. The API is not currently solid, but effort
-			could be put towards that if someone wants a stable interface. FicHub is
-			(partially) open source and currently hosted on
-			<a href=https://github.com/fichub>github/FicHub</a>. There is some
-			backlog cleaning up and releasing the other components -- please get in
-			contact if them being released sooner rather than later is important to
-			you.</p>
+
 	</section>
 <section>
 {% include 'contact_frag.html' %}

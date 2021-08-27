@@ -18,8 +18,15 @@ import util
 TMP_DIR='tmp'
 CACHE_DIR='cache'
 
+# total version is EXPORT_VERSION + EXPORT_TYPE_VERSIONS[etype]
 EXPORT_VERSION=1
 EXPORT_TYPES = ['epub', 'html', 'mobi', 'pdf']
+EXPORT_TYPE_VERSIONS = {
+		'epub': 0,
+		'html': 0,
+		'mobi': 0,
+		'pdf': 0,
+	}
 EXPORT_SUFFIXES = {
 		'epub': '.epub',
 		'html': '.zip',
@@ -39,6 +46,11 @@ EXPORT_DESCRIPTIONS = {
 		'mobi': 'MOBI',
 		'pdf': 'PDF',
 	}
+
+def exportVersion(etype: str) -> int:
+	if etype in EXPORT_TYPE_VERSIONS:
+		return EXPORT_VERSION + EXPORT_TYPE_VERSIONS[etype]
+	return EXPORT_VERSION
 
 def formatRelDatePart(val: int, which: str) -> str:
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""
@@ -109,7 +121,7 @@ def finalizeExport(etype: str, urlId: str, ihash: str, tname: str
 	# input hash and export version have not changed
 	try:
 		n = datetime.datetime.now()
-		el = ExportLog(urlId, EXPORT_VERSION, etype, ihash, fhash, n)
+		el = ExportLog(urlId, exportVersion(etype), etype, ihash, fhash, n)
 		el.upsert()
 	except Exception as e:
 		traceback.print_exc()
@@ -122,7 +134,7 @@ def finalizeExport(etype: str, urlId: str, ihash: str, tname: str
 def findExistingExport(etype: str, urlId: str, ihash: str
 		) -> Optional[Tuple[str, str]]:
 	try:
-		el = ExportLog.lookup(urlId, EXPORT_VERSION, etype, ihash)
+		el = ExportLog.lookup(urlId, exportVersion(etype), etype, ihash)
 		if el is None:
 			return None
 		fname = buildExportName(etype, urlId, el.exportHash)

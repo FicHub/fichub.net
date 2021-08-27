@@ -26,11 +26,11 @@
 		{% endif %}
 		<p>Exported with the assistance of
 			<a href='https://fichub.net'>FicHub.net</a></p>
-		<nav id="contents-list"> <ul>
+		<nav id="contents-list"> <ol>
 			{% for chapter in chapters %}
 				<li><a href="#chap_{{loop.index}}">{{chapter.title}}</a></li>
 			{% endfor %}
-		</ul> </nav>
+		</ol> </nav>
 		{% for chapter in chapters %}
 		<div id="chap_{{loop.index}}">
 			<div class="chapter_nav">

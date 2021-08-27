@@ -23,7 +23,7 @@ EXPORT_VERSION=1
 EXPORT_TYPES = ['epub', 'html', 'mobi', 'pdf']
 EXPORT_TYPE_VERSIONS = {
 		'epub': 0,
-		'html': 0,
+		'html': 1,
 		'mobi': 0,
 		'pdf': 0,
 	}

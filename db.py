@@ -39,6 +39,7 @@ class ExportLog:
 				''', (self.urlId, self.version, self.etype, self.inputHash,
 					self.exportHash))
 		l = ExportLog.lookup(self.urlId, self.version, self.etype, self.inputHash)
+		assert(l is not None)
 		self.exportHash = l.exportHash
 		self.created = l.created
 		return self
@@ -90,7 +91,10 @@ class FicInfo:
 	def searchByAuthor(q: str) -> List['FicInfo']:
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
-				select * from ficInfo where author = %s order by title asc
+				select * from ficInfo
+				where author = %s
+					and not exists (select 1 from ficBlacklist where urlId = id)
+				order by title asc
 			''', (q,))
 			return [FicInfo(*r) for r in curs.fetchall()]
 
@@ -135,6 +139,35 @@ class FicInfo:
 				ficInfo['source'],
 				extraMeta
 			)
+
+class FicBlacklist:
+	def __init__(self, urlId_: str, created_: datetime.datetime,
+			updated_: datetime.datetime, reason_: int) -> None:
+		self.urlId = urlId_
+		self.created = created_
+		self.updated = updated_
+		self.reason = reason_
+
+	@staticmethod
+	def select(urlId: Optional[str] = None) -> List['FicBlacklist']:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select urlId, created, updated, reason
+				from ficBlacklist
+				where %s is null or urlId = %s
+			''', (urlId, urlId))
+			return [FicBlacklist(*r) for r in curs.fetchall()]
+
+	@staticmethod
+	def save(urlId: str, reason: int) -> None:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				insert into ficBlacklist(urlId, reason)
+				values(%s, %s)
+				on conflict(urlId, reason) do
+				update set updated = current_timestamp
+				''', (urlId, reason))
+
 
 class RequestSource:
 	def __init__(self, id_: int, created_: datetime.datetime, isAutomated_: bool,

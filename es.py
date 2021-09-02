@@ -87,6 +87,10 @@ def handleFicInfo(fi: FicInfo) -> Dict[str, Any]:
 	r['_id'] = _id
 	return r
 
+def blacklist(urlId: str) -> None:
+	es = Elasticsearch(hosts=["localhost"])
+	es.delete(index='fi', id=urlId)
+
 def generateFicInfo() -> Iterator[Dict[str, Any]]:
 	for fi in FicInfo.select():
 		yield handleFicInfo(fi)

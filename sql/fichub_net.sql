@@ -64,3 +64,12 @@ create table if not exists exportLog (
 	unique(urlId, version, etype, inputHash)
 );
 
+create table if not exists ficBlacklist (
+	urlId varchar(128) references ficInfo(id),
+	created timestamp not null default(current_timestamp),
+	updated timestamp not null default(current_timestamp),
+	reason int not null default(1),
+
+	unique(urlId, reason)
+);
+

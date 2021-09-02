@@ -42,7 +42,7 @@ FlaskResponse = Union[
 app = Flask(__name__, static_url_path='')
 
 import ax
-from db import FicInfo, RequestLog, RequestSource
+from db import FicInfo, FicBlacklist, RequestLog, RequestSource
 import ebook
 
 NODE_NAME='orion'
@@ -97,6 +97,10 @@ def fic_info(urlId: str) -> FlaskResponse:
 		# entirely unknown fic, 404
 		return page_not_found(NotFound())
 	ficInfo = allInfo[0]
+	allBlacklist = FicBlacklist.select(urlId)
+	if len(allBlacklist) > 0:
+		# blacklisted fic, 404
+		return render_template('fic_info_blacklist.html'), 404
 
 	epubRL = RequestLog.mostRecentByUrlId('epub', urlId)
 	if epubRL is None:
@@ -107,6 +111,8 @@ def fic_info(urlId: str) -> FlaskResponse:
 	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
 	mostRecentRequest = epubRL.created
 	eh = epubRL.exportFileHash
+	if eh is None:
+		eh = 'unknown'
 	epubUrl = url_for('get_cached_export', etype='epub', urlId=urlId,
 			fname=f'{slug}.epub', h=eh)
 
@@ -375,6 +381,10 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		# entirely unknown fic, 404
 		return page_not_found(NotFound())
 	ficInfo = allInfo[0]
+	allBlacklist = FicBlacklist.select(urlId)
+	if len(allBlacklist) > 0:
+		# blacklisted fic, 404
+		return render_template('fic_info_blacklist.html'), 404
 	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
 	rl = RequestLog.mostRecentByUrlId(etype, urlId)
 	if rl is None:
@@ -441,6 +451,9 @@ def api_v0_epub() -> Any:
 			eres['q'] = q
 		if 'fixits' not in eres:
 			eres['fixits'] = fixits
+		# fic was blacklisted by author
+		if 'ret' in eres and int(eres['ret']) == 5 and 'fixits' in eres:
+			eres.pop('fixits', None)
 		return eres
 	for key in ['epub_fname', 'urlId', 'url']:
 		if key not in eres:

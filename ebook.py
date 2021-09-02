@@ -233,22 +233,6 @@ def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]
 	)
 	book.add_item(doc_style)
 
-	chapters = buildEpubChapters(rawChapters)
-	for _, c in sorted(chapters.items()):
-		c.add_item(doc_style)
-		book.add_item(c)
-
-	intro = epub.EpubHtml(title='Introduction', file_name='introduction.xhtml', lang='en')
-	intro.content = render_template('epub_introduction.html', info=info)
-
-	book.add_item(intro)
-	# define Table Of Contents
-	book.toc = [epub.Link('introduction.xhtml', 'Introduction', 'intro')] + list(chapters.values())
-
-	# add default NCX and Nav file
-	book.add_item(epub.EpubNcx())
-	book.add_item(epub.EpubNav())
-
 	# define CSS style
 	style = 'BODY {color: white;}'
 	nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css",
@@ -257,11 +241,30 @@ def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]
 	# add CSS file
 	book.add_item(nav_css)
 
-	# basic spine
-	nav_page = epub.EpubNav(uid='book_toc', file_name='toc.xhtml')
+	# introduction
+	intro = epub.EpubHtml(title='Introduction', file_name='introduction.xhtml', lang='en')
+	intro.content = render_template('epub_introduction.html', info=info)
+	book.add_item(intro)
+
+	# nav page
+	nav_page = epub.EpubNav(uid='nav', file_name='nav.xhtml')
 	nav_page.add_item(doc_style)
 	book.add_item(nav_page)
+
+	# actual chapter content
+	chapters = buildEpubChapters(rawChapters)
+	for _, c in sorted(chapters.items()):
+		c.add_item(doc_style)
+		book.add_item(c)
+
+	# define Table Of Contents
+	book.toc = [epub.Link('introduction.xhtml', 'Introduction', 'intro')] + list(chapters.values())
+
+	# basic spine
 	book.spine = [intro, nav_page] + list(chapters.values())
+
+	# add default NCX file
+	book.add_item(epub.EpubNcx())
 
 	tmp_fname = randomTempFile(f'{info.id}.epub')
 	epub.write_epub(tmp_fname, book,

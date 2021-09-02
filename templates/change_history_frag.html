@@ -1,10 +1,12 @@
 <h1>Change History</h1>
 <ul>
+	<li>2021-09-02: Fix EPUB compatibility with some e-readers. Please report
+		any issues that arise.</li>
+{% if fullHistory %}
 	<li>2021-06-26: Replace download links with generate links on fic pages when
 		alternate formats are out of date.</li>
 	<li>2021-06-26: Detect when the upstream API is down and notify the
 		user.</li>
-{% if fullHistory %}
 	<li>2021-06-26: Expand backend storage compatibility with cross-device
 		renames (used to support much larger cache size).</li>
 	<li>2021-04-25: Improve caching logic for exports; this should improve

@@ -375,8 +375,7 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		# we have a request for the wrong extension, 404
 		return page_not_found(NotFound())
 
-	allBlacklist = FicBlacklist.select(urlId)
-	if len(allBlacklist) > 0:
+	if FicBlacklist.check(urlId):
 		# blacklisted fic, 404
 		return render_template('fic_info_blacklist.html'), 404
 
@@ -475,8 +474,7 @@ def api_v0_epub() -> Any:
 					'q':q, 'fixits': fixits,
 				})
 
-	allBlacklist = FicBlacklist.select(eres['urlId'])
-	if len(allBlacklist) > 0:
+	if FicBlacklist.check(eres['urlId']):
 		return getErr(WebError.greylisted)
 
 	info = '[missing metadata; please report this on discord]'

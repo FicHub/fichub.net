@@ -112,10 +112,14 @@ class FicInfo:
 			curs.execute(f'''
 				select {FicInfo.selectList()}
 				from ficInfo {FicInfo.tableAlias}
+				left join ficBlacklist fb
+					on fb.urlId = {FicInfo.tableAlias}.id
+				left join authorBlacklist ab
+					on ab.sourceId = {FicInfo.tableAlias}.sourceId
+					and ab.authorId = {FicInfo.tableAlias}.authorId
 				where author = %s
-					and not exists (
-						select 1 from ficBlacklist where urlId = fi.id and reason = 5
-					)
+					and (fb.reason is null or fb.reason != 5)
+					and (ab.reason is null or ab.reason != 5)
 				order by title asc
 			''', (q,))
 			return [FicInfo(*r) for r in curs.fetchall()]
@@ -186,22 +190,32 @@ class FicBlacklist:
 			return [FicBlacklist(*r) for r in curs.fetchall()]
 
 	@staticmethod
-	def blacklisted(urlId: str) -> bool:
+	def check(urlId: str, reason: Optional[int] = None) -> bool:
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
-				select urlId from ficBlacklist
-				where urlId = %s and reason = %s
-			''', (urlId, FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value))
+				select 1
+				from ficInfo fi
+				left join ficBlacklist fb
+					on fb.urlId = fi.id
+					and (%s is null or fb.reason = %s)
+				left join authorBlacklist ab
+					on ab.sourceId = fi.sourceId
+					and ab.authorId = fi.authorId
+					and (%s is null or ab.reason = %s)
+				where fi.id = %s
+					and (fb.reason is not null or ab.reason is not null)
+			''', (reason, reason, reason, reason, urlId))
 			return len(curs.fetchall()) > 0
 
 	@staticmethod
+	def blacklisted(urlId: str) -> bool:
+		return FicBlacklist.check(urlId,
+				FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value)
+
+	@staticmethod
 	def greylisted(urlId: str) -> bool:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
-				select urlId from ficBlacklist
-				where urlId = %s and reason = %s
-			''', (urlId, FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value))
-			return len(curs.fetchall()) > 0
+		return FicBlacklist.check(urlId,
+				FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value)
 
 	@staticmethod
 	def save(urlId: str, reason: int) -> None:
@@ -213,6 +227,57 @@ class FicBlacklist:
 				update set updated = current_timestamp
 				''', (urlId, reason))
 
+class AuthorBlacklist:
+	def __init__(self, sourceId_: int, authorId_: int,
+			created_: datetime.datetime, updated_: datetime.datetime, reason_: int
+			) -> None:
+		self.sourceId = sourceId_
+		self.authorId = authorId_
+		self.created = created_
+		self.updated = updated_
+		self.reason = reason_
+
+	@staticmethod
+	def select(sourceId: Optional[int] = None, authorId: Optional[int] = None
+			) -> List['AuthorBlacklist']:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select sourceId, authorId, created, updated, reason
+				from authorBlacklist
+				where (%s is null or sourceId = %s)
+					and (%s is null or authorId = %s)
+			''', (sourceId, sourceId, authorId, authorId))
+			return [AuthorBlacklist(*r) for r in curs.fetchall()]
+
+	@staticmethod
+	def check(sourceId: int, authorId: int, reason: Optional[int] = None) -> bool:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select sourceId, authorId from authorBlacklist
+				where sourceId = %s and authorId = %s
+					and (%s is null or reason = %s)
+			''', (sourceId, authorId, reason, reason))
+			return len(curs.fetchall()) > 0
+
+	@staticmethod
+	def blacklisted(sourceId: int, authorId: int) -> bool:
+		return AuthorBlacklist.check(sourceId, authorId,
+				FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value)
+
+	@staticmethod
+	def greylisted(sourceId: int, authorId: int) -> bool:
+		return AuthorBlacklist.check(sourceId, authorId,
+				FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value)
+
+	@staticmethod
+	def save(sourceId: int, authorId: int, reason: int) -> None:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				insert into authorBlacklist(sourceId, authorId, reason)
+				values(%s, %s, %s)
+				on conflict(sourceId, authorId, reason) do
+				update set updated = current_timestamp
+				''', (sourceId, authorId, reason))
 
 class RequestSource:
 	def __init__(self, id_: int, created_: datetime.datetime, isAutomated_: bool,

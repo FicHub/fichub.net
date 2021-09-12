@@ -75,3 +75,13 @@ create table if not exists ficBlacklist (
 	unique(urlId, reason)
 );
 
+create table if not exists authorBlacklist (
+	sourceId int8 not null,
+	authorId int8 not null,
+	created timestamp not null default(current_timestamp),
+	updated timestamp not null default(current_timestamp),
+	reason int not null default(1),
+
+	unique(sourceId, authorId, reason)
+);
+

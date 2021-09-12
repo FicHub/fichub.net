@@ -51,6 +51,9 @@ CSS_CACHE_BUSTER=CACHE_BUSTER
 JS_CACHE_BUSTER=CACHE_BUSTER
 CURRENT_CSS='' # note: empty string is treated as None
 
+# may treat requests from these sources as being proxied for a user
+TRUSTED_UPSTREAMS={'95.217.234.255'}
+
 class WebError(IntEnum):
 	success = 0
 	no_query = -1
@@ -238,7 +241,10 @@ class InvalidEtypeException(Exception):
 
 def get_request_source() -> RequestSource:
 	automated = (request.args.get('automated', None) == 'true')
-	return RequestSource.upsert(automated, request.url_root, request.remote_addr)
+	remote_addr = request.remote_addr
+	if remote_addr is not None and remote_addr in TRUSTED_UPSTREAMS:
+		remote_addr = request.headers.get('X-Forwarded-For', remote_addr)
+	return RequestSource.upsert(automated, request.url_root, remote_addr)
 
 def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 	print(f'ensure_export: query: {query}')
@@ -364,7 +370,7 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		return page_not_found(NotFound())
 
 	fhash = request.args.get('h', None)
-	fdir = os.path.join(ebook.CACHE_DIR, etype, urlId)
+	fdir = ebook.buildExportPath(etype, urlId)
 	if fhash is not None:
 		# if the request is for a specific slug, try to serve it directly
 		rname = fname

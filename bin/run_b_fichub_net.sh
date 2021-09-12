@@ -5,8 +5,8 @@ if ! ./bin/check_setup.sh; then
 fi
 
 instance="beta"
-export PYTHONPATH=/home/fichub_net/pylib
-export OIL_DB_DBNAME=b_fichub_net
+export PYTHONPATH=/home/fichub/pylib
+export OIL_DB_DBNAME=b_fichub
 mkdir -p ./logs/
 
 exec uwsgi --plugin python3 --enable-threads \

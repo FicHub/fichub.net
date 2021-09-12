@@ -10,8 +10,8 @@ if [[ -z "${1}" ]]; then
 fi
 
 instance="${1}"
-export PYTHONPATH=/home/fichub_net/pylib
-export OIL_DB_DBNAME=fichub_net
+export PYTHONPATH=/home/fichub/pylib
+export OIL_DB_DBNAME=fichub
 mkdir -p ./logs/
 
 exec uwsgi --plugin python3 --enable-threads \

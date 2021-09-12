@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# create a gzip'd dump of the database (defaults to fichub_net)
+# create a gzip'd dump of the database (defaults to fichub)
 
-dbname="${1-fichub_net}"
+dbname="${1-fichub}"
 
 mkdir -p bak/
 

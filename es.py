@@ -100,7 +100,7 @@ def main(argv: List[str]) -> int:
 		print(f"usage: {sys.argv[0]}")
 		return 1
 
-	es = Elasticsearch(hosts=["localhost"])
+	es = Elasticsearch(hosts=["elastic.fichub.net"])
 	plog(f"using log {logFileName}")
 	#dropIndex(es)
 	createIndex(es)

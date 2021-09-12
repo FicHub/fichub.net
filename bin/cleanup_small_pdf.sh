@@ -3,5 +3,5 @@
 # quick to regenerate.
 set -e
 
-find ./cache/pdf/ -type f -size -4M -delete
+find /mnt/fichub/cache/pdf/ -type f -size -4M -delete
 

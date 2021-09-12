@@ -30,8 +30,8 @@ COPY (
 	order by rl.created asc
 ) TO STDOUT
 SQL
-} | psql fichub_net \
-	| sed -rn 's|^([^\t]*)\t([^\t]*)\t([^\t]*)$|./cache/\1/\2/\3.\1|p' \
+} | psql fichub \
+	| sed -rn 's|^([^\t]*)\t([^\t]*)\t([^\t]*)$|/mnt/fichub/cache/\1/\2/\3.\1|p' \
 	| sed 's/.html$/.zip/' \
 	| xargs rm -f
 

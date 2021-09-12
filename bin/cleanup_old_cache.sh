@@ -25,9 +25,9 @@ fi
 # clean up not-recently-used epubs
 grep -f \
   <(echo "COPY ($(cat sql/not_recently_used_exports.sql)) TO STDOUT" | psql) \
-  <(ls -1 cache/epub/) \
-  | xargs -n1 -I{} find ./cache/epub/{}/ -name '*.epub' -delete
-#  | xargs -n1 -I{} find ./cache/epub/{}/ -name '*.epub' -print0 \
+  <(ls -1 /mnt/fichub/cache/epub/) \
+  | xargs -n1 -I{} find /mnt/fichub/cache/epub/{}/ -name '*.epub' -delete
+#  | xargs -n1 -I{} find /mnt/fichub/cache/epub/{}/ -name '*.epub' -print0 \
 #  | xargs -0 du -xhsc | grep 'total'
 
 echo "current usage: $(disk_usage)"
@@ -51,8 +51,8 @@ COPY (
 		count(1) asc, urlId
 ) TO STDOUT
 SQL
-} | psql fichub_net | while read -r id; do
-	rm -rf ./cache/{epub,html}/${id}/
+} | psql fichub | while read -r id; do
+	rm -rf /mnt/fichub/cache/{epub,html}/${id}/
 	if (( $(disk_usage) < 70 )); then
 		break;
 	fi

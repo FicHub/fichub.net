@@ -33,7 +33,7 @@ def waitForOurTurn(key: str) -> None:
 			cmdl = p.cmdline()
 			if len(cmdl) != 4 \
 					or cmdl[0] != 'python3' \
-					or cmdl[1] != '/home/fichub_net/fichub.net/janus.py':
+					or cmdl[1] != '/home/fichub/fichub.net/janus.py':
 				continue
 			cnt += 1
 			if getWaitKey(cmdl) != key:

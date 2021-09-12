@@ -16,7 +16,7 @@ from db import ExportLog
 import util
 
 TMP_DIR='tmp'
-CACHE_DIR='cache'
+CACHE_DIR='/mnt/fichub/cache'
 
 # total version is EXPORT_VERSION + EXPORT_TYPE_VERSIONS[etype]
 EXPORT_VERSION=1
@@ -103,10 +103,20 @@ def randomTempFile(extra: str, bits: int = 32) -> str:
 	return os.path.join(tdir, fname)
 
 
-def buildExportName(etype: str, urlId: str, fhash: str) -> str:
-	fdir = os.path.join(CACHE_DIR, etype, urlId)
-	if not os.path.isdir(fdir):
+def buildExportPath(etype: str, urlId: str, create: bool = False) -> str:
+	urlId = urlId.lower()
+	parts = [CACHE_DIR, etype]
+	for i in range(0, len(urlId), 3):
+		parts.append(urlId[i:i + 3])
+	parts.append(urlId)
+	fdir = os.path.join(*parts)
+	if create and not os.path.isdir(fdir):
 		os.makedirs(fdir)
+	return fdir
+
+
+def buildExportName(etype: str, urlId: str, fhash: str, create: bool = False) -> str:
+	fdir = buildExportPath(etype, urlId, create)
 	suff = EXPORT_SUFFIXES[etype]
 	return os.path.join(fdir, f'{fhash}{suff}')
 
@@ -114,7 +124,7 @@ def buildExportName(etype: str, urlId: str, fhash: str) -> str:
 def finalizeExport(etype: str, urlId: str, ihash: str, tname: str
 		) -> Tuple[str, str]:
 	fhash = util.hashFile(tname)
-	fname = buildExportName(etype, urlId, fhash)
+	fname = buildExportName(etype, urlId, fhash, create=True)
 	shutil.move(tname, fname)
 
 	# record this result so we can immediately return it next time, assuming the
@@ -192,7 +202,7 @@ def convertEpub(info: FicInfo, chapters: Dict[int, Chapter], etype: str
 
 	try:
 		res = subprocess.run(\
-				['/home/fichub_net/fichub.net/janus.py', epub_fname, tmp_fname],
+				['/home/fichub/fichub.net/janus.py', epub_fname, tmp_fname],
 				timeout=60*5,
 			)
 		if res.returncode != 0:

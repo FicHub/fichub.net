@@ -11,19 +11,27 @@
 	{% endif -%}
 	<p>{{ ficInfo.words }} words in {{ ficInfo.chapters }} chapters</p>
 	<p>requested {{ mostRecentRequest.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+
 	{%- if ficInfo.source is not none and ficInfo.source|length > 0 -%}
 	<p>source:
 		<a rel="noopener noreferrer" href="{{ficInfo.source}}">{{ficInfo.source}}</a>
 	</p>
-	<p><a rel="nofollow" href="/?q={{ficInfo.source|urlencode|replace("/", "%2F")}}">Re-Export</a></p>
 	{%- endif -%}
-	<ul>
 
-	{% for etype, alreadyGenerated, link in links -%}
-	<li class=e><a href='{{link}}'>
-	{%- if alreadyGenerated -%}Download {% else -%}Generate and download {% endif -%}
-		as {{EXPORT_DESCRIPTIONS[etype]}}</a></li>
-	{% endfor %}
-	</ul>
+	{% if greylisted %}
+		<p>Exports for this work are unavailable. This may appear if an author
+			has requested that their work not be available through FicHub</p>
+	{% else %}
+		{%- if ficInfo.source is not none and ficInfo.source|length > 0 -%}
+			<p><a rel="nofollow" href="/?q={{ficInfo.source|urlencode|replace("/", "%2F")}}">Re-Export</a></p>
+		{%- endif -%}
+		<ul>
+		{% for etype, alreadyGenerated, link in links -%}
+			<li class=e><a href='{{link}}'>
+			{%- if alreadyGenerated -%}Download {% else -%}Generate and download {% endif -%}
+				as {{EXPORT_DESCRIPTIONS[etype]}}</a></li>
+			{% endfor %}
+		</ul>
+	{% endif %}
 	</main>
 {% endblock %}

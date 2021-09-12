@@ -62,6 +62,8 @@ class WebError(IntEnum):
 	ensure_failed = -4
 	lookup_failed = -5
 	ax_dead = -6
+	greylisted = -7
+
 
 errorMessages = {
 		WebError.success: 'success',
@@ -71,6 +73,7 @@ errorMessages = {
 		WebError.ensure_failed: 'ensure failed',
 		WebError.lookup_failed: 'lookup failed',
 		WebError.ax_dead: 'backend api is down',
+		WebError.greylisted: 'exports are unavailable for this fic, possibly due to author request',
 	}
 
 def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
@@ -100,10 +103,10 @@ def fic_info(urlId: str) -> FlaskResponse:
 		# entirely unknown fic, 404
 		return page_not_found(NotFound())
 	ficInfo = allInfo[0]
-	allBlacklist = FicBlacklist.select(urlId)
-	if len(allBlacklist) > 0:
+	if FicBlacklist.blacklisted(urlId):
 		# blacklisted fic, 404
 		return render_template('fic_info_blacklist.html'), 404
+	greylisted = FicBlacklist.greylisted(urlId)
 
 	epubRL = RequestLog.mostRecentByUrlId('epub', urlId)
 	if epubRL is None:
@@ -138,8 +141,11 @@ def fic_info(urlId: str) -> FlaskResponse:
 					fname=fname, h=fhash)
 			links.append((etype, True, link))
 
+	if greylisted:
+		links = []
+
 	return render_template('fic_info.html', ficInfo=ficInfo,
-			mostRecentRequest=mostRecentRequest, links=links)
+			mostRecentRequest=mostRecentRequest, links=links, greylisted=greylisted)
 
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
@@ -369,6 +375,11 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		# we have a request for the wrong extension, 404
 		return page_not_found(NotFound())
 
+	allBlacklist = FicBlacklist.select(urlId)
+	if len(allBlacklist) > 0:
+		# blacklisted fic, 404
+		return render_template('fic_info_blacklist.html'), 404
+
 	fhash = request.args.get('h', None)
 	fdir = ebook.buildExportPath(etype, urlId)
 	if fhash is not None:
@@ -387,10 +398,6 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		# entirely unknown fic, 404
 		return page_not_found(NotFound())
 	ficInfo = allInfo[0]
-	allBlacklist = FicBlacklist.select(urlId)
-	if len(allBlacklist) > 0:
-		# blacklisted fic, 404
-		return render_template('fic_info_blacklist.html'), 404
 	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
 	rl = RequestLog.mostRecentByUrlId(etype, urlId)
 	if rl is None:
@@ -467,6 +474,10 @@ def api_v0_epub() -> Any:
 					'key': key, 'msg': 'please report this on discord',
 					'q':q, 'fixits': fixits,
 				})
+
+	allBlacklist = FicBlacklist.select(eres['urlId'])
+	if len(allBlacklist) > 0:
+		return getErr(WebError.greylisted)
 
 	info = '[missing metadata; please report this on discord]'
 	if 'info' in eres:

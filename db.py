@@ -1,4 +1,5 @@
 from typing import Dict, Any, Optional, List, Tuple
+from enum import Enum
 import datetime
 from oil import oil
 
@@ -93,7 +94,9 @@ class FicInfo:
 			curs.execute('''
 				select * from ficInfo
 				where author = %s
-					and not exists (select 1 from ficBlacklist where urlId = id)
+					and not exists (
+						select 1 from ficBlacklist where urlId = id and reason = 5
+					)
 				order by title asc
 			''', (q,))
 			return [FicInfo(*r) for r in curs.fetchall()]
@@ -140,6 +143,12 @@ class FicInfo:
 				extraMeta
 			)
 
+class FicBlacklistReason(Enum):
+	# blacklist request by author, they're trying to scrub it from the net
+	AUTHOR_BLACKLIST_REQUEST = 5
+	# greylist request by author, they don't want downloads available
+	AUTHOR_GREYLIST_REQUEST = 6
+
 class FicBlacklist:
 	def __init__(self, urlId_: str, created_: datetime.datetime,
 			updated_: datetime.datetime, reason_: int) -> None:
@@ -157,6 +166,24 @@ class FicBlacklist:
 				where %s is null or urlId = %s
 			''', (urlId, urlId))
 			return [FicBlacklist(*r) for r in curs.fetchall()]
+
+	@staticmethod
+	def blacklisted(urlId: str) -> bool:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select urlId from ficBlacklist
+				where urlId = %s and reason = %s
+			''', (urlId, FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value))
+			return len(curs.fetchall()) > 0
+
+	@staticmethod
+	def greylisted(urlId: str) -> bool:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute('''
+				select urlId from ficBlacklist
+				where urlId = %s and reason = %s
+			''', (urlId, FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value))
+			return len(curs.fetchall()) > 0
 
 	@staticmethod
 	def save(urlId: str, reason: int) -> None:

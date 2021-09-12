@@ -46,6 +46,17 @@ class ExportLog:
 		return self
 
 class FicInfo:
+	tableAlias = 'fi'
+	fields = [
+		'id', 'created', 'updated', 'title', 'author', 'chapters', 'words',
+		'description', 'ficCreated', 'ficUpdated', 'status', 'source', 'extraMeta',
+	]
+	fieldCount = len(fields)
+
+	@classmethod
+	def selectList(cls) -> str:
+		return ', '.join(map(lambda f: f'{cls.tableAlias}.{f}', cls.fields))
+
 	def __init__(self, id_: str, created_: datetime.datetime,
 			updated_: datetime.datetime, title_: str, author_: str, chapters_: int,
 			words_: int, description_: str, ficCreated_: datetime.datetime,
@@ -83,19 +94,22 @@ class FicInfo:
 	@staticmethod
 	def select(urlId: Optional[str] = None) -> List['FicInfo']:
 		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
-				select * from ficInfo where %s is null or id = %s
+			curs.execute(f'''
+				select {FicInfo.selectList()}
+				from ficInfo {FicInfo.tableAlias}
+				where %s is null or id = %s
 			''', (urlId, urlId))
 			return [FicInfo(*r) for r in curs.fetchall()]
 
 	@staticmethod
 	def searchByAuthor(q: str) -> List['FicInfo']:
 		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
-				select * from ficInfo
+			curs.execute(f'''
+				select {FicInfo.selectList()}
+				from ficInfo {FicInfo.tableAlias}
 				where author = %s
 					and not exists (
-						select 1 from ficBlacklist where urlId = id and reason = 5
+						select 1 from ficBlacklist where urlId = fi.id and reason = 5
 					)
 				order by title asc
 			''', (q,))
@@ -311,7 +325,7 @@ class RequestLog:
 	def mostRecentEpub(date: datetime.date, limit: int, offset: int
 			) -> List[Tuple['RequestLog', FicInfo]]:
 		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
+			curs.execute(f'''
 				; with mostRecentPerUrlId as (
 					select coalesce(
 						max(case when rs.isAutomated = true then null else r.created end),
@@ -329,12 +343,12 @@ class RequestLog:
 				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,
 					r.urlId, r.ficInfo, r.exportMs, r.exportFileName, r.exportFileHash,
 					r.url,
-					fi.*
+					{FicInfo.selectList()}
 				from mostRecentPerUrlId mr
 				join requestLog r
 					on r.urlId = mr.urlId
 					and r.created = mr.created
-				join ficInfo fi on fi.id = r.urlId
+				join ficInfo {FicInfo.tableAlias} on {FicInfo.tableAlias}.id = r.urlId
 				order by r.created desc
 				limit %s
 				offset %s
@@ -361,7 +375,7 @@ class RequestLog:
 	def mostRecentsByUrlId(urlId: str
 			) -> Tuple[Optional[FicInfo], List['RequestLog']]:
 		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
+			curs.execute(f'''
 				; with recent as (
 					select max(rl.id) as id, rl.urlId
 					from requestLog rl
@@ -369,11 +383,11 @@ class RequestLog:
 						and rl.urlId = %s
 					group by rl.etype, rl.urlId
 				)
-				select fi.*,
+				select {FicInfo.selectList()},
 					rl.id, rl.created, rl.sourceId, rl.etype, rl.query,
 					rl.infoRequestMs, rl.urlId, rl.ficInfo, rl.exportMs,
 					rl.exportFileName, rl.exportFileHash, rl.url
-				from ficInfo fi
+				from ficInfo {FicInfo.tableAlias}
 				join recent l on l.urlId = fi.id
 				join requestLog rl on rl.id = l.id
 				where fi.id = %s
@@ -387,7 +401,7 @@ class RequestLog:
 	@staticmethod
 	def mostPopular(limit: int = 10, offset: int = 0) -> List[Tuple[int, FicInfo]]:
 		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
+			curs.execute(f'''
 				; with popular as (
 					select count(1) as cnt, urlId
 					from requestLog rl
@@ -398,9 +412,9 @@ class RequestLog:
 					limit %s
 					offset %s
 				)
-				select p.cnt, fi.*
+				select p.cnt, {FicInfo.selectList()}
 				from popular p
-				join ficInfo fi on fi.id = p.urlId
+				join ficInfo {FicInfo.tableAlias} on {FicInfo.tableAlias}.id = p.urlId
 				order by p.cnt desc
 				''', (limit, offset))
 			return [(int(r[0]), FicInfo(*r[1:])) for r in curs.fetchall()]

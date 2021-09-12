@@ -50,6 +50,7 @@ class FicInfo:
 	fields = [
 		'id', 'created', 'updated', 'title', 'author', 'chapters', 'words',
 		'description', 'ficCreated', 'ficUpdated', 'status', 'source', 'extraMeta',
+		'sourceId', 'authorId',
 	]
 	fieldCount = len(fields)
 
@@ -57,11 +58,13 @@ class FicInfo:
 	def selectList(cls) -> str:
 		return ', '.join(map(lambda f: f'{cls.tableAlias}.{f}', cls.fields))
 
+	# TODO: make sourceId, authorId non-Optional when fully backfilled
 	def __init__(self, id_: str, created_: datetime.datetime,
 			updated_: datetime.datetime, title_: str, author_: str, chapters_: int,
 			words_: int, description_: str, ficCreated_: datetime.datetime,
 			ficUpdated_: datetime.datetime, status_: str, source_: str,
-			extraMeta_: Optional[str]) -> None:
+			extraMeta_: Optional[str], sourceId_: Optional[int],
+			authorId_: Optional[int]) -> None:
 		self.id = id_
 		self.created = created_
 		self.updated = updated_
@@ -75,6 +78,8 @@ class FicInfo:
 		self.status = status_
 		self.source = source_
 		self.extraMeta = extraMeta_
+		self.sourceId = sourceId_
+		self.authorId = authorId_
 
 	def toJson(self) -> Dict['str', Any]:
 		return {
@@ -118,14 +123,12 @@ class FicInfo:
 	@staticmethod
 	def save(ficInfo: Dict[str, str]) -> None:
 		with oil.open() as db, db.cursor() as curs:
-			extraMeta = ficInfo['extraMeta'] if 'extraMeta' in ficInfo else None
-			if extraMeta is not None and len(extraMeta.strip()) < 1:
-				extraMeta = None
+			fi = FicInfo.parse(ficInfo)
 			curs.execute('''
 				insert into ficInfo(
 					id, title, author, chapters, words, description, ficCreated,
-					ficUpdated, status, source, extraMeta)
-				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+					ficUpdated, status, source, extraMeta, sourceId, authorId)
+				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				on conflict(id) do
 				update set updated = current_timestamp,
 					title = EXCLUDED.title, author = EXCLUDED.author,
@@ -133,12 +136,11 @@ class FicInfo:
 					description = EXCLUDED.description,
 					ficCreated = EXCLUDED.ficCreated, ficUpdated = EXCLUDED.ficUpdated,
 					status = EXCLUDED.status, source = EXCLUDED.source,
-					extraMeta = EXCLUDED.extraMeta
-				''', (ficInfo['urlId'], ficInfo['title'], ficInfo['author'],
-					int(ficInfo['chapters']), int(ficInfo['words']), ficInfo['desc'],
-					datetime.datetime.fromtimestamp(int(ficInfo['published'])/1000.0),
-					datetime.datetime.fromtimestamp(int(ficInfo['updated'])/1000.0),
-					ficInfo['status'], ficInfo['source'], extraMeta))
+					extraMeta = EXCLUDED.extraMeta, sourceId = EXCLUDED.sourceId,
+					authorId = EXCLUDED.authorId
+				''', (fi.id, fi.title, fi.author, fi.chapters, fi.words,
+					fi.description, fi.ficCreated, fi.ficUpdated, fi.status, fi.source,
+					fi.extraMeta, fi.sourceId, fi.authorId))
 
 	@staticmethod
 	def parse(ficInfo: Dict[str, str]) -> 'FicInfo':
@@ -154,7 +156,9 @@ class FicInfo:
 				datetime.datetime.fromtimestamp(int(ficInfo['updated'])/1000.0),
 				ficInfo['status'],
 				ficInfo['source'],
-				extraMeta
+				extraMeta,
+				ficInfo['sourceId'],
+				ficInfo['authorId'],
 			)
 
 class FicBlacklistReason(Enum):

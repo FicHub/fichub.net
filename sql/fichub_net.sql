@@ -50,7 +50,9 @@ create table if not exists ficInfo (
 	ficUpdated timestamp not null,
 	status text not null,
 	source text not null,
-	extraMeta text
+	extraMeta text,
+	sourceId int8 null, -- TODO: make non-nullable when backfilled
+	authorId int8 null -- TODO: make non-nullable when backfilled
 );
 
 create table if not exists exportLog (

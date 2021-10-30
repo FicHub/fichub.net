@@ -90,11 +90,66 @@ def page_not_found(e: Exception) -> FlaskResponse:
 @app.route('/')
 def index() -> FlaskResponse:
 	from_pw = request.args.get('from_pw', '').strip()
-	return render_template('index.html', from_pw=from_pw)
+
+	noscript_v = request.args.get('noscript', '').strip()
+	noscript = (noscript_v == 'true')
+
+	urlId = request.args.get('id', '').strip()
+	blacklisted = False
+	greylisted = False
+	links = []
+	ficInfo = None
+	try:
+		if noscript and len(urlId) > 1:
+			fis = FicInfo.select(urlId)
+			if len(fis) == 1:
+				blacklisted = FicBlacklist.blacklisted(urlId)
+				greylisted = FicBlacklist.greylisted(urlId)
+				ficInfo = fis[0]
+
+				epubRL = RequestLog.mostRecentByUrlId('epub', urlId)
+				if epubRL is None:
+					# we always generate the epub first, so if we don't have it something went
+					# horribly wrong
+					raise Exception("uh oh")
+
+				slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
+				eh = epubRL.exportFileHash
+				if eh is None:
+					eh = 'unknown'
+				epubUrl = url_for('get_cached_export', etype='epub', urlId=urlId,
+						fname=f'{slug}.epub', h=eh)
+
+				links = [('epub', True, epubUrl)]
+				for etype in ebook.EXPORT_TYPES:
+					if etype == 'epub':
+						continue
+					pe = ebook.findExistingExport(etype, urlId, eh)
+					if pe is None:
+						# for any etype that hasn't already been exported or is out of date,
+						# create a (re)generate link
+						link = url_for(f'get_cached_export_partial', etype=etype, urlId=urlId,
+								cv=CACHE_BUSTER, eh=eh)
+						links.append((etype, False, link))
+					else:
+						# otherwise build the direct link
+						fname = slug + ebook.EXPORT_SUFFIXES[etype]
+						fhash = pe[1]
+						link = url_for('get_cached_export', etype=etype, urlId=urlId,
+								fname=fname, h=fhash)
+						links.append((etype, True, link))
+	except:
+		pass
+
+	if greylisted:
+		links = []
+
+	return render_template('index.html', from_pw=from_pw, ficInfo=ficInfo,
+			blacklisted=blacklisted, greylisted=greylisted, links=links)
 
 @app.route('/changes')
 def changes() -> FlaskResponse:
-	return render_template('changes.html', fullHistory=True)
+	return redirect(url_for('index'))
 
 @app.route('/fic/<urlId>')
 def fic_info(urlId: str) -> FlaskResponse:
@@ -103,139 +158,32 @@ def fic_info(urlId: str) -> FlaskResponse:
 		# entirely unknown fic, 404
 		return page_not_found(NotFound())
 	ficInfo = allInfo[0]
-	if FicBlacklist.blacklisted(urlId):
-		# blacklisted fic, 404
-		return render_template('fic_info_blacklist.html'), 404
-	greylisted = FicBlacklist.greylisted(urlId)
 
-	epubRL = RequestLog.mostRecentByUrlId('epub', urlId)
-	if epubRL is None:
-		# we always generate the epub first, so if we don't have it something went
-		# horribly wrong
-		return page_not_found(NotFound())
-
-	slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
-	mostRecentRequest = epubRL.created
-	eh = epubRL.exportFileHash
-	if eh is None:
-		eh = 'unknown'
-	epubUrl = url_for('get_cached_export', etype='epub', urlId=urlId,
-			fname=f'{slug}.epub', h=eh)
-
-	links = [('epub', True, epubUrl)]
-	for etype in ebook.EXPORT_TYPES:
-		if etype == 'epub':
-			continue
-		pe = ebook.findExistingExport(etype, urlId, eh)
-		if pe is None:
-			# for any etype that hasn't already been exported or is out of date,
-			# create a (re)generate link
-			link = url_for(f'get_cached_export_partial', etype=etype, urlId=urlId,
-					cv=CACHE_BUSTER, eh=eh)
-			links.append((etype, False, link))
-		else:
-			# otherwise build the direct link
-			fname = slug + ebook.EXPORT_SUFFIXES[etype]
-			fhash = pe[1]
-			link = url_for('get_cached_export', etype=etype, urlId=urlId,
-					fname=fname, h=fhash)
-			links.append((etype, True, link))
-
-	if greylisted:
-		links = []
-
-	return render_template('fic_info.html', ficInfo=ficInfo,
-			mostRecentRequest=mostRecentRequest, links=links, greylisted=greylisted)
+	return redirect(url_for('index', q=ficInfo.source, id=ficInfo.id))
 
 @app.route('/cache/', defaults={'page': 1})
 @app.route('/cache/<int:page>')
 def cache_listing_deprecated(page: int) -> FlaskResponse:
-	return redirect(url_for('cache_listing_today'))
+	return redirect(url_for('index'))
 
 @app.route('/cache/today/', defaults={'page': 1})
 @app.route('/cache/today/<int:page>')
 def cache_listing_today(page: int) -> FlaskResponse:
-	today = datetime.date.today()
-	return cache_listing(today.year, today.month, today.day, page)
+	return redirect(url_for('index'))
 
 @app.route('/cache/<int:year>/<int:month>/<int:day>/', defaults={'page': 1})
 @app.route('/cache/<int:year>/<int:month>/<int:day>/<int:page>')
 def cache_listing(year: int, month: int, day: int, page: int) -> FlaskResponse:
-	date = None
-	try:
-		date = datetime.date(year, month, day)
-	except Exception as e:
-		return redirect(url_for('cache_listing_today'))
-
-	if page < 1:
-		return redirect(url_for('cache_listing', year=year, month=month, day=day))
-
-	cnt = RequestLog.mostRecentEpubCount(date)
-	pageSize = 300 if cnt < 300 else 200
-	pageCount = int(math.floor((cnt + (pageSize - 1)) / pageSize))
-
-	if page > pageCount and page > 1:
-		return redirect(url_for('cache_listing', year=year, month=month, day=day,
-				page=pageCount))
-
-	rlfi = RequestLog.mostRecentEpub(date, pageSize, (page - 1) * pageSize)
-	prevDay = RequestLog.prevDay(date)
-	nextDay = RequestLog.nextDay(date)
-
-	items = []
-	for rl, fi in rlfi:
-		if fi is None:
-			continue
-		if fi.sourceId == 19:
-			continue
-		href = url_for(f'get_cached_export', etype='epub', urlId=rl.urlId,
-				fname=f'{rl.exportFileHash}.epub')
-
-		dt = rl.created
-
-		# if we have FicInfo, generate a more direct link to the epub
-		if fi is not None:
-			slug = ebook.buildFileSlug(fi.title, fi.author, fi.id)
-			href = url_for('get_cached_export', etype='epub', urlId=fi.id,
-					fname=f'{slug}.epub', h=rl.exportFileHash)
-
-		sourceUrl = ''
-		if fi is not None and fi.source is not None:
-			sourceUrl = fi.source
-		elif rl.ficInfo is not None:
-			try:
-				info = json.loads(rl.ficInfo)
-				if 'source' in info:
-					sourceUrl = info['source']
-			except:
-				pass
-
-		items.append({'href':href, 'ficInfo':fi, 'requestLog':rl, 'created':dt,
-			'sourceUrl':sourceUrl})
-
-	return render_template('cache.html', cache=items, pageCount=pageCount,
-			page=page, prevDay=prevDay, nextDay=nextDay, date=date)
+	return redirect(url_for('index'))
 
 @app.route('/popular/', defaults={'page': 1})
 @app.route('/popular/<int:page>')
 def popular_listing(page: int) -> FlaskResponse:
-	pageSize = 100
-	popular = RequestLog.mostPopular(pageSize, (page - 1) * pageSize)
-	items = [
-			(pageSize * (page - 1) + i + 1,) + popular[i]
-			for i in range(len(popular))
-		]
-	total = RequestLog.totalPopular()
-	pageCount = int(math.floor((total + pageSize - 1) / pageSize))
-	return render_template('popular.html', items=items, pageCount=pageCount,
-			page=page)
-
+	return render_template('popular_outmoded.html')
 
 @app.route('/search/author/<q>')
 def search_author(q: str) -> FlaskResponse:
-	results = FicInfo.searchByAuthor(q)
-	return render_template('author_search.html', q=q, results=results)
-
+	return redirect(url_for('index'))
 
 def try_ensure_export(etype: str, query: str) -> Optional[str]:
 	key = f'{etype}_fname'
@@ -513,11 +461,12 @@ def legacy_epub_export() -> FlaskResponse:
 	q = request.args.get('q', '').strip() if 'q' not in res else res['q']
 	fixits = [] if 'fixits' not in res else res['fixits']
 	if 'err' not in res or int(res['err']) == 0 and 'urlId' in res:
+		return redirect(url_for('index', q=q, id=res['urlId'], noscript='true'))
 		return redirect(url_for('fic_info', urlId=res['urlId']))
 	if 'fixits' in res:
 		del res['fixits']
 	fixits = ['an error ocurred :('] + fixits + ['', flask.escape(json.dumps(res))]
-	return render_template('index.html', q=q, fixits=fixits)
+	return render_template('index.html', q=q, fixits=fixits, ficInfo=None)
 
 
 @app.route('/api/v0/remote', methods=['GET'])

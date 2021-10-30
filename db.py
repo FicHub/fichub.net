@@ -107,24 +107,6 @@ class FicInfo:
 			return [FicInfo(*r) for r in curs.fetchall()]
 
 	@staticmethod
-	def searchByAuthor(q: str) -> List['FicInfo']:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute(f'''
-				select {FicInfo.selectList()}
-				from ficInfo {FicInfo.tableAlias}
-				left join ficBlacklist fb
-					on fb.urlId = {FicInfo.tableAlias}.id
-				left join authorBlacklist ab
-					on ab.sourceId = {FicInfo.tableAlias}.sourceId
-					and ab.authorId = {FicInfo.tableAlias}.authorId
-				where author = %s
-					and (fb.reason is null or fb.reason != 5)
-					and (ab.reason is null or ab.reason != 5)
-				order by title asc
-			''', (q,))
-			return [FicInfo(*r) for r in curs.fetchall()]
-
-	@staticmethod
 	def save(ficInfo: Dict[str, str]) -> None:
 		with oil.open() as db, db.cursor() as curs:
 			fi = FicInfo.parse(ficInfo)
@@ -337,95 +319,6 @@ class RequestLog:
 		self.url = url_
 
 	@staticmethod
-	def prevDay(date: datetime.date) -> Optional[datetime.date]:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
-				select max(date(r.created))
-				from requestLog r
-				where date(r.created) < %s
-					and r.exportFileName is not null
-					and r.etype = 'epub'
-				''', (date,))
-			r = curs.fetchone()
-			return r[0] if r is not None else None
-
-	@staticmethod
-	def nextDay(date: datetime.date) -> Optional[datetime.date]:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
-				select min(date(r.created))
-				from requestLog r
-				where date(r.created) > %s
-					and r.exportFileName is not null
-					and r.etype = 'epub'
-				''', (date,))
-			r = curs.fetchone()
-			return r[0] if r is not None else None
-
-	@staticmethod
-	def mostRecentEpubCount(date: datetime.date) -> int:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
-				; with mostRecentPerUrlId as (
-					select coalesce(
-						max(case when rs.isAutomated = true then null else r.created end),
-						max(r.created)) as created,
-						r.urlId
-					from requestLog r
-					join requestSource rs
-						on rs.id = r.sourceId
-					where r.exportFileName is not null
-						and r.etype = 'epub'
-						and date(r.created) = date(%s)
-						and rs.isAutomated = false
-					group by r.urlId
-				)
-				select count(1)
-				from mostRecentPerUrlId mr
-				join requestLog r
-					on r.urlId = mr.urlId
-					and r.created = mr.created
-				join ficInfo fi on fi.id = r.urlId
-				''', (date,))
-			r = curs.fetchone()
-			return 0 if r is None else int(r[0])
-
-	@staticmethod
-	def mostRecentEpub(date: datetime.date, limit: int, offset: int
-			) -> List[Tuple['RequestLog', FicInfo]]:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute(f'''
-				; with mostRecentPerUrlId as (
-					select coalesce(
-						max(case when rs.isAutomated = true then null else r.created end),
-						max(r.created)) as created,
-						r.urlId
-					from requestLog r
-					join requestSource rs
-						on rs.id = r.sourceId
-					where r.exportFileName is not null
-						and r.etype = 'epub'
-						and date(r.created) = date(%s)
-						and rs.isAutomated = false
-					group by r.urlId
-				)
-				select r.id, r.created, r.sourceId, r.etype, r.query, r.infoRequestMs,
-					r.urlId, r.ficInfo, r.exportMs, r.exportFileName, r.exportFileHash,
-					r.url,
-					{FicInfo.selectList()}
-				from mostRecentPerUrlId mr
-				join requestLog r
-					on r.urlId = mr.urlId
-					and r.created = mr.created
-				join ficInfo {FicInfo.tableAlias} on {FicInfo.tableAlias}.id = r.urlId
-				order by r.created desc
-				limit %s
-				offset %s
-				''', (date, limit, offset))
-			return [(RequestLog(*r[:12]), FicInfo(*r[12:]))
-					for r in curs.fetchall()]
-
-	@staticmethod
 	def mostRecentByUrlId(etype: str, urlId: str) -> Optional['RequestLog']:
 		with oil.open() as db, db.cursor() as curs:
 			curs.execute('''
@@ -441,73 +334,6 @@ class RequestLog:
 			return None if r is None else RequestLog(*r)
 
 	@staticmethod
-	def mostRecentsByUrlId(urlId: str
-			) -> Tuple[Optional[FicInfo], List['RequestLog']]:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute(f'''
-				; with recent as (
-					select max(rl.id) as id, rl.urlId
-					from requestLog rl
-					where rl.urlId is not null and rl.exportFileHash is not null
-						and rl.urlId = %s
-					group by rl.etype, rl.urlId
-				)
-				select {FicInfo.selectList()},
-					rl.id, rl.created, rl.sourceId, rl.etype, rl.query,
-					rl.infoRequestMs, rl.urlId, rl.ficInfo, rl.exportMs,
-					rl.exportFileName, rl.exportFileHash, rl.url
-				from ficInfo {FicInfo.tableAlias}
-				join recent l on l.urlId = fi.id
-				join requestLog rl on rl.id = l.id
-				where fi.id = %s
-				''', (urlId, urlId,))
-			rs = [(FicInfo(*r[:13]), RequestLog(*r[13:]))
-					for r in curs.fetchall()]
-			if len(rs) < 1:
-				return (None, [])
-			return (rs[0][0], [e[1] for e in rs])
-
-	@staticmethod
-	def mostPopular(limit: int = 10, offset: int = 0) -> List[Tuple[int, FicInfo]]:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute(f'''
-				; with popular as (
-					select count(1) as cnt, urlId
-					from requestLog rl
-					where rl.urlId is not null
-						and rl.exportFileHash is not null
-					group by rl.urlId
-					order by count(1) desc
-				)
-				select p.cnt, {FicInfo.selectList()}
-				from popular p
-				join ficInfo {FicInfo.tableAlias} on {FicInfo.tableAlias}.id = p.urlId
-				where {FicInfo.tableAlias}.sourceId != 19
-				order by p.cnt desc
-				limit %s
-				offset %s
-				''', (limit, offset))
-			return [(int(r[0]), FicInfo(*r[1:])) for r in curs.fetchall()]
-
-	@staticmethod
-	def totalPopular() -> int:
-		with oil.open() as db, db.cursor() as curs:
-			curs.execute('''
-				; with popular as (
-					select count(1) as cnt, urlId
-					from requestLog rl
-					where rl.urlId is not null
-						and rl.exportFileHash is not null
-					group by rl.urlId
-					order by count(1) desc
-				)
-				select count(1)
-				from popular p
-				''')
-			r = curs.fetchone()
-			return 0 if r is None else int(r[0])
-
-	@staticmethod
 	def insert(source: RequestSource, etype: str, query: str, infoRequestMs: int,
 			urlId: Optional[str], ficInfo: Optional[str], exportMs: Optional[int],
 			exportFileName: Optional[str], exportFileHash: Optional[str],
@@ -519,5 +345,4 @@ class RequestLog:
 				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				''', (source.id, etype, query, infoRequestMs, urlId, ficInfo, exportMs,
 					exportFileName, exportFileHash, url))
-
 

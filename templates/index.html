@@ -3,8 +3,7 @@
 	<main>
 	<h1 class=c>FanFiction Export</h1>
 	<p>Enter a URL and click <span class=b>Export</span> to generate an EPUB
-		or download in an alternate format. View previously exported works by
-		going to the <a href="{{ url_for('cache_listing_today') }}">Cache</a>.
+		or download in an alternate format.
 	</p>
 	<form id=f action="/legacy/epub_export" method=get>
 		<label for=q class=h>Fic URL:</label>
@@ -23,6 +22,30 @@
 		{%- if request.args.get('i', '')|length > 0 -%}
 		<p>{{request.args.get('i', '')}}</p>
 		{%- endif -%}
+
+		{% if blacklisted %}
+			<p>This work is unavailable through FicHub. This may appear due to an
+			author request.</p>
+		{% elif ficInfo is not none %}
+			<h1>{{ ficInfo.title }} by {{ ficInfo.author }}</h1>
+
+			{%- if (ficInfo.description|striptags).strip()
+				!= ficInfo.title ~ " by " ~ ficInfo.author %}
+			<p>{{ ficInfo.description|striptags }}</p>
+			{% endif -%}
+			<p>{{ ficInfo.words }} words in {{ ficInfo.chapters }} chapters</p>
+
+			{% if greylisted %}
+				<p>Exports for this work are unavailable. This may appear if an author
+					has requested that their work not be available through FicHub</p>
+			{% else %}
+				<ul>
+				{% for etype, alreadyGenerated, link in links -%}
+					<li class=e><a href='{{link}}'>Download as {{EXPORT_DESCRIPTIONS[etype]}}</a></li>
+				{% endfor %}
+				</ul>
+			{% endif %}
+		{% endif %}
 	</div>
 	</main>
 	<section>
@@ -41,9 +64,7 @@
 		<div class='a c'>
 			<p><b>Attention:</b> A backend service is currently offline and we are
 			working with our provider to get it up and running. Until then exports
-			likely won't work. Please either try again later or take a look through
-			<a href="{{ url_for('cache_listing_today') }}">the cache</a> or
-			<a href=/popular>the popular page</a> to find existing exports.  </p>
+			likely won't work. Please either try again later.</p>
 		</div>
 		{% endif %}
 		{% if from_pw|length > 0 %}
@@ -55,17 +76,19 @@
 		{% endif %}
 		<h1 id=about>About</h1>
 		<p><a href=/>FicHub</a> is a growing set of accessibility tools for reading
-			(and eventually finding) fanfiction and original works. After entering a
-			URL and clicking <span class=b>Export</span>, basic fic metadata and a
-			link to download as a standard EPUB will appear. Additionally, links to
-			generate and download MOBI, PDF, or Zipped HTML versions will show.</p>
+			fanfiction. After entering a URL and clicking <span class=b>Export</span>,
+			basic fic metadata and a link to download as a standard EPUB will
+			appear. Additionally, links to generate and download MOBI, PDF, or
+			Zipped HTML versions will show.</p>
 		<p>The EPUB format is recommended, as many EPUB readers have options to
 			change font, font size, colors, and have other options to enhance
 			readability. This includes the option to change to a dyslexia friendly
 			font.</p>
-		<p>Feel free to <a href=#contact>get in touch</a>. If you'd like to
-			support <b>iris</b> the creator, they
-			<a href='https://www.patreon.com/irides'>have a patreon</a>.</p>
+		<p>Looking for something new to read? <a href='https://fic.ai'>Fic.AI</a> is
+		an in development project aiding discovery. More advanced features are
+		coming, but until then consider checking out
+		<a href='https://fic.ai/popular'>the popular page</a>.</p>
+		<p>Feel free to <a href=#contact>get in touch</a>.</p>
 
 		<h2 id=sites>Supported Sites</h2>
 		<ul>
@@ -121,8 +144,5 @@
 	</section>
 <section>
 {% include 'contact_frag.html' %}
-</section>
-<section>
-{% include 'change_history_frag.html' %}
 </section>
 {% endblock %}

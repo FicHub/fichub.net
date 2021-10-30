@@ -11,7 +11,7 @@ import datetime
 from enum import IntEnum
 import flask
 from flask import Flask, Response, request, render_template, \
-	send_from_directory, redirect, url_for
+	send_from_directory, redirect, url_for, make_response
 import werkzeug.wrappers
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import NotFound
@@ -89,18 +89,18 @@ def page_not_found(e: Exception) -> FlaskResponse:
 
 @app.route('/')
 def index() -> FlaskResponse:
+	urlId = request.args.get('id', '').strip()
+	return index_impl(urlId, False)
+
+def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
 	from_pw = request.args.get('from_pw', '').strip()
 
-	noscript_v = request.args.get('noscript', '').strip()
-	noscript = (noscript_v == 'true')
-
-	urlId = request.args.get('id', '').strip()
 	blacklisted = False
 	greylisted = False
 	links = []
 	ficInfo = None
 	try:
-		if noscript and len(urlId) > 1:
+		if legacy and len(urlId) > 1:
 			fis = FicInfo.select(urlId)
 			if len(fis) == 1:
 				blacklisted = FicBlacklist.blacklisted(urlId)
@@ -144,8 +144,12 @@ def index() -> FlaskResponse:
 	if greylisted:
 		links = []
 
-	return render_template('index.html', from_pw=from_pw, ficInfo=ficInfo,
-			blacklisted=blacklisted, greylisted=greylisted, links=links)
+	resp = make_response(render_template('index.html', from_pw=from_pw, ficInfo=ficInfo,
+			blacklisted=blacklisted, greylisted=greylisted, links=links))
+	if legacy:
+		resp.headers['X-Robots-Tag'] = 'noindex'
+	return resp
+
 
 @app.route('/changes')
 def changes() -> FlaskResponse:
@@ -461,6 +465,7 @@ def legacy_epub_export() -> FlaskResponse:
 	q = request.args.get('q', '').strip() if 'q' not in res else res['q']
 	fixits = [] if 'fixits' not in res else res['fixits']
 	if 'err' not in res or int(res['err']) == 0 and 'urlId' in res:
+		return index_impl(res['urlId'], True)
 		return redirect(url_for('index', q=q, id=res['urlId'], noscript='true'))
 		return redirect(url_for('fic_info', urlId=res['urlId']))
 	if 'fixits' in res:

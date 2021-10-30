@@ -203,7 +203,7 @@ class FicBlacklist:
 					and ab.authorId = fi.authorId
 					and (%s is null or ab.reason = %s)
 				where fi.id = %s
-					and (fb.reason is not null or ab.reason is not null)
+					and ((fb.reason is not null or ab.reason is not null) or fi.sourceId = 19)
 			''', (reason, reason, reason, reason, urlId))
 			return len(curs.fetchall()) > 0
 
@@ -255,7 +255,7 @@ class AuthorBlacklist:
 			curs.execute('''
 				select sourceId, authorId from authorBlacklist
 				where sourceId = %s and authorId = %s
-					and (%s is null or reason = %s)
+					and ((%s is null or reason = %s) or sourceId = 19)
 			''', (sourceId, authorId, reason, reason))
 			return len(curs.fetchall()) > 0
 
@@ -478,13 +478,14 @@ class RequestLog:
 						and rl.exportFileHash is not null
 					group by rl.urlId
 					order by count(1) desc
-					limit %s
-					offset %s
 				)
 				select p.cnt, {FicInfo.selectList()}
 				from popular p
 				join ficInfo {FicInfo.tableAlias} on {FicInfo.tableAlias}.id = p.urlId
+				where {FicInfo.tableAlias}.sourceId != 19
 				order by p.cnt desc
+				limit %s
+				offset %s
 				''', (limit, offset))
 			return [(int(r[0]), FicInfo(*r[1:])) for r in curs.fetchall()]
 

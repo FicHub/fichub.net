@@ -184,6 +184,10 @@ def cache_listing(year: int, month: int, day: int, page: int) -> FlaskResponse:
 
 	items = []
 	for rl, fi in rlfi:
+		if fi is None:
+			continue
+		if fi.sourceId == 19:
+			continue
 		href = url_for(f'get_cached_export', etype='epub', urlId=rl.urlId,
 				fname=f'{rl.exportFileHash}.epub')
 

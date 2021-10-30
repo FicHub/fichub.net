@@ -93,6 +93,8 @@ def blacklist(urlId: str) -> None:
 
 def generateFicInfo() -> Iterator[Dict[str, Any]]:
 	for fi in FicInfo.select():
+		if fi.sourceId == 19:
+			continue
 		yield handleFicInfo(fi)
 
 def main(argv: List[str]) -> int:

@@ -135,7 +135,8 @@ window['epub'] = epub;
 
 window.onload = setup;
 function setup() {
-	console.log(q());
+	if(navigator.userAgent.indexOf('ooglebot') >= 0) { return; }
+	if(navigator.userAgent.indexOf('BingPreview') >= 0) { return; }
 	if(f()) {
 		f().action = 'javascript:void(0);';
 	}

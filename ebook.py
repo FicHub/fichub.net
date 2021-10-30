@@ -72,12 +72,9 @@ def metaDataString(info: FicInfo) -> str:
 
 	return '\n'.join([
 			f"{info.title} by {info.author}",
-			'(' + ', '.join([
-					f"{info.words} words",
-					f"{info.chapters} chapters",
-					f"status: {info.status}",
-					f"Updated: {info.ficUpdated.date()} - {diffString}",
-				]) + ')',
+			f"{info.words} words in {info.chapters} chapters",
+			f"Status: {info.status}",
+			f"Updated: {info.ficUpdated.date()} - {diffString}",
 			'',
 		])
 

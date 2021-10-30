@@ -81,6 +81,13 @@ function extractUrls(res) {
 	return urls;
 }
 
+function explodeNewlines(str) {
+	while(str.indexOf('\n') >= 0) {
+		str = str.replace('\n', '<br/>');
+	}
+	return str;
+}
+
 function epub() {
 	if(x().disabled)
 		return;
@@ -98,8 +105,8 @@ function epub() {
 				return error('an error ocurred :(', this, res);
 			}
 			let urls = extractUrls(res);
-			let htmlRes = '<p><a href="' + urls['epub'] + '">Download EPUB</a></p>' +
-				'<p>' + res.info.replace('\n', '<br/>') + '</p>';
+			let htmlRes = '<p>' + explodeNewlines(res.info) + '</p>' +
+				'<p><a href="' + urls['epub'] + '">Download as EPUB</a></p>';
 			if ('html' in urls) {
 				htmlRes += '<p><a href="' + urls['html'] + '">Download as zipped HTML</a></p>';
 			}
@@ -108,6 +115,9 @@ function epub() {
 			}
 			if ('pdf' in urls) {
 				htmlRes += '<p><a href="' + urls['pdf'] + '">Download as PDF (may take time to start)</a></p>';
+			}
+			if (res.urlId && res.urlId.length) {
+				htmlRes += '<p><a href="/fic/' + res.urlId + '">Re-export Link</a></p>'
 			}
 			info().innerHTML = htmlRes;
 		} catch (e) {

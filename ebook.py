@@ -277,5 +277,6 @@ def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]
 	epub.write_epub(tmp_fname, book,
 			{'mtime':info.ficUpdated, 'play_order':{'enabled':True}})
 
-	return finalizeExport('epub', info.id, 'upstream', tmp_fname)
+	ihash = 'upstream' if info.contentHash is None else info.contentHash
+	return finalizeExport('epub', info.id, ihash, tmp_fname)
 

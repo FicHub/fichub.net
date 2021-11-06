@@ -242,6 +242,44 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 	infoTimeMs = int(time.time() * 1000)
 	infoRequestMs = infoTimeMs - initTimeMs
 
+	# attempt to find previous epub export if it exists...
+	try:
+		existingEpub = None
+		if meta.contentHash is not None:
+			existingEpub = ebook.findExistingExport('epub', meta.id, meta.contentHash)
+
+		existingExport = None
+		if etype == 'epub':
+			existingExport = existingEpub
+		elif existingEpub is not None:
+			epub_fname, ehash = existingEpub
+			existingExport = ebook.findExistingExport(etype, meta.id, ehash)
+
+		if existingExport is not None:
+			print(f'ensure_export({etype}, {query}): attempting to reuse previous export for {meta.id}')
+			fname, fhash = existingExport
+			metaString = ebook.metaDataString(meta)
+
+			slug = ebook.buildFileSlug(meta.title, meta.author, meta.id)
+			suff = ebook.EXPORT_SUFFIXES[etype]
+			exportUrl = url_for(f'get_cached_export', etype=etype, urlId=meta.id,
+					fname=f'{slug}{suff}', h=fhash)
+
+			endTimeMs = int(time.time() * 1000)
+			exportMs = endTimeMs - infoTimeMs
+
+			RequestLog.insert(source, etype, query, infoRequestMs, meta.id,
+					json.dumps(lres), exportMs, fname, fhash, exportUrl)
+
+			print(f'ensure_export({etype}, {query}): reusing previous export for {meta.id}')
+			return {'urlId': meta.id, 'info': metaString,
+					f'{etype}_fname': fname, 'hash': fhash, 'url': exportUrl,
+					'meta': metaDict, 'slug': slug, 'hashes': {etype: fhash}}
+	except Exception as e:
+		traceback.print_exc()
+		print(e)
+		print('ensure_export: ^ something went wrong trying to reuse existing export :/')
+
 	etext = None
 	try:
 		# TODO we could be timing this too...
@@ -258,8 +296,6 @@ def ensure_export(etype: str, query: str) -> Dict[str, Any]:
 			fname, fhash = ebook.convertEpub(meta, chapters, etype)
 		else:
 			raise InvalidEtypeException(f'err: unknown etype: {etype}')
-
-		exportFileName = os.path.basename(fname)
 
 		slug = ebook.buildFileSlug(meta.title, meta.author, meta.id)
 		suff = ebook.EXPORT_SUFFIXES[etype]

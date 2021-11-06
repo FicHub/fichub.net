@@ -50,7 +50,7 @@ class FicInfo:
 	fields = [
 		'id', 'created', 'updated', 'title', 'author', 'chapters', 'words',
 		'description', 'ficCreated', 'ficUpdated', 'status', 'source', 'extraMeta',
-		'sourceId', 'authorId',
+		'sourceId', 'authorId', 'contentHash',
 	]
 	fieldCount = len(fields)
 
@@ -64,7 +64,7 @@ class FicInfo:
 			words_: int, description_: str, ficCreated_: datetime.datetime,
 			ficUpdated_: datetime.datetime, status_: str, source_: str,
 			extraMeta_: Optional[str], sourceId_: Optional[int],
-			authorId_: Optional[int]) -> None:
+			authorId_: Optional[int], contentHash_: Optional[str]) -> None:
 		self.id = id_
 		self.created = created_
 		self.updated = updated_
@@ -80,6 +80,7 @@ class FicInfo:
 		self.extraMeta = extraMeta_
 		self.sourceId = sourceId_
 		self.authorId = authorId_
+		self.contentHash = contentHash_
 
 	def toJson(self) -> Dict['str', Any]:
 		return {
@@ -113,8 +114,9 @@ class FicInfo:
 			curs.execute('''
 				insert into ficInfo(
 					id, title, author, chapters, words, description, ficCreated,
-					ficUpdated, status, source, extraMeta, sourceId, authorId)
-				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+					ficUpdated, status, source, extraMeta, sourceId, authorId,
+					contentHash)
+				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				on conflict(id) do
 				update set updated = current_timestamp,
 					title = EXCLUDED.title, author = EXCLUDED.author,
@@ -123,10 +125,10 @@ class FicInfo:
 					ficCreated = EXCLUDED.ficCreated, ficUpdated = EXCLUDED.ficUpdated,
 					status = EXCLUDED.status, source = EXCLUDED.source,
 					extraMeta = EXCLUDED.extraMeta, sourceId = EXCLUDED.sourceId,
-					authorId = EXCLUDED.authorId
+					authorId = EXCLUDED.authorId, contentHash = EXCLUDED.contentHash
 				''', (fi.id, fi.title, fi.author, fi.chapters, fi.words,
 					fi.description, fi.ficCreated, fi.ficUpdated, fi.status, fi.source,
-					fi.extraMeta, fi.sourceId, fi.authorId))
+					fi.extraMeta, fi.sourceId, fi.authorId, fi.contentHash))
 
 	@staticmethod
 	def parse(ficInfo: Dict[str, str]) -> 'FicInfo':
@@ -145,6 +147,7 @@ class FicInfo:
 				extraMeta,
 				ficInfo['sourceId'],
 				ficInfo['authorId'],
+				ficInfo['contentHash'],
 			)
 
 class FicBlacklistReason(Enum):

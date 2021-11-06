@@ -52,7 +52,8 @@ create table if not exists ficInfo (
 	source text not null,
 	extraMeta text,
 	sourceId int8 null, -- TODO: make non-nullable when backfilled
-	authorId int8 null -- TODO: make non-nullable when backfilled
+	authorId int8 null, -- TODO: make non-nullable when backfilled
+	contentHash varchar(256) null
 );
 
 create table if not exists exportLog (

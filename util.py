@@ -11,9 +11,10 @@ def hashFile(fname: str) -> str:
 	return digest
 
 def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> Dict[Any, Any]:
-	cookies = {'session': a.SESSION}
+	params = {'apiKey': a.AX_API_KEY}
 	headers = {'User-Agent': 'fichub.net/0.1.0'}
-	r = requests.get(link, cookies=cookies, headers=headers, timeout=timeout)
+	r = requests.get(link, headers=headers, timeout=timeout,
+			params=params, auth=(a.AX_USER, a.AX_PASS))
 	try:
 		p = r.json()
 	except ValueError:

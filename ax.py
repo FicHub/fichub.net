@@ -9,7 +9,7 @@ import authentications as a
 
 def alive() -> bool:
 	try:
-		url = '/'.join([a.AX_LOOKUP_ENDPOINT])
+		url = '/'.join([a.AX_STATUS_ENDPOINT])
 		m = util.reqJson(url, timeout=5.0)
 	except:
 		return False
@@ -41,7 +41,7 @@ class MissingChapterException(Exception):
 	pass
 
 def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
-	url = '/'.join([a.AX_FIC_ENDPOINT, urlId, 'all'])
+	url = '/'.join([a.AX_FIC_ENDPOINT, urlId])
 	res = util.reqJson(url)
 	chapters = {}
 	titles = []

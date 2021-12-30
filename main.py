@@ -189,9 +189,9 @@ def popular_listing(page: int) -> FlaskResponse:
 def search_author(q: str) -> FlaskResponse:
 	return redirect(url_for('index'))
 
-def try_ensure_export(etype: str, query: str) -> Optional[str]:
+def try_ensure_export(etype: str, urlId: str) -> Optional[str]:
 	key = f'{etype}_fname'
-	res = ensure_export(etype, query)
+	res = ensure_export(etype, urlId, urlId)
 	if 'err' in res or key not in res:
 		return None
 	if res[key] is None or isinstance(res[key], str):
@@ -208,28 +208,37 @@ def get_request_source() -> RequestSource:
 		remote_addr = request.headers.get('X-Forwarded-For', remote_addr)
 	return RequestSource.upsert(automated, request.url_root, remote_addr)
 
-def ensure_export(etype: str, query: str) -> Dict[str, Any]:
+def ensure_export(
+	etype: str, query: str, urlId: Optional[str] = None
+) -> Dict[str, Any]:
 	print(f'ensure_export: query: {query}')
 	if etype not in ebook.EXPORT_TYPES:
 		return getErr(WebError.invalid_etype,
 				{'fn': 'ensure_export', 'etype': etype})
 	source = get_request_source()
 
-	if not ax.alive():
+	axAlive = ax.alive()
+	if not axAlive:
 		print('ensure_export: ax is not alive :(')
-		return getErr(WebError.ax_dead)
+		if urlId is None or len(FicInfo.select(urlId)) != 1:
+			return getErr(WebError.ax_dead)
+		# otherwise fallthrough
 
 	initTimeMs = int(time.time() * 1000)
 	meta = None
+	lres = None
 	try:
-		lres = ax.lookup(query)
-		if 'err' in lres:
-			endTimeMs = int(time.time() * 1000)
-			RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, None,
-					json.dumps(lres), None, None, None, None)
-			lres['upstream'] = True
-			return lres
-		meta = FicInfo.parse(lres)
+		if not axAlive:
+			meta = FicInfo.select(urlId)[0]
+		else:
+			lres = ax.lookup(query)
+			if 'err' in lres:
+				endTimeMs = int(time.time() * 1000)
+				RequestLog.insert(source, etype, query, endTimeMs - initTimeMs, None,
+						json.dumps(lres), None, None, None, None)
+				lres['upstream'] = True
+				return lres
+			meta = FicInfo.parse(lres)
 	except Exception as e:
 		traceback.print_exc()
 		print(e)
@@ -444,12 +453,13 @@ def get_fixits(q: str) -> List[str]:
 @app.route('/api/v0/epub', methods=['GET'])
 def api_v0_epub() -> Any:
 	q = request.args.get('q', '').strip()
+	urlId = request.args.get('id', '').strip()
 	fixits = get_fixits(q)
 	if len(q.strip()) < 1:
 		return getErr(WebError.no_query, {'q':q,'fixits': fixits,})
 
 	print(f'api_v0_epub: query: {q}')
-	eres = ensure_export('epub', q)
+	eres = ensure_export('epub', q, urlId)
 	if 'err' in eres:
 		if 'q' not in eres:
 			eres['q'] = q

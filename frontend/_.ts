@@ -127,7 +127,19 @@ function epub() {
 		x().disabled = false;
 	});
 	var data = null;
-	exportReq.open('GET', '/api/v0/epub?q=' + encodeURIComponent(q()));
+	let id = null;
+	try {
+		let params = (new URL(<string><unknown>document.location)).searchParams;
+		if(params.get("q") === q()) {
+			id = params.get("id");
+		}
+	} catch(error) {
+	}
+	let path = '/api/v0/epub?q=' + encodeURIComponent(q());
+	if(id) {
+		path = path + '&id=' + encodeURIComponent(id);
+	}
+	exportReq.open('GET', path);
 	exportReq.send(data);
 }
 

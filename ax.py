@@ -11,6 +11,8 @@ def alive() -> bool:
 	try:
 		url = '/'.join([a.AX_STATUS_ENDPOINT])
 		m = util.reqJson(url, timeout=5.0)
+		if 'err' in m and str(m['err']) != '0':
+			return False
 	except:
 		return False
 	return True

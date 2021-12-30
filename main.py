@@ -217,12 +217,14 @@ def ensure_export(
 				{'fn': 'ensure_export', 'etype': etype})
 	source = get_request_source()
 
+	notes = []
 	axAlive = ax.alive()
 	if not axAlive:
 		print('ensure_export: ax is not alive :(')
 		if urlId is None or len(FicInfo.select(urlId)) != 1:
 			return getErr(WebError.ax_dead)
 		# otherwise fallthrough
+		notes += ['backend api is down; results may be stale']
 
 	initTimeMs = int(time.time() * 1000)
 	meta = None
@@ -283,7 +285,8 @@ def ensure_export(
 			print(f'ensure_export({etype}, {query}): reusing previous export for {meta.id}')
 			return {'urlId': meta.id, 'info': metaString,
 					f'{etype}_fname': fname, 'hash': fhash, 'url': exportUrl,
-					'meta': metaDict, 'slug': slug, 'hashes': {etype: fhash}}
+					'meta': metaDict, 'slug': slug, 'hashes': {etype: fhash},
+					'notes': notes}
 	except Exception as e:
 		traceback.print_exc()
 		print(e)
@@ -486,7 +489,7 @@ def api_v0_epub() -> Any:
 
 	res = { 'q':q, 'err':0, 'fixits':[], 'info':info, 'urlId':eres['urlId'], }
 	res['urls'] = {'epub':eres['url']}
-	for key in ['meta', 'slug', 'hashes']:
+	for key in ['meta', 'slug', 'hashes', 'notes']:
 		if key in eres:
 			res[key] = eres[key]
 

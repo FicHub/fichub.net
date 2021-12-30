@@ -105,7 +105,13 @@ function epub() {
 				return error('an error ocurred :(', this, res);
 			}
 			let urls = extractUrls(res);
-			let htmlRes = '<p>' + explodeNewlines(res.info) + '</p>' +
+			let htmlRes = '';
+			if (res.notes && res.notes.length > 0) {
+				for (let i = 0; i < res.notes.length; ++i) {
+					htmlRes += '<p>Note: ' + res.notes[i] + '</p>';
+				}
+			}
+			htmlRes += '<p>' + explodeNewlines(res.info) + '</p>' +
 				'<p><a href="' + urls['epub'] + '">Download as EPUB</a></p>';
 			if ('html' in urls) {
 				htmlRes += '<p><a href="' + urls['html'] + '">Download as zipped HTML</a></p>';

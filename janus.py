@@ -81,7 +81,7 @@ def main() -> int:
 	ret = 255
 	stime = time.time()
 	try:
-		res = subprocess.run(['ebook-convert', epub_fname, tmp_fname],
+		res = subprocess.run(['/opt/calibre/ebook-convert', epub_fname, tmp_fname],
 				timeout=60*5,
 				)#preexec_fn=limitVirtualMemory)
 		ret = res.returncode

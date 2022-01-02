@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 from flask import render_template
 from ebooklib import epub # type: ignore
 from ax import Chapter, FicInfo
-from db import ExportLog
+from db import ExportLog, FicVersionBump
 import util
 
 TMP_DIR='tmp'
@@ -47,10 +47,13 @@ EXPORT_DESCRIPTIONS = {
 		'pdf': 'PDF',
 	}
 
-def exportVersion(etype: str) -> int:
+def exportVersion(etype: str, urlId: str) -> int:
+	res = EXPORT_VERSION
 	if etype in EXPORT_TYPE_VERSIONS:
-		return EXPORT_VERSION + EXPORT_TYPE_VERSIONS[etype]
-	return EXPORT_VERSION
+		res += EXPORT_TYPE_VERSIONS[etype]
+	for fvb in FicVersionBump.select(urlId):
+		res += fvb.value
+	return res
 
 def formatRelDatePart(val: int, which: str) -> str:
 	return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""
@@ -128,7 +131,7 @@ def finalizeExport(etype: str, urlId: str, ihash: str, tname: str
 	# input hash and export version have not changed
 	try:
 		n = datetime.datetime.now()
-		el = ExportLog(urlId, exportVersion(etype), etype, ihash, fhash, n)
+		el = ExportLog(urlId, exportVersion(etype, urlId), etype, ihash, fhash, n)
 		el.upsert()
 	except Exception as e:
 		traceback.print_exc()
@@ -141,7 +144,7 @@ def finalizeExport(etype: str, urlId: str, ihash: str, tname: str
 def findExistingExport(etype: str, urlId: str, ihash: str
 		) -> Optional[Tuple[str, str]]:
 	try:
-		el = ExportLog.lookup(urlId, exportVersion(etype), etype, ihash)
+		el = ExportLog.lookup(urlId, exportVersion(etype, urlId), etype, ihash)
 		if el is None:
 			return None
 		fname = buildExportName(etype, urlId, el.exportHash)

@@ -86,3 +86,8 @@ create table if not exists authorBlacklist (
 	unique(sourceId, authorId, reason)
 );
 
+create table if not exists ficVersionBump (
+	id varchar(128) primary key,
+	value int
+);
+

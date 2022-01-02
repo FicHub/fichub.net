@@ -45,6 +45,29 @@ class ExportLog:
 		self.created = l.created
 		return self
 
+class FicVersionBump:
+	tableAlias = 'fvb'
+	fields = ['id', 'value']
+	fieldCount = len(fields)
+
+	@classmethod
+	def selectList(cls) -> str:
+		return ', '.join(map(lambda f: f'{cls.tableAlias}.{f}', cls.fields))
+
+	def __init__(self, id_: str, value_: int) -> None:
+		self.id = id_
+		self.value = value_
+
+	@staticmethod
+	def select(urlId: str) -> List['FicVersionBump']:
+		with oil.open() as db, db.cursor() as curs:
+			curs.execute(f'''
+				select {FicVersionBump.selectList()}
+				from ficVersionBump {FicVersionBump.tableAlias}
+				where id = %s
+			''', (urlId,))
+			return [FicVersionBump(*r) for r in curs.fetchall()]
+
 class FicInfo:
 	tableAlias = 'fi'
 	fields = [

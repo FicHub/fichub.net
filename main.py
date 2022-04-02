@@ -63,6 +63,7 @@ class WebError(IntEnum):
 	lookup_failed = -5
 	ax_dead = -6
 	greylisted = -7
+	internal = -8
 
 
 errorMessages = {
@@ -74,6 +75,7 @@ errorMessages = {
 		WebError.lookup_failed: 'lookup failed',
 		WebError.ax_dead: 'backend api is down',
 		WebError.greylisted: 'exports are unavailable for this fic, possibly due to author request',
+		WebError.internal: 'internal error',
 	}
 
 def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
@@ -507,6 +509,17 @@ def api_v0_epub() -> Any:
 
 	return res
 
+@app.route('/api/v0/meta', methods=['GET'])
+def api_v0_meta() -> Any:
+	q = request.args.get('q', '').strip()
+	urlId = request.args.get('id', '').strip()
+	if len(q.strip()) < 1:
+		return getErr(WebError.no_query, {'q':q})
+
+	r = api_v0_epub()
+	if 'meta' not in r:
+		return getErr(WebError.internal, {'q':q})
+	return r['meta']
 
 @app.route('/legacy/epub_export', methods=['GET'])
 def legacy_epub_export() -> FlaskResponse:

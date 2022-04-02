@@ -123,7 +123,7 @@ function epub() {
 				htmlRes += '<p><a href="' + urls['pdf'] + '">Download as PDF (may take time to start)</a></p>';
 			}
 			if (res.urlId && res.urlId.length) {
-				htmlRes += '<p><a href="/fic/' + res.urlId + '">Re-export Link</a></p>'
+				htmlRes += '<p><a href="/fic/' + res.urlId + '">Shareable link to this export</a></p>'
 			}
 			info().innerHTML = htmlRes;
 		} catch (e) {

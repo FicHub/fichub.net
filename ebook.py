@@ -22,7 +22,7 @@ CACHE_DIR='/mnt/fichub/cache'
 EXPORT_VERSION=1
 EXPORT_TYPES = ['epub', 'html', 'mobi', 'pdf']
 EXPORT_TYPE_VERSIONS = {
-		'epub': 0,
+		'epub': 1,
 		'html': 1,
 		'mobi': 0,
 		'pdf': 0,
@@ -233,6 +233,7 @@ def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]
 	book.set_title(info.title)
 	book.set_language('en')
 	book.add_author(info.author)
+	book.add_metadata('DC', 'description', info.description)
 
 	# document style
 	doc_style = epub.EpubItem(

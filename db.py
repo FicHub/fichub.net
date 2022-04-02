@@ -73,7 +73,7 @@ class FicInfo:
 	fields = [
 		'id', 'created', 'updated', 'title', 'author', 'chapters', 'words',
 		'description', 'ficCreated', 'ficUpdated', 'status', 'source', 'extraMeta',
-		'sourceId', 'authorId', 'contentHash',
+		'sourceId', 'authorId', 'contentHash', 'authorUrl', 'authorLocalId',
 	]
 	fieldCount = len(fields)
 
@@ -82,12 +82,14 @@ class FicInfo:
 		return ', '.join(map(lambda f: f'{cls.tableAlias}.{f}', cls.fields))
 
 	# TODO: make sourceId, authorId non-Optional when fully backfilled
+	# TODO: make authorUrl, authorLocalId non-Optional when fully backfilled
 	def __init__(self, id_: str, created_: datetime.datetime,
 			updated_: datetime.datetime, title_: str, author_: str, chapters_: int,
 			words_: int, description_: str, ficCreated_: datetime.datetime,
 			ficUpdated_: datetime.datetime, status_: str, source_: str,
 			extraMeta_: Optional[str], sourceId_: Optional[int],
-			authorId_: Optional[int], contentHash_: Optional[str]) -> None:
+			authorId_: Optional[int], contentHash_: Optional[str],
+			authorUrl_: Optional[str], authorLocalId_: Optional[str]) -> None:
 		self.id = id_
 		self.created = created_
 		self.updated = updated_
@@ -104,6 +106,8 @@ class FicInfo:
 		self.sourceId = sourceId_
 		self.authorId = authorId_
 		self.contentHash = contentHash_
+		self.authorUrl = authorUrl_
+		self.authorLocalId = authorLocalId_
 
 	def toJson(self) -> Dict['str', Any]:
 		return {
@@ -118,6 +122,10 @@ class FicInfo:
 				'status': self.status,
 				'source': self.source,
 				'extraMeta': self.extraMeta,
+				'authorUrl': self.authorUrl,
+				'authorLocalId': self.authorLocalId,
+				'sourceId': self.sourceId,
+				'authorId': self.authorId,
 			}
 
 	@staticmethod
@@ -138,8 +146,8 @@ class FicInfo:
 				insert into ficInfo(
 					id, title, author, chapters, words, description, ficCreated,
 					ficUpdated, status, source, extraMeta, sourceId, authorId,
-					contentHash)
-				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+					contentHash, authorUrl, authorLocalId)
+				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				on conflict(id) do
 				update set updated = current_timestamp,
 					title = EXCLUDED.title, author = EXCLUDED.author,
@@ -148,10 +156,13 @@ class FicInfo:
 					ficCreated = EXCLUDED.ficCreated, ficUpdated = EXCLUDED.ficUpdated,
 					status = EXCLUDED.status, source = EXCLUDED.source,
 					extraMeta = EXCLUDED.extraMeta, sourceId = EXCLUDED.sourceId,
-					authorId = EXCLUDED.authorId, contentHash = EXCLUDED.contentHash
+					authorId = EXCLUDED.authorId, contentHash = EXCLUDED.contentHash,
+					authorUrl = EXCLUDED.authorUrl,
+					authorLocalId = EXCLUDED.authorLocalId
 				''', (fi.id, fi.title, fi.author, fi.chapters, fi.words,
 					fi.description, fi.ficCreated, fi.ficUpdated, fi.status, fi.source,
-					fi.extraMeta, fi.sourceId, fi.authorId, fi.contentHash))
+					fi.extraMeta, fi.sourceId, fi.authorId, fi.contentHash,
+					fi.authorUrl, fi.authorLocalId))
 
 	@staticmethod
 	def parse(ficInfo: Dict[str, str]) -> 'FicInfo':
@@ -168,9 +179,11 @@ class FicInfo:
 				ficInfo['status'],
 				ficInfo['source'],
 				extraMeta,
-				ficInfo['sourceId'],
-				ficInfo['authorId'],
+				int(ficInfo['sourceId']),
+				int(ficInfo['authorId']),
 				ficInfo['contentHash'],
+				ficInfo['authorUrl'] if 'authorUrl' in ficInfo else None,
+				ficInfo['authorLocalId'] if 'authorLocalId' in ficInfo else None,
 			)
 
 class FicBlacklistReason(Enum):

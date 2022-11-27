@@ -45,6 +45,12 @@ app = Flask(__name__, static_url_path='')
 import ax
 from db import FicInfo, FicBlacklist, RequestLog, RequestSource
 import ebook
+from limiter import Limiter
+from ip_tag import ip_is_datacenter, load_ip_ranges, TAGGED_IP_RANGES
+from rl_conf import (
+	DYNAMIC_RATE_LIMIT, LIMIT_UPSTREAMS, LIMIT_UPSTREAMS_EXTRA,
+	NO_LIMIT_UPSTREAMS, WEIRD_UPSTREAMS,
+)
 
 NODE_NAME='orion'
 CACHE_BUSTER='26'
@@ -66,6 +72,8 @@ class WebError(IntEnum):
 	ax_dead = -6
 	greylisted = -7
 	internal = -8
+	internal_datacenter = -9
+	internal_strange = -10
 
 
 errorMessages = {
@@ -78,6 +86,8 @@ errorMessages = {
 		WebError.ax_dead: 'backend api is down',
 		WebError.greylisted: 'exports are unavailable for this fic, possibly due to author request',
 		WebError.internal: 'internal error',
+		WebError.internal_datacenter: 'internal error',
+		WebError.internal_strange: 'internal error',
 	}
 
 def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
@@ -223,7 +233,20 @@ def ensure_export(
 	if etype not in ebook.EXPORT_TYPES:
 		return getErr(WebError.invalid_etype,
 				{'fn': 'ensure_export', 'etype': etype})
+
 	source = get_request_source()
+
+	authorization = request.headers.get('Authorization', None)
+	if authorization is None:
+		if source.description not in LIMIT_UPSTREAMS and source.description not in NO_LIMIT_UPSTREAMS:
+			LIMIT_UPSTREAMS[source.description] = 0.1
+		if source.description in LIMIT_UPSTREAMS:
+			v = LIMIT_UPSTREAMS[source.description]
+			o = LIMIT_UPSTREAMS_EXTRA[source.description] if source.description in LIMIT_UPSTREAMS_EXTRA else 0.0
+			limit_d = 1 + (random.random() * v) + o
+			print(f'  limiting {source.description}: v={v:0.3} o={o:0.3} d={limit_d:0.3} ts={time.time()}')
+			time.sleep(limit_d)
+		#time.sleep(.1)
 
 	notes = []
 	axAlive = ax.alive()
@@ -387,6 +410,10 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		# we have a request for the wrong extension, 404
 		return page_not_found(NotFound())
 
+	source_limiter, limit_resp = maybe_limit_request()
+	if limit_resp is not None:
+		return limit_resp
+
 	if FicBlacklist.check(urlId):
 		# blacklisted fic, 404
 		return render_template('fic_info_blacklist.html'), 404
@@ -465,8 +492,104 @@ def get_fixits(q: str) -> List[str]:
 	return fixits
 
 
+def get_limiter(key: str) -> Limiter:
+	limiter = Limiter.select(key)
+	if limiter is not None:
+		return limiter
+
+	return Limiter.create(key)
+
+
+def maybe_limit_request() -> Tuple[Optional[Limiter], Any]:
+	source = get_request_source()
+
+	source_limiter = None
+
+	authorization = request.headers.get('Authorization', None)
+	if authorization is not None:
+		token = ''
+		if authorization.startswith('Bearer '):
+			token = authorization[len('Bearer '):]
+		source_limiter = Limiter.select(f'token:{token}')
+		if source_limiter is None:
+			# We have an Authorization header that's not tied to any valid token
+			# based limiter, which means the client is passing the wrong thing. 403
+			# them so they know something needs fixed
+			return (source_limiter, make_response(
+				{'err':-403,'msg':'forbidden'},
+				403,
+			))
+
+	authorized = source_limiter is not None
+	authorized |= (source.description in NO_LIMIT_UPSTREAMS)
+
+	# If we don't have a source_limiter based on the Authorization header,
+	# default to one based on the remote address.
+	if source_limiter is None:
+		source_limiter = get_limiter(f'remote:{source.description}')
+
+	if DYNAMIC_RATE_LIMIT:
+		source_ra = source_limiter.retryAfter(1.0)
+		if source_ra is not None:
+			source_limiter.tick(0.200)
+			source_ra = source_limiter.retryAfter(1.0)
+		if source_ra is not None:
+			source_ra_v = int(math.ceil(source_ra + 1))
+			print(f'rate limiting {source.description}, retry after={source_ra_v}')
+
+			resp = make_response(
+				{'err':-429,'msg':'too many requests','retry_after':source_ra_v},
+				429,
+			)
+			resp.headers['Retry-After'] = str(source_ra_v)
+			return (source_limiter, resp)
+
+		global_limiter = get_limiter('global')
+		global_ra = global_limiter.retryAfter(1.0)
+		if global_ra is not None:
+			global_ra_v = int(math.ceil(global_ra + 1))
+			print(f'rate limiting global, retry after={global_ra_v}')
+
+			resp = make_response(
+				{'err':-429,'msg':'too many requests (g)','retry_after':global_ra_v},
+				429,
+			)
+			resp.headers['Retry-After'] = str(global_ra_v)
+			return (source_limiter, resp)
+
+	# TODO instead of blocking outright, insert ip into ip tag table and set the
+	# limit to something much lower? Share a limit across azure/DO address
+	# space?
+	datacenter = ip_is_datacenter(source.description)
+
+	# If we haven't seen a valid Authorization header, block anything that looks
+	# like an autonomous network
+	if datacenter is not None and not authorized:
+		print(f'BLOCKING DATACENTER IP: {datacenter} {source.description}')
+		return (source_limiter, getErr(WebError.internal_datacenter))
+
+	if datacenter is not None and authorized:
+		print(f'allowing datacenter ip, authorized: {datacenter} {source.description}')
+
+	if source.description in WEIRD_UPSTREAMS:
+		print(f'BLOCKING weird QQ: {source.description}')
+		return (source_limiter, getErr(WebError.internal_strange))
+
+	# TODO both the testsuite and some annoying mass crawlers >_>
+	automated = (request.args.get('automated', None) == 'true')
+	if automated:
+		print(f'BLOCKING DATACENTER IP: automated=true {source.description}')
+		return (source_limiter, getErr(WebError.internal_datacenter))
+
+	return (source_limiter, None)
+
+
 @app.route('/api/v0/epub', methods=['GET'])
 def api_v0_epub() -> Any:
+	source_limiter, limit_resp = maybe_limit_request()
+	if limit_resp is not None:
+		return limit_resp
+
 	q = request.args.get('q', '').strip()
 	urlId = request.args.get('id', '').strip()
 	fixits = get_fixits(q)
@@ -476,6 +599,9 @@ def api_v0_epub() -> Any:
 	print(f'api_v0_epub: query: {q}')
 	eres = ensure_export('epub', q, urlId)
 	if 'err' in eres:
+		if DYNAMIC_RATE_LIMIT and source_limiter is not None:
+			# TODO maybe only do this when the fic is in the graveyard?
+			source_limiter.tick(0.500)
 		if 'q' not in eres:
 			eres['q'] = q
 		if 'fixits' not in eres:
@@ -563,12 +689,9 @@ def inject_suffix_info() -> Dict[str, Any]:
 	return {'EXPORT_SUFFIXES': ebook.EXPORT_SUFFIXES,
 			'EXPORT_DESCRIPTIONS': ebook.EXPORT_DESCRIPTIONS}
 
-if __name__ == '__main__':
-	app.run(debug=True)
+def uwsgi_init() -> None:
+	global CSS_CACHE_BUSTER, JS_CACHE_BUSTER, CURRENT_CSS
 
-print()
-print(__name__)
-if __name__ == 'uwsgi_file___main':
 	CSS_CACHE_BUSTER = str(time.time())
 	JS_CACHE_BUSTER = CSS_CACHE_BUSTER
 	print(f'reset JS/CSS CACHE_BUSTER: {JS_CACHE_BUSTER}')
@@ -585,4 +708,18 @@ if __name__ == 'uwsgi_file___main':
 			JS_CACHE_BUSTER = jshash
 		print(f'reset JS_CACHE_BUSTER: {JS_CACHE_BUSTER}')
 	print()
+
+	print('loading IP ranges')
+	load_ip_ranges()
+	for tag in TAGGED_IP_RANGES:
+		print(f"  loaded {tag=}: {len(TAGGED_IP_RANGES[tag])} IP ranges")
+
+print()
+print(__name__)
+
+if __name__ == '__main__':
+	app.run(debug=True)
+
+if __name__ == 'uwsgi_file___main':
+	uwsgi_init()
 

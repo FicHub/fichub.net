@@ -1,4 +1,5 @@
 from typing import Dict, Any, Optional, List, Tuple
+import json
 from enum import Enum
 import datetime
 from oil import oil
@@ -74,6 +75,7 @@ class FicInfo:
 		'id', 'created', 'updated', 'title', 'author', 'chapters', 'words',
 		'description', 'ficCreated', 'ficUpdated', 'status', 'source', 'extraMeta',
 		'sourceId', 'authorId', 'contentHash', 'authorUrl', 'authorLocalId',
+		'rawExtendedMeta',
 	]
 	fieldCount = len(fields)
 
@@ -89,7 +91,8 @@ class FicInfo:
 			ficUpdated_: datetime.datetime, status_: str, source_: str,
 			extraMeta_: Optional[str], sourceId_: Optional[int],
 			authorId_: Optional[int], contentHash_: Optional[str],
-			authorUrl_: Optional[str], authorLocalId_: Optional[str]) -> None:
+			authorUrl_: Optional[str], authorLocalId_: Optional[str],
+			rawExtendedMeta_: Optional[str]) -> None:
 		self.id = id_
 		self.created = created_
 		self.updated = updated_
@@ -108,8 +111,15 @@ class FicInfo:
 		self.contentHash = contentHash_
 		self.authorUrl = authorUrl_
 		self.authorLocalId = authorLocalId_
+		self.rawExtendedMeta = rawExtendedMeta_
 
 	def toJson(self) -> Dict['str', Any]:
+		rawExtendedMeta = None
+		try:
+			if self.rawExtendedMeta is not None and len(self.rawExtendedMeta) > 0:
+				rawExtendedMeta = json.loads(self.rawExtendedMeta)
+		except:
+			pass
 		return {
 				'id': self.id,
 				'created': self.ficCreated.isoformat(),
@@ -122,6 +132,7 @@ class FicInfo:
 				'status': self.status,
 				'source': self.source,
 				'extraMeta': self.extraMeta,
+				'rawExtendedMeta': rawExtendedMeta,
 				'authorUrl': self.authorUrl,
 				'authorLocalId': self.authorLocalId,
 				'sourceId': self.sourceId,
@@ -146,8 +157,9 @@ class FicInfo:
 				insert into ficInfo(
 					id, title, author, chapters, words, description, ficCreated,
 					ficUpdated, status, source, extraMeta, sourceId, authorId,
-					contentHash, authorUrl, authorLocalId)
-				values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+					contentHash, authorUrl, authorLocalId, rawExtendedMeta)
+				values(
+					%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				on conflict(id) do
 				update set updated = current_timestamp,
 					title = EXCLUDED.title, author = EXCLUDED.author,
@@ -158,17 +170,21 @@ class FicInfo:
 					extraMeta = EXCLUDED.extraMeta, sourceId = EXCLUDED.sourceId,
 					authorId = EXCLUDED.authorId, contentHash = EXCLUDED.contentHash,
 					authorUrl = EXCLUDED.authorUrl,
-					authorLocalId = EXCLUDED.authorLocalId
+					authorLocalId = EXCLUDED.authorLocalId,
+					rawExtendedMeta = EXCLUDED.rawExtendedMeta
 				''', (fi.id, fi.title, fi.author, fi.chapters, fi.words,
 					fi.description, fi.ficCreated, fi.ficUpdated, fi.status, fi.source,
 					fi.extraMeta, fi.sourceId, fi.authorId, fi.contentHash,
-					fi.authorUrl, fi.authorLocalId))
+					fi.authorUrl, fi.authorLocalId, fi.rawExtendedMeta))
 
 	@staticmethod
 	def parse(ficInfo: Dict[str, str]) -> 'FicInfo':
 		extraMeta = ficInfo['extraMeta'] if 'extraMeta' in ficInfo else None
 		if extraMeta is not None and len(extraMeta.strip()) < 1:
 			extraMeta = None
+		rawExtendedMeta = ficInfo['rawExtendedMeta'] if 'rawExtendedMeta' in ficInfo else None
+		if rawExtendedMeta is not None and len(rawExtendedMeta.strip()) < 1:
+			rawExtendedMeta = None
 		return FicInfo(ficInfo['urlId'],
 				datetime.datetime.now(), datetime.datetime.now(),
 				ficInfo['title'], ficInfo['author'],
@@ -184,6 +200,7 @@ class FicInfo:
 				ficInfo['contentHash'],
 				ficInfo['authorUrl'] if 'authorUrl' in ficInfo else None,
 				ficInfo['authorLocalId'] if 'authorLocalId' in ficInfo else None,
+				rawExtendedMeta,
 			)
 
 class FicBlacklistReason(Enum):

@@ -53,7 +53,8 @@ JS_CACHE_BUSTER=CACHE_BUSTER
 CURRENT_CSS='' # note: empty string is treated as None
 
 # may treat requests from these sources as being proxied for a user
-TRUSTED_UPSTREAMS={'95.217.234.255'}
+# gil: 142.132.180.201
+TRUSTED_UPSTREAMS={'142.132.180.201',}
 
 class WebError(IntEnum):
 	success = 0

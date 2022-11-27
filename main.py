@@ -8,6 +8,7 @@ import json
 import random
 import math
 import datetime
+import shutil
 from enum import IntEnum
 import flask
 from flask import Flask, Response, request, render_template, \
@@ -386,11 +387,15 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 		return render_template('fic_info_blacklist.html'), 404
 
 	fhash = request.args.get('h', None)
-	fdir = ebook.buildExportPath(etype, urlId)
+	fdir, sfdir = ebook.buildExportPath(etype, urlId)
 	if fhash is not None:
 		# if the request is for a specific slug, try to serve it directly
 		rname = fname
 		fname = f'{fhash}{suff}'
+		if (not os.path.isfile(os.path.join(fdir, fname))
+				and os.path.isfile(os.path.join(sfdir, fname))):
+			os.makedirs(fdir)
+			shutil.move(os.path.join(sfdir, fname), os.path.join(fdir, fname))
 		if os.path.isfile(os.path.join(fdir, fname)):
 			return send_from_directory(fdir, fname, as_attachment=True,
 					attachment_filename=rname, mimetype=mimetype,

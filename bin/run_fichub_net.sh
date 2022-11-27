@@ -17,7 +17,7 @@ mkdir -p ./logs/
 exec uwsgi --plugin python3 --enable-threads \
 	--reuse-port --uwsgi-socket 127.0.0.1:9293 \
 	--plugin logfile \
-	--logger file:logfile=./logs/fichub_net.log,maxsize=2000000 \
+	--logger file:logfile=./logs/fichub_net.log,maxsize=20000000 \
 	--pidfile master_${instance}.pid \
 	--master --processes 3 --threads 4 \
 	--daemonize2 /dev/null \

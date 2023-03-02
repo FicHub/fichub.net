@@ -208,6 +208,10 @@ class FicBlacklistReason(Enum):
 	AUTHOR_BLACKLIST_REQUEST = 5
 	# greylist request by author, they don't want downloads available
 	AUTHOR_GREYLIST_REQUEST = 6
+	# real author requests plagiarism takedown
+	REAL_AUTHOR_PLAGIRAISM_TAKEDOWN_REQUEST = 7
+	# 3rd party plagiarism request
+	THIRD_PARTY_PLAGIRAISM_TAKEDOWN_REQUEST = 8
 
 class FicBlacklist:
 	def __init__(self, urlId_: str, created_: datetime.datetime,
@@ -252,8 +256,14 @@ class FicBlacklist:
 
 	@staticmethod
 	def greylisted(urlId: str) -> bool:
+		if FicBlacklist.check(urlId,
+				FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value):
+			return True
+		if FicBlacklist.check(urlId,
+				FicBlacklistReason.REAL_AUTHOR_PLAGIRAISM_TAKEDOWN_REQUEST.value):
+			return True
 		return FicBlacklist.check(urlId,
-				FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value)
+			FicBlacklistReason.THIRD_PARTY_PLAGIRAISM_TAKEDOWN_REQUEST.value)
 
 	@staticmethod
 	def save(urlId: str, reason: int) -> None:

@@ -2,7 +2,7 @@ from typing import Dict, Any, Optional, List, Tuple
 import datetime
 import traceback
 import urllib.parse
-from db import FicInfo
+from db import FicInfo, FicBlacklist, AuthorBlacklist
 import es
 import util
 import authentications as a
@@ -23,6 +23,13 @@ def lookup(query: str, timeout: float = 280.0) -> Dict[str, Any]:
 	if 'error' in meta and 'err' not in meta:
 		meta['err'] = meta.pop('error', None)
 	if 'err' not in meta:
+		if (FicBlacklist.check(meta['urlId'])
+				or AuthorBlacklist.check(meta['sourceId'], meta['authorId'])):
+			return {
+				'ret':5,
+				'err':-7,
+				'msg':'exports are unavailable for this fic, possibly due to author request',
+			}
 		FicInfo.save(meta)
 		try:
 			fis = FicInfo.select(meta['urlId'])

@@ -90,6 +90,10 @@ def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None
 def page_not_found(e: Exception) -> FlaskResponse:
 	return render_template('404.html'), 404
 
+@app.route('/api')
+def api_landing() -> FlaskResponse:
+	return render_template('api.html')
+
 @app.route('/')
 def index() -> FlaskResponse:
 	urlId = request.args.get('id', '').strip()

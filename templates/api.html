@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+{% block content %}
+{% include 'nav_frag.html' %}
+	<main>
+	<h1>Unstable API</h1>
+	<p>Source code related to this project is available. Currently the primary
+	location is several github organizations:</p>
+	<ul>
+		<li><a href='https://github.com/FicHub'>FicHub</a></li>
+		<li><a href='https://github.com/FanFicDev'>FanFicDev</a></li>
+	</ul>
+	<p>You may make requests directly to FicHub's internal API, though no
+	stability guarantee is made at this time.</p>
+	<ul>
+		<li>please set a custom user-agent</li>
+		<li>please do not make concurrent requests</li>
+		<li>do not try to export a large fraction of a site without getting into
+			contact first</li>
+		<li>do not expect v0 to be entirely stable</li>
+	</ul>
+	<h2>Requesting exports</h2>
+	<p>The main v0 endpoint is <code>/api/v0/epub</code> which takes a
+		<code>q</code> parameter for the fic to export. That is, make a GET
+		request to <code>https://fichub.net/api/v0/epub?q={fic}</code>. Ex (please
+		set a custom user-agent -- ie use some identifier for your project and
+		include contact info after the +, and make requests in serial):
+	</p>
+	<p>
+		<code>
+			&gt; curl -s -A "fichub-client/0.0.1 +@iris" https://fichub.net/api/v0/epub?q=https://forums.spacebattles.com/threads/nemesis-worm-au.747148 | jq '.'
+		</code>
+	</p>
+	<p>
+		<pre>
+		<code>
+{
+  "epub_url": "/cache/epub/NtePoQrV/Nemesis_by_BeaconHill-NtePoQrV.epub?h=47bd33893936ece7315060d0b09fe7c9",
+  "err": 0,
+  "fixits": [],
+  "hashes": {
+    "epub": "47bd33893936ece7315060d0b09fe7c9"
+  },
+  "html_url": "/cache/html/NtePoQrV?cv=26&amp;eh=47bd33893936ece7315060d0b09fe7c9",
+  "info": "Nemesis by BeaconHill\n65754 words in 14 chapters\nStatus: ongoing\nUpdated: 2023-01-28 - 2 months 7 days  ago\n",
+  "meta": {
+    "author": "BeaconHill",
+    "authorId": 2446,
+    "authorLocalId": "beaconhill.295356",
+    "authorUrl": "https://forums.spacebattles.com/members/beaconhill.295356/",
+    "chapters": 14,
+    "created": "2022-03-05T19:43:19",
+    "description": "&lt;lt;p&gt;Nemesis&lt;lt;/p&gt;&lt;lt;p&gt;Worm AU&lt;lt;/p&gt;&lt;lt;p&gt;It was June 2011, and Emma Barnes was the queen bee of her high school…&lt;lt;/p&gt;",
+    "extraMeta": null,
+    "id": "NtePoQrV",
+    "rawExtendedMeta": null,
+    "source": "https://forums.spacebattles.com/threads/nemesis-worm-au.747148/",
+    "sourceId": 12,
+    "status": "ongoing",
+    "title": "Nemesis",
+    "updated": "2023-01-28T23:13:19",
+    "words": 65754
+  },
+  "mobi_url": "/cache/mobi/NtePoQrV?cv=26&amp;eh=47bd33893936ece7315060d0b09fe7c9",
+  "notes": [],
+  "pdf_url": "/cache/pdf/NtePoQrV?cv=26&amp;eh=47bd33893936ece7315060d0b09fe7c9",
+  "q": "https://forums.spacebattles.com/threads/nemesis-worm-au.747148",
+  "slug": "Nemesis_by_BeaconHill-NtePoQrV",
+  "urlId": "NtePoQrV",
+  "urls": {
+    "epub": "/cache/epub/NtePoQrV/Nemesis_by_BeaconHill-NtePoQrV.epub?h=47bd33893936ece7315060d0b09fe7c9",
+    "html": "/cache/html/NtePoQrV?cv=26&amp;eh=47bd33893936ece7315060d0b09fe7c9",
+    "mobi": "/cache/mobi/NtePoQrV?cv=26&amp;eh=47bd33893936ece7315060d0b09fe7c9",
+    "pdf": "/cache/pdf/NtePoQrV?cv=26&amp;eh=47bd33893936ece7315060d0b09fe7c9"
+  }
+}
+		</code>
+		</pre>
+	</p>
+	<p>The response will have <code>"err":0</code> if the fic was successfully
+		exported. You can then GET one of the <code>urls<code> fields to (generate
+		and) download the fic in a particular format:
+	</p>
+	<p>
+		<code>
+			curl -s -o "ex.epub" "https://fichub.net/cache/epub/NtePoQrV/Nemesis_by_BeaconHill-NtePoQrV.epub?h=47bd33893936ece7315060d0b09fe7c9" ; echo "status: $?"
+		</code>
+	</p>
+	<p>
+		<code>
+			status: 0
+		</code>
+	</p>
+	<p>
+		<code>du -h ex.epub ; md5sum ex.epub</code>
+	</p>
+	<p>
+		<code>
+			129K    ex.epub
+			47bd33893936ece7315060d0b09fe7c9  ex.epub
+		</code>
+	</p>
+	<h2>Requesting metadata</h2>
+	<p>An alternate endpoint is provided if you're simply trying to get
+		pre-parsed metadata. Call the <code>/api/v0/meta</code> endpoint, passing a
+		<code>q</code> parameter with the fic in question. Ex:
+	</p>
+	<p>
+		<code>
+			&gt; curl -s -A "fichub-client/0.0.1 +@iris" https://fichub.net/api/v0/meta?q=https://forums.spacebattles.com/threads/nemesis-worm-au.747148 | jq '.'
+		</code>
+	</p>
+	<p>
+		<pre>
+		<code>
+{
+  "author": "BeaconHill",
+  "authorId": 2446,
+  "authorLocalId": "beaconhill.295356",
+  "authorUrl": "https://forums.spacebattles.com/members/beaconhill.295356/",
+  "chapters": 14,
+  "created": "2022-03-05T19:43:19",
+  "description": "&lt;p&gt;Nemesis&lt;/p&gt;&lt;p&gt;Worm AU&lt;/p&gt;&lt;p&gt;It was June 2011, and Emma Barnes was the queen bee of her high school…&lt;/p&gt;",
+  "extraMeta": null,
+  "id": "NtePoQrV",
+  "rawExtendedMeta": null,
+  "source": "https://forums.spacebattles.com/threads/nemesis-worm-au.747148/",
+  "sourceId": 12,
+  "status": "ongoing",
+  "title": "Nemesis",
+  "updated": "2023-01-28T23:13:19",
+  "words": 65754
+}
+		</code>
+		</pre>
+	</p>
+	</main>
+<section>
+{% include 'contact_frag.html' %}
+</section>
+{% endblock %}
+

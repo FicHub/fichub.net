@@ -40,4 +40,5 @@ EOF
 
 cp popular.data /tmp/
 chmod ogu+r /tmp/popular.data
+rm -f popular.data
 

@@ -6,13 +6,20 @@ import resource
 import os
 import psutil
 import time
+import logging
+
+def init_logging() -> None:
+	logging.basicConfig(
+		format="%(asctime)s\t%(levelname)s\t%(message)s",
+		level=logging.DEBUG,
+	)
 
 def plog(msg: str) -> None:
-	print(msg)
+	logging.info(f'janus|{msg}')
 	if not msg.endswith('\n'):
 		msg += '\n'
 	with open('./janus.log', 'a+') as logf:
-		logf.write(msg)
+		logf.write(f'janus|{msg}')
 
 def getWaitKey(cmdline: List[str]) -> str:
 	if len(cmdline) != 4:
@@ -47,9 +54,9 @@ def waitForOurTurn(key: str) -> None:
 		if minCreated is not None and usCreated is not None \
 				and minPid != usPid and minCreated < usCreated:
 			if cnt >= 4:
-				plog(f'janus|{usPid}|there are at least 3 other waiting; aborting')
+				plog(f'{usPid}|there are at least 3 other waiting; aborting')
 				sys.exit(103)
-			plog(f'janus|{usPid}|previous export still running: {minPid} {minCreated} < {usCreated}')
+			plog(f'{usPid}|previous export still running: {minPid} {minCreated} < {usCreated}')
 			time.sleep(delta)
 		else:
 			return
@@ -59,6 +66,17 @@ def limitVirtualMemory() -> None:
 	MAX_VIRTUAL_MEMORY = int(1024 * 1024 * 1024 * 2.5) # 2.5 GiB
 	resource.setrlimit(resource.RLIMIT_AS,
 			(MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
+
+def convert_local(usPid: int, epub_fname: str, tmp_fname: str) -> int:
+	ret = 255
+	try:
+		res = subprocess.run(['/opt/calibre/ebook-convert', epub_fname, tmp_fname],
+				timeout=60*5,
+				)#preexec_fn=limitVirtualMemory)
+		ret = res.returncode
+	except Exception as e:
+		plog(f'{usPid}|exception: {e}')
+	return ret
 
 def main() -> int:
 	if len(sys.argv) != 3:
@@ -71,32 +89,29 @@ def main() -> int:
 	key = 'null'
 	for p in psutil.process_iter():
 		if p.pid == usPid:
-			plog(f'janus|{usPid}|cmdline: {p.cmdline()}')
+			plog(f'{usPid}|cmdline: {p.cmdline()}')
 			key = getWaitKey(p.cmdline())
 
-	plog(f'janus|{usPid}|waiting on {key}')
+	plog(f'{usPid}|waiting on {key}')
 	waitForOurTurn(key)
-	plog(f'janus|{usPid}|proceeding')
+	plog(f'{usPid}|proceeding')
 
 	ret = 255
 	stime = time.time()
-	try:
-		res = subprocess.run(['/opt/calibre/ebook-convert', epub_fname, tmp_fname],
-				timeout=60*5,
-				)#preexec_fn=limitVirtualMemory)
-		ret = res.returncode
-	except Exception as e:
-		plog(f'janus|{usPid}|exception: {e}')
+
+	ret = convert_local(usPid, epub_fname, tmp_fname)
+
 	etime = time.time()
 	dtime = etime - stime
-	plog(f'janus|{usPid}|returning {ret} after {dtime}s')
+	plog(f'{usPid}|returning {ret} after {dtime}s')
 	return ret
 
 if __name__ == '__main__':
+	init_logging()
 	try:
 		ret = main()
 	except Exception as e:
-		plog(f'janus|main|exception: {e}')
+		plog(f'main|exception: {e}')
 		ret = 255
 	sys.exit(ret)
 

@@ -52,7 +52,7 @@ def createIndex(es: Any) -> None:
 
 def search(q: str, limit: int = 10) -> List[FicInfo]:
 	try:
-		es = Elasticsearch(hosts=["localhost"])
+		es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
 		res = es.search(index="fi", body={
 				"query": {
 					"multi_match": {
@@ -75,7 +75,7 @@ def search(q: str, limit: int = 10) -> List[FicInfo]:
 		return [] # TODO
 
 def save(fi: FicInfo) -> None:
-	es = Elasticsearch(hosts=["localhost"])
+	es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
 	r = handleFicInfo(fi)
 	_id = r.pop('_id', fi.id)
 	es.index(index='fi', id=_id, body=r)
@@ -88,7 +88,7 @@ def handleFicInfo(fi: FicInfo) -> Dict[str, Any]:
 	return r
 
 def blacklist(urlId: str) -> None:
-	es = Elasticsearch(hosts=["localhost"])
+	es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
 	es.delete(index='fi', id=urlId)
 
 def generateFicInfo() -> Iterator[Dict[str, Any]]:
@@ -102,7 +102,7 @@ def main(argv: List[str]) -> int:
 		print(f"usage: {sys.argv[0]}")
 		return 1
 
-	es = Elasticsearch(hosts=["elastic.fichub.net"])
+	es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
 	plog(f"using log {logFileName}")
 	#dropIndex(es)
 	createIndex(es)

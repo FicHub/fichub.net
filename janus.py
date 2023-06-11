@@ -8,6 +8,14 @@ import psutil
 import time
 import logging
 
+# for calls to janus service
+import requests
+import base64
+import json
+import os.path
+
+USE_LOCAL_CALIBRE=False
+
 def init_logging() -> None:
 	logging.basicConfig(
 		format="%(asctime)s\t%(levelname)s\t%(message)s",
@@ -78,6 +86,46 @@ def convert_local(usPid: int, epub_fname: str, tmp_fname: str) -> int:
 		plog(f'{usPid}|exception: {e}')
 	return ret
 
+def convert_janus(usPid: int, epub_fname: str, tmp_fname: str) -> int:
+	ret = 255
+
+	input_filename = os.path.basename(epub_fname)
+	output_filename = os.path.basename(tmp_fname)
+
+	content = open(epub_fname, 'rb').read()
+	content_b64 = base64.b64encode(content).decode('utf-8')
+
+	try:
+		r = requests.post('http://localhost:8001/convert',
+			json={
+				'input_filename': input_filename,
+				'output_filename': output_filename,
+				'content': content_b64,
+			},
+			headers={
+				'User-Agent': 'fichub.net/janus/0.0.1',
+			},
+		)
+		if r.status_code != 200:
+			plog(f'{usPid}|janus request returned non-200|{r.status_code}|{r.content!r}')
+		r.raise_for_status()
+
+		j = r.json()
+
+		content_b64 = j['content']
+		content = base64.b64decode(content_b64)
+		j['content.len'] = len(content)
+		del j['content']
+
+		plog(f'{usPid}|janus returned 200|{json.dumps(j, sort_keys=True)}')
+		with open(tmp_fname, 'wb') as f:
+			f.write(content)
+
+		ret = j['code']
+	except Exception as e:
+		plog(f'{usPid}|exception: {e}')
+	return ret
+
 def main() -> int:
 	if len(sys.argv) != 3:
 		return 1
@@ -99,7 +147,10 @@ def main() -> int:
 	ret = 255
 	stime = time.time()
 
-	ret = convert_local(usPid, epub_fname, tmp_fname)
+	if USE_LOCAL_CALIBRE:
+		ret = convert_local(usPid, epub_fname, tmp_fname)
+	else:
+		ret = convert_janus(usPid, epub_fname, tmp_fname)
 
 	etime = time.time()
 	dtime = etime - stime

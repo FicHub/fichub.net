@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-time psql > popular.data <<EOF
+time psql > /tmp/popular.tmp.data <<EOF
 copy (
 	select
 		fi.id,
@@ -38,7 +38,6 @@ copy (
 ) to stdout
 EOF
 
-cp popular.data /tmp/
-chmod ogu+r /tmp/popular.data
-rm -f popular.data
+chmod ogu+r /tmp/popular.tmp.data
+mv /tmp/popular.tmp.data /tmp/popular.data
 

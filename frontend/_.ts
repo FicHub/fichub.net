@@ -155,6 +155,7 @@ window.onload = setup;
 function setup() {
 	if(navigator.userAgent.indexOf('ooglebot') >= 0) { return; }
 	if(navigator.userAgent.indexOf('BingPreview') >= 0) { return; }
+	if(navigator.userAgent.indexOf('bingbot/') >= 0) { return; }
 	if(f()) {
 		f().action = 'javascript:void(0);';
 	}

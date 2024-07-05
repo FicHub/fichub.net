@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-from typing import List
+#!./venv/bin/python3
+from typing import List, TypeVar, ParamSpec, Any, Callable, Dict
 import sys
 import subprocess
 import resource
@@ -7,6 +7,8 @@ import os
 import psutil
 import time
 import logging
+import functools
+import inspect
 
 # for calls to janus service
 import requests
@@ -17,23 +19,72 @@ import os.path
 USE_LOCAL_CALIBRE=False
 
 def init_logging() -> None:
-	logging.basicConfig(
-		format="%(asctime)s\t%(levelname)s\t%(message)s",
-		level=logging.DEBUG,
-	)
+	if not os.path.isdir('./log'):
+		os.makedirs('./log')
 
-def plog(msg: str) -> None:
-	logging.info(f'janus|{msg}')
-	if not msg.endswith('\n'):
-		msg += '\n'
-	with open('./janus.log', 'a+') as logf:
-		logf.write(f'janus|{msg}')
+	from logging.handlers import RotatingFileHandler
+	file_formatter = logging.Formatter(fmt="%(asctime)s\t%(levelname)s\t%(message)s", datefmt='%s')
+	file_handler = RotatingFileHandler('./log/janus.log')
+	file_handler.setLevel(logging.DEBUG)
+	file_handler.setFormatter(file_formatter)
+
+	stream_formatter = logging.Formatter(fmt="%(asctime)s\t%(levelname)s\t%(message)s")
+	stream_handler = logging.StreamHandler(sys.stdout)
+	stream_handler.setLevel(logging.DEBUG)
+	stream_handler.setFormatter(stream_formatter)
+
+	logging.captureWarnings(True)
+
+	root_logger = logging.getLogger()
+
+	root_logger.addHandler(file_handler)
+	root_logger.addHandler(stream_handler)
+	root_logger.setLevel(logging.DEBUG)
+
+class LoggingTimer:
+	def __init__(self, name: str, args: Dict[str, str]) -> None:
+		self.name = name
+		self.args = args
+		self.s = time.time()
+
+	def __enter__(self) -> None:
+		self.s = time.time()
+
+	def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+		e = time.time()
+		d = e - self.s
+		msg = "timing: {}({}) took {}s".format(self.name, ', '.join([f"{k}={v}" for k, v in self.args.items()]), f"{d:.3f}")
+		plog(msg, func_name=self.name, func_args=self.args, duration_ms=round(d*1000, 3))
+
+
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+def trace_timing(fspec: List[str]) -> Callable[[Callable[P, T]], Callable[P, T]]:
+	def decorator(func: Callable[P, T]) -> Callable[P, T]:
+		@functools.wraps(func)
+		def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
+			with LoggingTimer(func.__name__,
+					{k: v for k, v in inspect.getcallargs(func, *args, **kwargs).items() if k in fspec}
+			):
+				return func(*args, **kwargs)
+
+		return wrapped
+
+	return decorator
+
+
+def plog(msg: str, **kwargs) -> None:
+	msg = json.dumps({"service": "fichub/janus", "pid": os.getpid(), "msg": msg} | kwargs)
+	logging.info(msg)
 
 def getWaitKey(cmdline: List[str]) -> str:
 	if len(cmdline) != 4:
 		return 'null'
 	return cmdline[-1].split('.')[-1]
 
+@trace_timing(['key'])
 def waitForOurTurn(key: str) -> None:
 	delta = 2.5
 	usPid = os.getpid()
@@ -62,13 +113,13 @@ def waitForOurTurn(key: str) -> None:
 		if minCreated is not None and usCreated is not None \
 				and minPid != usPid and minCreated < usCreated:
 			if cnt >= 4:
-				plog(f'{usPid}|there are at least 3 other waiting; aborting')
+				plog('there are at least 3 other waiting; aborting')
 				sys.exit(103)
-			plog(f'{usPid}|previous export still running: {minPid} {minCreated} < {usCreated}')
+			plog('previous export still running', min_pid=minPid, min_created=minCreated, us_created=usCreated)
 			time.sleep(delta)
 		else:
 			return
-	raise Exception(f'janus|{usPid}|error: it was never our turn')
+	raise Exception(f'error: it was never our turn')
 
 def limitVirtualMemory() -> None:
 	MAX_VIRTUAL_MEMORY = int(1024 * 1024 * 1024 * 2.5) # 2.5 GiB
@@ -83,9 +134,10 @@ def convert_local(usPid: int, epub_fname: str, tmp_fname: str) -> int:
 				)#preexec_fn=limitVirtualMemory)
 		ret = res.returncode
 	except Exception as e:
-		plog(f'{usPid}|exception: {e}')
+		plog('unhandled exception in convert_local', err=f'{e}')
 	return ret
 
+@trace_timing(["usPid", "epub_fname", "tmp_fname"])
 def convert_janus(usPid: int, epub_fname: str, tmp_fname: str) -> int:
 	ret = 255
 
@@ -107,7 +159,11 @@ def convert_janus(usPid: int, epub_fname: str, tmp_fname: str) -> int:
 			},
 		)
 		if r.status_code != 200:
-			plog(f'{usPid}|janus request returned non-200|{r.status_code}|{r.content!r}')
+			try:
+				plog('janus request returned non-200', status_code=r.status_code, response=r.content.decode('utf-8'))
+			except:
+				plog('janus request returned non-200', status_code=r.status_code, response=f'{r.content!r}')
+
 		r.raise_for_status()
 
 		j = r.json()
@@ -117,13 +173,13 @@ def convert_janus(usPid: int, epub_fname: str, tmp_fname: str) -> int:
 		j['content.len'] = len(content)
 		del j['content']
 
-		plog(f'{usPid}|janus returned 200|{json.dumps(j, sort_keys=True)}')
+		plog('janus request returned 200', response=j)
 		with open(tmp_fname, 'wb') as f:
 			f.write(content)
 
 		ret = j['code']
 	except Exception as e:
-		plog(f'{usPid}|exception: {e}')
+		plog('unhandled exception in convert_janus', err=f'{e}')
 	return ret
 
 def main() -> int:
@@ -137,32 +193,28 @@ def main() -> int:
 	key = 'null'
 	for p in psutil.process_iter():
 		if p.pid == usPid:
-			plog(f'{usPid}|cmdline: {p.cmdline()}')
+			plog('cmdline', cmdline=p.cmdline())
 			key = getWaitKey(p.cmdline())
 
-	plog(f'{usPid}|waiting on {key}')
+	plog(f'waiting on key', key=key)
 	waitForOurTurn(key)
-	plog(f'{usPid}|proceeding')
 
 	ret = 255
-	stime = time.time()
 
 	if USE_LOCAL_CALIBRE:
 		ret = convert_local(usPid, epub_fname, tmp_fname)
 	else:
 		ret = convert_janus(usPid, epub_fname, tmp_fname)
 
-	etime = time.time()
-	dtime = etime - stime
-	plog(f'{usPid}|returning {ret} after {dtime}s')
 	return ret
 
 if __name__ == '__main__':
 	init_logging()
 	try:
 		ret = main()
+		plog('returning', ret=ret)
 	except Exception as e:
-		plog(f'main|exception: {e}')
+		plog('unhandled exception in main', err=f'{e}')
 		ret = 255
 	sys.exit(ret)
 

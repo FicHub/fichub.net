@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!./venv/bin/python
 from typing import List, Any, Dict, Optional, Iterator
 import time
 import traceback
@@ -8,7 +8,8 @@ from db import FicInfo, FicBlacklist
 from oil import oil
 import authentications as a
 
-logFileName = f'./es.log'
+# TODO actually log anything :|
+logFileName = f'./log/es.log'
 
 def plog(msg: str) -> None:
 	global logFileName

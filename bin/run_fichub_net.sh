@@ -12,14 +12,14 @@ fi
 instance="${1}"
 export PYTHONPATH=/home/fichub/pylib
 export OIL_DB_DBNAME=fichub
-mkdir -p ./logs/
+mkdir -p ./log/ ./run/
 
-exec uwsgi --plugin python3 --enable-threads \
+exec uwsgi --plugin python3 --venv venv/ --enable-threads \
 	--reuse-port --uwsgi-socket 127.0.0.1:9293 \
 	--plugin logfile \
-	--logger file:logfile=./logs/fichub_net.log,maxsize=20000000 \
-	--pidfile master_${instance}.pid \
-	--master --processes 3 --threads 4 \
+	--logger file:logfile=./log/fichub_net.log,maxsize=20000000 \
+	--pidfile ./run/master_${instance}.pid \
+	--master --processes 6 --threads 6 \
 	--daemonize2 /dev/null \
 	--wsgi-file ./main.py --callable app
 

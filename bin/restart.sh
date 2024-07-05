@@ -7,5 +7,5 @@ fi
 
 instance="${1}"
 
-kill -HUP $(cat master_${instance}.pid)
+kill -HUP $(cat run/master_${instance}.pid)
 

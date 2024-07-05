@@ -2,9 +2,10 @@ authentications.py
 
 cache/
 tmp/
+venv/
 
-master*.pid
-logs/
+run/
+log/
 janus.log
 
 static/js/_.js

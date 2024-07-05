@@ -1,0 +1,5 @@
+# Apparently the consumers of ads.txt are unable to understand the difference
+# between an empty file and no file (404), so "at least one properly formatted
+# line must be included." Therefore, for an intentionally "empty" ads.txt,
+# v1.0.2 (2019-03-04) of the spec recommends using this placeholder record:
+placeholder.example.com, placeholder, DIRECT, placeholder

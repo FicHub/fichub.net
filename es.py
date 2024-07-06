@@ -4,7 +4,7 @@ import time
 import traceback
 import elasticsearch.helpers # type: ignore
 from elasticsearch import Elasticsearch
-from db import FicInfo
+from db import FicInfo, FicBlacklist
 from oil import oil
 import authentications as a
 
@@ -22,6 +22,8 @@ def dropIndex(es: Any) -> None:
 
 def createIndex(es: Any) -> None:
 	try:
+		# TODO: DeprecationWarning: The 'body' parameter is deprecated and will be
+		# removed in a future version. Instead use individiual parameters.
 		es.indices.create(index='fi', body={
 				'settings': {
 					'analysis': {
@@ -95,6 +97,13 @@ def generateFicInfo() -> Iterator[Dict[str, Any]]:
 	for fi in FicInfo.select():
 		if fi.sourceId == 19:
 			continue
+		if FicBlacklist.greylisted(fi.id):
+			plog(f'greylisted: {fi.id}')
+			continue
+		if FicBlacklist.blacklisted(fi.id):
+			plog(f'blacklisted: {fi.id}')
+			continue
+		plog(f'  indexing {fi.id}')
 		yield handleFicInfo(fi)
 
 def main(argv: List[str]) -> int:

@@ -403,8 +403,8 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 			shutil.move(os.path.join(sfdir, fname), os.path.join(fdir, fname))
 		if os.path.isfile(os.path.join(fdir, fname)):
 			return send_from_directory(fdir, fname, as_attachment=True,
-					attachment_filename=rname, mimetype=mimetype,
-					cache_timeout=(60*60*24*365))
+					download_name=rname, mimetype=mimetype,
+					max_age=(60*60*24*365))
 		# fall through...
 
 	# otherwise find the most recent export and give them that

@@ -16,8 +16,8 @@ from db import ExportLog, FicVersionBump
 import util
 
 TMP_DIR='tmp'
-PRIMARY_CACHE_DIR='/mnt/atem_fichub/cache'
-SECONDARY_CACHE_DIR='/mnt/fichub/cache'
+PRIMARY_CACHE_DIR='/mnt/selene_fichub/cache'
+SECONDARY_CACHE_DIR='/mnt/atem_fichub/cache'
 
 # total version is EXPORT_VERSION + EXPORT_TYPE_VERSIONS[etype]
 EXPORT_VERSION=1
@@ -156,7 +156,7 @@ def findExistingExport(etype: str, urlId: str, ihash: str
 				shutil.move(sfname, fname)
 			except Exception as ie:
 				traceback.print_exc()
-				print(e)
+				print(ie)
 				print('findExistingExport: ^ something went wrong trying to move existing export :/')
 		if not os.path.isfile(fname):
 			return None

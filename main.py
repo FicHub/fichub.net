@@ -653,13 +653,23 @@ def api_v0_meta() -> Any:
 		return getErr(WebError.no_query, {'q':q})
 
 	r = api_v0_epub()
+	if not isinstance(r, dict):
+		return r # Rate limited 429
 	if 'meta' not in r:
+		if 'err' in r and isinstance(r['err'], int):
+			return r
 		return getErr(WebError.internal, {'q':q})
 	return r['meta']
 
 @app.route('/legacy/epub_export', methods=['GET'])
 def legacy_epub_export() -> FlaskResponse:
 	res = api_v0_epub()
+	if not isinstance(res, dict):
+		# Rate limited 429
+		q = request.args.get('q', '').strip()
+		d = res.data.decode('utf-8')
+		fixits = ['an error ocurred :('] + ['', flask.escape(d)]
+		return render_template('index.html', q=q, fixits=fixits, ficInfo=None), 429
 	q = request.args.get('q', '').strip() if 'q' not in res else res['q']
 	fixits = [] if 'fixits' not in res else res['fixits']
 	if 'err' not in res or int(res['err']) == 0 and 'urlId' in res:

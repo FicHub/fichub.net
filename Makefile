@@ -16,7 +16,10 @@ static/js/_.js: frontend/_.ts | dirs
 static/style/_.css: frontend/_.sass | dirs
 	sassc -t compressed $< > $@
 
-.PHONY: clean dirs beta prod
+test:
+	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/
+
+.PHONY: clean dirs beta prod test
 
 clean:
 	rm -f static/js/_.js static/style/_.css

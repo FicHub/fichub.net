@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+addopts = [
+	"--import-mode=importlib",
+]
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_also = [
+	"if __name__ == .__main__.:",
+	"if typing.TYPE_CHECKING:",
+	"if TYPE_CHECKING:",
+]

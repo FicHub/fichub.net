@@ -20,9 +20,6 @@ There are several additional components needed that are not currently covered
 by pyproject.toml if you want a fully functioning instance of FicHub, though
 several of these may be omitted:
 
-	python-oil:
-		grab from https://github.com/FanFicDev/python-oil
-
 	typescript:
 		used for frontend js
 
@@ -41,12 +38,28 @@ several of these may be omitted:
 		If a new database is created for a new instance, the OIL_DB_DBNAME env
 		variable likely needs updated in the run and dump_db scripts.
 
+		by default the fichub and b_fichub databases are used depending on whether
+		the beta is running
+
 	elasticsearch:
 		used for search fallback when a fic is not found
 
 	calibre:
 		used to generate mobi and pdf formats
 
+	/etc/hosts:
+		elastic.fichub.net is used for the elasticsearch host, or adjust
+		ELASTICSEARCH_HOSTS in es.py
+
+	cache dir:
+		/mnt/selene_fichub/cache and /mnt/atem_fichub/cache are the default primary
+		and secondary cache directories, or adjust PRIMARY_CACHE_DIR and
+		SECONDARY_CACHE_DIR in ebook.py
+
+	compiled js dir:
+		/var/www/fichub.net/ and /var/www/b.fichub.net/ are used the target
+		directory for built js and css and can be adjusted in the prod and beta
+		Makefile targets
 
 See https://github.com/FicHub/infra-dev if you're interested in using Docker
 to run a dev instance.

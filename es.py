@@ -2,7 +2,7 @@
 from typing import List, Any, Dict, Optional, Iterator
 import time
 import traceback
-import elasticsearch.helpers # type: ignore
+import elasticsearch.helpers
 from elasticsearch import Elasticsearch
 from db import FicInfo, FicBlacklist
 from oil import oil

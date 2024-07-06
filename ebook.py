@@ -10,7 +10,7 @@ import random
 import threading
 from dateutil.relativedelta import relativedelta
 from flask import render_template
-from ebooklib import epub # type: ignore
+from ebooklib import epub
 from ax import Chapter, FicInfo
 from db import ExportLog, FicVersionBump
 import util

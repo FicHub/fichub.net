@@ -19,7 +19,10 @@ static/style/_.css: frontend/_.sass | dirs
 test:
 	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/
 
-.PHONY: clean dirs beta prod test
+type:
+	./venv/bin/mypy .
+
+.PHONY: clean dirs beta prod test type
 
 clean:
 	rm -f static/js/_.js static/style/_.css

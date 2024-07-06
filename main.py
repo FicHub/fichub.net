@@ -224,6 +224,8 @@ def get_request_source() -> RequestSource:
 	remote_addr = request.remote_addr
 	if remote_addr is not None and remote_addr in TRUSTED_UPSTREAMS:
 		remote_addr = request.headers.get('X-Forwarded-For', remote_addr)
+	if remote_addr is None:
+		remote_addr = 'unknown'
 	return RequestSource.upsert(automated, request.url_root, remote_addr)
 
 def ensure_export(
@@ -330,7 +332,7 @@ def ensure_export(
 		chapters = ax.fetchChapters(meta)
 
 		# actually do the export
-		fname, fhash = None, None
+		fname, fhash = '', ''
 		if etype == 'epub':
 			fname, fhash = ebook.createEpub(meta, chapters)
 		elif etype == 'html':
@@ -674,8 +676,8 @@ def legacy_epub_export() -> FlaskResponse:
 	fixits = [] if 'fixits' not in res else res['fixits']
 	if 'err' not in res or int(res['err']) == 0 and 'urlId' in res:
 		return index_impl(res['urlId'], True)
-		return redirect(url_for('index', q=q, id=res['urlId'], noscript='true'))
-		return redirect(url_for('fic_info', urlId=res['urlId']))
+		# return redirect(url_for('index', q=q, id=res['urlId'], noscript='true'))
+		# return redirect(url_for('fic_info', urlId=res['urlId']))
 	if 'fixits' in res:
 		del res['fixits']
 	fixits = ['an error ocurred :('] + fixits + ['', flask.escape(json.dumps(res))]

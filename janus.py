@@ -1,5 +1,5 @@
 #!./venv/bin/python3
-from typing import List, TypeVar, ParamSpec, Any, Callable, Dict
+from typing import List, TypeVar, ParamSpec, Any, Callable, Dict, Optional
 import sys
 import subprocess
 import resource
@@ -75,7 +75,7 @@ def trace_timing(fspec: List[str]) -> Callable[[Callable[P, T]], Callable[P, T]]
 	return decorator
 
 
-def plog(msg: str, **kwargs) -> None:
+def plog(msg: str, **kwargs: Any) -> None:
 	msg = json.dumps({"service": "fichub/janus", "pid": os.getpid(), "msg": msg} | kwargs)
 	logging.info(msg)
 
@@ -91,8 +91,8 @@ def waitForOurTurn(key: str) -> None:
 	usCreated = None
 	for i in range(int(180 / delta)):
 		cnt = 0
-		minPid = None
-		minCreated = None
+		minPid: Optional[int] = None
+		minCreated = 1.0 * 9e9
 		for p in psutil.process_iter():
 			if p.pid == usPid:
 				usCreated = p.create_time()

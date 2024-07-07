@@ -696,6 +696,10 @@ def maybe_limit_request() -> Tuple[Optional[Limiter], Any]:
     # default to one based on the remote address.
     if source_limiter is None:
         source_limiter = get_limiter(f"remote:{source.description}")
+        user_agent = request.headers.get("User-Agent", "")
+        if user_agent.lower().find("headlesschrome") >= 0:
+            print(f"HEADLESSCHROME: lowering params for: {source.description}")
+            source_limiter = source_limiter.set_parameters(3, 1.0 / 99.0)
 
     if DYNAMIC_RATE_LIMIT:
         source_ra = source_limiter.retryAfter(1.0)

@@ -62,6 +62,17 @@ class Limiter:
         assert limiter is not None
         return limiter
 
+    def set_parameters(self, capacity: int, flow: float) -> "Limiter":
+        with oil.open() as db, db.cursor() as curs:
+            curs.execute(
+                """
+                update fichub.limiter set capacity = %s, flow = %s, dflt = %s
+                where key = %s
+                """,
+                (capacity, flow, False, self.key),
+            )
+        return self.refresh()
+
     def refresh(self) -> "Limiter":
         limiter = Limiter.select(self.key)
         assert limiter is not None

@@ -1,6 +1,8 @@
+#!./venv/bin/python
 from typing import Any, Dict, List, Optional, Set
 import ipaddress
 import json
+import sys
 import traceback
 import xml.etree.ElementTree as ElementTree
 
@@ -161,3 +163,26 @@ def ip_is_datacenter(addr: str) -> Optional[str]:
         print(f"ip_tag: ^ something went wrong checking if ip is tagged: {addr}")
 
     return "uh-oh"
+
+
+def main() -> int:
+    load_ip_ranges()
+    all_good = True
+    count = 0
+    for line in sys.stdin.readlines():
+        addr = line.strip()
+        if len(addr) < 1 or addr == "142.132.180.201":  # gil
+            continue
+        count += 1
+        # print(f"checking {addr=}")
+        if ip_is_datacenter(addr) is None:
+            print(addr)
+            all_good = False
+
+    if all_good:
+        print(f"all_good: {count=}")
+    return 0 if all_good else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

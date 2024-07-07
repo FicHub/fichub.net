@@ -22,7 +22,10 @@ test:
 type:
 	./venv/bin/mypy .
 
-.PHONY: clean dirs beta prod test type
+format:
+	./venv/bin/ruff format
+
+.PHONY: clean dirs beta prod test type format
 
 clean:
 	rm -f static/js/_.js static/style/_.css

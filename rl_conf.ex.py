@@ -23,4 +23,3 @@ NO_LIMIT_UPSTREAMS: Set[str] = set()
 # An extra set of remotes to treat as "weird" and handle similarly to
 # datacenter IPs.
 WEIRD_UPSTREAMS: Set[str] = set()
-

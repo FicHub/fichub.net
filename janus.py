@@ -1,20 +1,21 @@
 #!./venv/bin/python3
-from typing import List, TypeVar, ParamSpec, Any, Callable, Dict, Optional
-import sys
-import subprocess
-import resource
-import os
-import psutil
-import time
-import logging
+from typing import Any, Callable, Dict, List, Optional, ParamSpec, TypeVar
+import base64
 import functools
 import inspect
+import json
+import logging
+import os
+import os.path
+import resource
+import subprocess
+import sys
+import time
+
+import psutil
 
 # for calls to janus service
 import requests
-import base64
-import json
-import os.path
 
 USE_LOCAL_CALIBRE = False
 
@@ -110,7 +111,7 @@ def waitForOurTurn(key: str) -> None:
     delta = 2.5
     usPid = os.getpid()
     usCreated = None
-    for i in range(int(180 / delta)):
+    for _i in range(int(180 / delta)):
         cnt = 0
         minPid: Optional[int] = None
         minCreated = 1.0 * 9e9
@@ -127,10 +128,7 @@ def waitForOurTurn(key: str) -> None:
             cnt += 1
             if getWaitKey(cmdl) != key:
                 continue
-            if minPid is None:
-                minPid = p.pid
-                minCreated = p.create_time()
-            elif p.create_time() < minCreated:
+            if minPid is None or p.create_time() < minCreated:
                 minPid = p.pid
                 minCreated = p.create_time()
         if (
@@ -151,7 +149,7 @@ def waitForOurTurn(key: str) -> None:
             time.sleep(delta)
         else:
             return
-    raise Exception(f"error: it was never our turn")
+    raise Exception("error: it was never our turn")
 
 
 def limitVirtualMemory() -> None:
@@ -179,7 +177,8 @@ def convert_janus(usPid: int, epub_fname: str, tmp_fname: str) -> int:
     input_filename = os.path.basename(epub_fname)
     output_filename = os.path.basename(tmp_fname)
 
-    content = open(epub_fname, "rb").read()
+    with open(epub_fname, "rb") as f:
+        content = f.read()
     content_b64 = base64.b64encode(content).decode("utf-8")
 
     try:
@@ -201,7 +200,7 @@ def convert_janus(usPid: int, epub_fname: str, tmp_fname: str) -> int:
                     status_code=r.status_code,
                     response=r.content.decode("utf-8"),
                 )
-            except:
+            except Exception:
                 plog(
                     "janus request returned non-200",
                     status_code=r.status_code,
@@ -241,7 +240,7 @@ def main() -> int:
             plog("cmdline", cmdline=p.cmdline())
             key = getWaitKey(p.cmdline())
 
-    plog(f"waiting on key", key=key)
+    plog("waiting on key", key=key)
     waitForOurTurn(key)
 
     ret = 255

@@ -1,15 +1,16 @@
 #!./venv/bin/python
-from typing import List, Any, Dict, Optional, Iterator
+from typing import Any, Dict, Iterator, List
 import time
 import traceback
-import elasticsearch.helpers
+
 from elasticsearch import Elasticsearch
-from db import FicInfo, FicBlacklist
-from oil import oil
+import elasticsearch.helpers
+
 import authentications as a
+from db import FicBlacklist, FicInfo
 
 # TODO actually log anything :|
-logFileName = f"./log/es.log"
+logFileName = "./log/es.log"
 
 
 def plog(msg: str) -> None:
@@ -18,46 +19,40 @@ def plog(msg: str) -> None:
 
 
 def dropIndex(es: Any) -> None:
-    try:
-        es.indices.delete(index="fi")
-    except:
-        pass
+    es.indices.delete(index="fi")
 
 
 def createIndex(es: Any) -> None:
-    try:
-        # TODO: DeprecationWarning: The 'body' parameter is deprecated and will be
-        # removed in a future version. Instead use individiual parameters.
-        es.indices.create(
-            index="fi",
-            body={
-                "settings": {
-                    "analysis": {
-                        "analyzer": {
-                            "default": {"type": "standard"},
-                        },
-                    },
-                },
-                "mappings": {
-                    "properties": {
-                        "urlId": {"type": "text"},
-                        "created": {"type": "date"},
-                        "updated": {"type": "date"},
-                        "title": {"type": "text"},
-                        "author": {"type": "text"},
-                        "chapters": {"type": "long"},
-                        "words": {"type": "long"},
-                        "description": {"type": "text"},
-                        "ficCreated": {"type": "date"},
-                        "ficUpdated": {"type": "date"},
-                        "status": {"type": "text"},
-                        "source": {"type": "text"},
+    # TODO: DeprecationWarning: The 'body' parameter is deprecated and will be
+    # removed in a future version. Instead use individiual parameters.
+    es.indices.create(
+        index="fi",
+        body={
+            "settings": {
+                "analysis": {
+                    "analyzer": {
+                        "default": {"type": "standard"},
                     },
                 },
             },
-        )
-    except:
-        pass
+            "mappings": {
+                "properties": {
+                    "urlId": {"type": "text"},
+                    "created": {"type": "date"},
+                    "updated": {"type": "date"},
+                    "title": {"type": "text"},
+                    "author": {"type": "text"},
+                    "chapters": {"type": "long"},
+                    "words": {"type": "long"},
+                    "description": {"type": "text"},
+                    "ficCreated": {"type": "date"},
+                    "ficUpdated": {"type": "date"},
+                    "status": {"type": "text"},
+                    "source": {"type": "text"},
+                },
+            },
+        },
+    )
 
 
 def search(q: str, limit: int = 10) -> List[FicInfo]:
@@ -144,13 +139,13 @@ def main(argv: List[str]) -> int:
             elasticsearch.helpers.bulk(client=es, index="fi", actions=generateFicInfo())
             cnt += 1
             success = True
-        except SystemExit as e:
+        except SystemExit:
             raise
-        except:
-            plog(f"  trouble")
+        except Exception:
+            plog("  trouble")
             plog(traceback.format_exc())
     if not success:
-        plog(f"  permanent trouble")
+        plog("  permanent trouble")
         raise Exception("block failed")
 
     return 0

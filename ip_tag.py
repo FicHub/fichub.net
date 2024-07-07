@@ -1,8 +1,8 @@
-from typing import Dict, Optional, Any, Set, List
-import xml.etree.ElementTree as ElementTree
+from typing import Any, Dict, List, Optional, Set
 import ipaddress
 import json
 import traceback
+import xml.etree.ElementTree as ElementTree
 
 TAGGED_IP_RANGES: Dict[str, List[Any]] = {}  # TODO
 IP_TAG: Dict[str, Optional[str]] = {}
@@ -15,7 +15,8 @@ def load_azure_ip_ranges() -> None:
         TAGGED_IP_RANGES[tag] = []
 
     # Load legacy xml format
-    x = open("./dat/PublicIPs_20200824.xml", "r").read()
+    with open("./dat/PublicIPs_20200824.xml") as f:
+        x = f.read()
 
     root = ElementTree.fromstring(x)
 
@@ -40,7 +41,8 @@ def load_azure_ip_ranges() -> None:
             print(f"load_azure_ip_ranges: ^ something went wrong parsing {r}")
 
     # Load new json format
-    x = open("./dat/ServiceTags_Public_20230703.json", "r").read()
+    with open("./dat/ServiceTags_Public_20230703.json") as f:
+        x = f.read()
     j = json.loads(x)
     for val in j["values"]:
         prop = val["properties"]
@@ -60,7 +62,8 @@ def load_google_ip_ranges() -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    x = open("./dat/google_cloud.json", "r").read()
+    with open("./dat/google_cloud.json") as f:
+        x = f.read()
     j = json.loads(x)
 
     for prefix in j["prefixes"]:
@@ -86,7 +89,8 @@ def load_aws_ip_ranges() -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    x = open("./dat/aws-ip-ranges.json", "r").read()
+    with open("./dat/aws-ip-ranges.json") as f:
+        x = f.read()
     j = json.loads(x)
 
     for prefix in j["prefixes"]:
@@ -105,7 +109,8 @@ def load_asn_list(tag: str, fname: str) -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    x = open(fname, "r").readlines()
+    with open(fname) as f:
+        x = f.readlines()
 
     for xx in x:
         try:

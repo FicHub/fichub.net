@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 import shutil
+
 from db import FicInfo
-import ebook
 
 LEGACY_CACHE_DIR = "/veil/fichub_net_cache"
 TARGET_CACHE_DIR = "/veil/new_fichub_net_cache"

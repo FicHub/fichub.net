@@ -1,7 +1,5 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 import datetime
-
-import psycopg2
 
 from oil import oil
 

@@ -25,7 +25,15 @@ type:
 format:
 	./venv/bin/ruff format
 
-.PHONY: clean dirs beta prod test type format
+lint:
+	./venv/bin/ruff check
+
+lint-fix:
+	./venv/bin/ruff check --fix
+
+check: format type lint
+
+.PHONY: clean dirs beta prod test type format lint lint-fix check
 
 clean:
 	rm -f static/js/_.js static/style/_.css

@@ -1,7 +1,8 @@
-from typing import Dict, Any, Optional, List, Tuple
-import json
-from enum import Enum
+from typing import Any, Dict, List, Optional
 import datetime
+from enum import Enum
+import json
+
 from oil import oil
 
 
@@ -55,10 +56,10 @@ class ExportLog:
                 """,
                 (self.urlId, self.version, self.etype, self.inputHash, self.exportHash),
             )
-        l = ExportLog.lookup(self.urlId, self.version, self.etype, self.inputHash)
-        assert l is not None
-        self.exportHash = l.exportHash
-        self.created = l.created
+        el = ExportLog.lookup(self.urlId, self.version, self.etype, self.inputHash)
+        assert el is not None
+        self.exportHash = el.exportHash
+        self.created = el.created
         return self
 
 
@@ -167,7 +168,7 @@ class FicInfo:
         try:
             if self.rawExtendedMeta is not None and len(self.rawExtendedMeta) > 0:
                 rawExtendedMeta = json.loads(self.rawExtendedMeta)
-        except:
+        except Exception:
             pass
         return {
             "id": self.id,
@@ -249,12 +250,10 @@ class FicInfo:
 
     @staticmethod
     def parse(ficInfo: Dict[str, str]) -> "FicInfo":
-        extraMeta = ficInfo["extraMeta"] if "extraMeta" in ficInfo else None
+        extraMeta = ficInfo.get("extraMeta")
         if extraMeta is not None and len(extraMeta.strip()) < 1:
             extraMeta = None
-        rawExtendedMeta = (
-            ficInfo["rawExtendedMeta"] if "rawExtendedMeta" in ficInfo else None
-        )
+        rawExtendedMeta = ficInfo.get("rawExtendedMeta")
         if rawExtendedMeta is not None and len(rawExtendedMeta.strip()) < 1:
             rawExtendedMeta = None
         return FicInfo(
@@ -274,8 +273,8 @@ class FicInfo:
             int(ficInfo["sourceId"]),
             int(ficInfo["authorId"]),
             ficInfo["contentHash"],
-            ficInfo["authorUrl"] if "authorUrl" in ficInfo else None,
-            ficInfo["authorLocalId"] if "authorLocalId" in ficInfo else None,
+            ficInfo.get("authorUrl"),
+            ficInfo.get("authorLocalId"),
             rawExtendedMeta,
         )
 
@@ -487,7 +486,7 @@ class RequestSource:
             )
         src = RequestSource.select(isAutomated, route, description)
         if src is None:
-            raise Exception(f"RequestSource.upsert: failed to upsert")
+            raise Exception("RequestSource.upsert: failed to upsert")
         return src
 
 

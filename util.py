@@ -1,6 +1,8 @@
-from typing import Dict, Any, cast
+from typing import Any, Dict, cast
 import hashlib
+
 import requests
+
 import authentications as a
 
 

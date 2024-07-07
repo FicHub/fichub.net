@@ -10,30 +10,43 @@ from typing import (
     Union,
     cast,
 )
+import contextlib
+from enum import IntEnum
+import json
+import math
 import os
 import os.path
+import random
+import shutil
 import time
 import traceback
-import json
-import random
-import math
-import datetime
-import shutil
-from enum import IntEnum
+
 import flask
 from flask import (
     Flask,
     Response,
-    request,
-    render_template,
-    send_from_directory,
-    redirect,
-    url_for,
     make_response,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
 )
-import werkzeug.wrappers
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import NotFound
+
+import ax
+from db import FicBlacklist, FicInfo, RequestLog, RequestSource
+import ebook
+from ip_tag import TAGGED_IP_RANGES, ip_is_datacenter, load_ip_ranges
+from limiter import Limiter
+from rl_conf import (
+    DYNAMIC_RATE_LIMIT,
+    LIMIT_UPSTREAMS,
+    LIMIT_UPSTREAMS_EXTRA,
+    NO_LIMIT_UPSTREAMS,
+    WEIRD_UPSTREAMS,
+)
 
 FlaskHeaderValue = Union[str, List[str], Tuple[str, ...]]
 FlaskHeaders = Union[
@@ -49,19 +62,6 @@ FlaskResponse = Union[
 ]
 
 app = Flask(__name__, static_url_path="")
-
-import ax
-from db import FicInfo, FicBlacklist, RequestLog, RequestSource
-import ebook
-from limiter import Limiter
-from ip_tag import ip_is_datacenter, load_ip_ranges, TAGGED_IP_RANGES
-from rl_conf import (
-    DYNAMIC_RATE_LIMIT,
-    LIMIT_UPSTREAMS,
-    LIMIT_UPSTREAMS_EXTRA,
-    NO_LIMIT_UPSTREAMS,
-    WEIRD_UPSTREAMS,
-)
 
 NODE_NAME = "orion"
 CACHE_BUSTER = "26"
@@ -135,7 +135,7 @@ def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
     greylisted = False
     links = []
     ficInfo = None
-    try:
+    with contextlib.suppress(Exception):
         if legacy and len(urlId) > 1:
             fis = FicInfo.select(urlId)
             if len(fis) == 1:
@@ -170,7 +170,7 @@ def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
                         # for any etype that hasn't already been exported or is out of date,
                         # create a (re)generate link
                         link = url_for(
-                            f"get_cached_export_partial",
+                            "get_cached_export_partial",
                             etype=etype,
                             urlId=urlId,
                             cv=CACHE_BUSTER,
@@ -189,8 +189,6 @@ def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
                             h=fhash,
                         )
                         links.append((etype, True, link))
-    except:
-        pass
 
     if greylisted:
         links = []
@@ -297,11 +295,7 @@ def ensure_export(
             LIMIT_UPSTREAMS[source.description] = 0.1
         if source.description in LIMIT_UPSTREAMS:
             v = LIMIT_UPSTREAMS[source.description]
-            o = (
-                LIMIT_UPSTREAMS_EXTRA[source.description]
-                if source.description in LIMIT_UPSTREAMS_EXTRA
-                else 0.0
-            )
+            o = LIMIT_UPSTREAMS_EXTRA.get(source.description, 0.0)
             limit_d = 1 + (random.random() * v) + o
             print(
                 f"  limiting {source.description}: v={v:0.3} o={o:0.3} d={limit_d:0.3} ts={time.time()}"
@@ -378,7 +372,7 @@ def ensure_export(
             slug = ebook.buildFileSlug(meta.title, meta.author, meta.id)
             suff = ebook.EXPORT_SUFFIXES[etype]
             exportUrl = url_for(
-                f"get_cached_export",
+                "get_cached_export",
                 etype=etype,
                 urlId=meta.id,
                 fname=f"{slug}{suff}",
@@ -442,7 +436,7 @@ def ensure_export(
         slug = ebook.buildFileSlug(meta.title, meta.author, meta.id)
         suff = ebook.EXPORT_SUFFIXES[etype]
         exportUrl = url_for(
-            f"get_cached_export",
+            "get_cached_export",
             etype=etype,
             urlId=meta.id,
             fname=f"{slug}{suff}",
@@ -491,11 +485,12 @@ def ensure_export(
             None,
         )
 
-        if e.args is not None and len(e.args) > 0:
-            if isinstance(e, ax.MissingChapterException):
-                etext = e.args[0]
-            elif isinstance(e, InvalidEtypeException):
-                etext = e.args[0]
+        if (
+            e.args is not None
+            and len(e.args) > 0
+            and isinstance(e, (ax.MissingChapterException, InvalidEtypeException))
+        ):
+            etext = e.args[0]
 
         traceback.print_exc()
         print(e)
@@ -650,18 +645,16 @@ def get_fixits(q: str) -> List[str]:
         fixits += [
             "fictionpress.com is fragile at the moment; please try again later or check the discord"
         ]
-    try:
+
+    with contextlib.suppress(Exception):
         import es
-        import urllib.parse
 
         fis = es.search(q, limit=15)
         for fi in fis:
-            u = urllib.parse.quote(fi.source, safe="")
             fixits += [
                 f"<br/>did you mean <a href=/fic/{fi.id}>{fi.title} by {fi.author}</a>?"
             ]
-    except:
-        pass
+
     return fixits
 
 
@@ -833,7 +826,7 @@ def api_v0_epub() -> Any:
         if etype == "epub":
             continue  # we already exported epub
         url = url_for(
-            f"get_cached_export_partial",
+            "get_cached_export_partial",
             etype=etype,
             urlId=eres["urlId"],
             cv=CACHE_BUSTER,
@@ -851,7 +844,7 @@ def api_v0_epub() -> Any:
 @app.route("/api/v0/meta", methods=["GET"])
 def api_v0_meta() -> Any:
     q = request.args.get("q", "").strip()
-    urlId = request.args.get("id", "").strip()
+    _urlId = request.args.get("id", "").strip()
     if len(q.strip()) < 1:
         return getErr(WebError.no_query, {"q": q})
 
@@ -875,7 +868,7 @@ def legacy_epub_export() -> FlaskResponse:
         fixits = ["an error ocurred :("] + ["", flask.escape(d)]
         return render_template("index.html", q=q, fixits=fixits, ficInfo=None), 429
     q = request.args.get("q", "").strip() if "q" not in res else res["q"]
-    fixits = [] if "fixits" not in res else res["fixits"]
+    fixits = res.get("fixits", [])
     if "err" not in res or int(res["err"]) == 0 and "urlId" in res:
         return index_impl(res["urlId"], True)
         # return redirect(url_for('index', q=q, id=res['urlId'], noscript='true'))

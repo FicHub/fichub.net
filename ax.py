@@ -1,11 +1,11 @@
-from typing import Dict, Any, Optional, List, Tuple
-import datetime
+from typing import Any, Dict
 import traceback
 import urllib.parse
-from db import FicInfo, FicBlacklist, AuthorBlacklist
+
+import authentications as a
+from db import AuthorBlacklist, FicBlacklist, FicInfo
 import es
 import util
-import authentications as a
 
 
 def alive() -> bool:
@@ -14,7 +14,7 @@ def alive() -> bool:
         m = util.reqJson(url, timeout=5.0)
         if "err" in m and str(m["err"]) != "0":
             return False
-    except:
+    except Exception:
         return False
     return True
 

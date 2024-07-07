@@ -1,16 +1,19 @@
-from typing import Dict, Tuple, Any, Optional
-import os
-import shutil
-import traceback
+from typing import Dict, Optional, Tuple
 import datetime
-import re
-import zipfile
-import subprocess
+import os
+import pathlib
 import random
+import re
+import shutil
+import subprocess
 import threading
+import traceback
+import zipfile
+
 from dateutil.relativedelta import relativedelta
-from flask import render_template
 from ebooklib import epub
+from flask import render_template
+
 from ax import Chapter, FicInfo
 from db import ExportLog, FicVersionBump
 import util
@@ -90,13 +93,13 @@ def metaDataString(info: FicInfo) -> str:
 
 def buildFileSlug(title: str, author: str, urlId: str) -> str:
     slug = f"{title} by {author}"
-    slug = re.sub("[^\w\-_]+", "_", slug)
+    slug = re.sub(r"[^\w\-_]+", "_", slug)
     slug = re.sub("_+", "_", slug)
     slug = slug.strip("_")
     try:
         t = slug.encode("utf-8").decode("ascii", "ignore")
         slug = t
-    except:
+    except Exception:
         pass
     return f"{slug}-{urlId}"
 
@@ -257,7 +260,7 @@ def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]) -> Tuple[str, str
         uid="doc_style",
         file_name="style/main.css",
         media_type="text/css",
-        content=open("epub_style.css").read(),
+        content=pathlib.Path("epub_style.css").read_text(),
     )
     book.add_item(doc_style)
 

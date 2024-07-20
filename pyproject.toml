@@ -59,6 +59,7 @@ extend-select = [
 	"SIM", # flake8-simplify
 	"I",   # isort
 	"F",   # pyflakes
+	"ARG", # flake8-unused-arguments
 ]
 
 [tool.ruff.lint.isort]

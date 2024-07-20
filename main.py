@@ -113,7 +113,7 @@ def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None) -> Dict[str, A
 
 
 @app.errorhandler(404)
-def page_not_found(e: Exception) -> FlaskResponse:
+def page_not_found(_e: Exception) -> FlaskResponse:
     return render_template("404.html"), 404
 
 
@@ -224,32 +224,32 @@ def fic_info(urlId: str) -> FlaskResponse:
     return redirect(url_for("index", q=ficInfo.source, id=ficInfo.id))
 
 
-@app.route("/cache/", defaults={"page": 1})
-@app.route("/cache/<int:page>")
-def cache_listing_deprecated(page: int) -> FlaskResponse:
+@app.route("/cache/", defaults={"_page": 1})
+@app.route("/cache/<int:_page>")
+def cache_listing_deprecated(_page: int) -> FlaskResponse:
     return redirect(url_for("index"))
 
 
-@app.route("/cache/today/", defaults={"page": 1})
-@app.route("/cache/today/<int:page>")
-def cache_listing_today(page: int) -> FlaskResponse:
+@app.route("/cache/today/", defaults={"_page": 1})
+@app.route("/cache/today/<int:_page>")
+def cache_listing_today(_page: int) -> FlaskResponse:
     return redirect(url_for("index"))
 
 
-@app.route("/cache/<int:year>/<int:month>/<int:day>/", defaults={"page": 1})
-@app.route("/cache/<int:year>/<int:month>/<int:day>/<int:page>")
-def cache_listing(year: int, month: int, day: int, page: int) -> FlaskResponse:
+@app.route("/cache/<int:_year>/<int:_month>/<int:_day>/", defaults={"_page": 1})
+@app.route("/cache/<int:_year>/<int:_month>/<int:_day>/<int:_page>")
+def cache_listing(_year: int, _month: int, _day: int, _page: int) -> FlaskResponse:
     return redirect(url_for("index"))
 
 
-@app.route("/popular/", defaults={"page": 1})
-@app.route("/popular/<int:page>")
-def popular_listing(page: int) -> FlaskResponse:
+@app.route("/popular/", defaults={"_page": 1})
+@app.route("/popular/<int:_page>")
+def popular_listing(_page: int) -> FlaskResponse:
     return render_template("popular_outmoded.html")
 
 
-@app.route("/search/author/<q>")
-def search_author(q: str) -> FlaskResponse:
+@app.route("/search/author/<_q>")
+def search_author(_q: str) -> FlaskResponse:
     return redirect(url_for("index"))
 
 

@@ -1,5 +1,6 @@
 #!./venv/bin/python
 from typing import Any, Dict, Iterator, List
+import sys
 import time
 import traceback
 
@@ -119,8 +120,8 @@ def generateFicInfo() -> Iterator[Dict[str, Any]]:
 
 
 def main(argv: List[str]) -> int:
-    if len(sys.argv) not in {1}:
-        print(f"usage: {sys.argv[0]}")
+    if len(argv) not in {1}:
+        print(f"usage: {argv[0]}")
         return 1
 
     es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
@@ -152,6 +153,4 @@ def main(argv: List[str]) -> int:
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main(sys.argv))

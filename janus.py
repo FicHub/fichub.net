@@ -157,7 +157,7 @@ def limitVirtualMemory() -> None:
     resource.setrlimit(resource.RLIMIT_AS, (MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
 
-def convert_local(usPid: int, epub_fname: str, tmp_fname: str) -> int:
+def convert_local(epub_fname: str, tmp_fname: str) -> int:
     ret = 255
     try:
         res = subprocess.run(
@@ -170,8 +170,8 @@ def convert_local(usPid: int, epub_fname: str, tmp_fname: str) -> int:
     return ret
 
 
-@trace_timing(["usPid", "epub_fname", "tmp_fname"])
-def convert_janus(usPid: int, epub_fname: str, tmp_fname: str) -> int:
+@trace_timing(["epub_fname", "tmp_fname"])
+def convert_janus(epub_fname: str, tmp_fname: str) -> int:
     ret = 255
 
     input_filename = os.path.basename(epub_fname)
@@ -246,9 +246,9 @@ def main() -> int:
     ret = 255
 
     if USE_LOCAL_CALIBRE:
-        ret = convert_local(usPid, epub_fname, tmp_fname)
+        ret = convert_local(epub_fname, tmp_fname)
     else:
-        ret = convert_janus(usPid, epub_fname, tmp_fname)
+        ret = convert_janus(epub_fname, tmp_fname)
 
     return ret
 

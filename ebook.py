@@ -212,7 +212,8 @@ def convertEpub(
     info: FicInfo, chapters: Dict[int, Chapter], etype: str
 ) -> Tuple[str, str]:
     if etype not in EXPORT_TYPES:
-        raise Exception(f"convertEpub: invalid etype: {etype}")
+        msg = f"convertEpub: invalid etype: {etype}"
+        raise Exception(msg)
 
     suff = EXPORT_SUFFIXES[etype]
     tmp_fname = randomTempFile(f"{info.id}{suff}")
@@ -228,7 +229,8 @@ def convertEpub(
             timeout=60 * 5,
         )
         if res.returncode != 0:
-            raise Exception(f"convertEpub: error: return code {res.returncode} != 0")
+            msg = f"convertEpub: error: return code {res.returncode} != 0"
+            raise Exception(msg)
     except:
         raise
 

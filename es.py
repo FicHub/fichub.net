@@ -147,7 +147,8 @@ def main(argv: List[str]) -> int:
             plog(traceback.format_exc())
     if not success:
         plog("  permanent trouble")
-        raise Exception("block failed")
+        msg = "block failed"
+        raise Exception(msg)
 
     return 0
 

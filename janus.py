@@ -149,7 +149,8 @@ def waitForOurTurn(key: str) -> None:
             time.sleep(delta)
         else:
             return
-    raise Exception("error: it was never our turn")
+    msg = "error: it was never our turn"
+    raise Exception(msg)
 
 
 def limitVirtualMemory() -> None:

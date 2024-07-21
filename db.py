@@ -490,7 +490,8 @@ class RequestSource:
             )
         src = RequestSource.select(isAutomated, route, description)
         if src is None:
-            raise Exception("RequestSource.upsert: failed to upsert")
+            msg = "RequestSource.upsert: failed to upsert"
+            raise Exception(msg)
         return src
 
 

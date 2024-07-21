@@ -84,7 +84,8 @@ def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
         if i not in chapters:
             print(f"requestAllChapters: err: {i} not in chapters")
             print(list(chapters.keys()))
-            raise MissingChapterException(f"err: missing chapter: {i}/{expected}")
+            msg = f"err: missing chapter: {i}/{expected}"
+            raise MissingChapterException(msg)
 
     return chapters
 

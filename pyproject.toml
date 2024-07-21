@@ -64,6 +64,8 @@ extend-select = [
 	"A",   # flake8-builtins
 	"C4",  # flake8-comprehensions
 	"DTZ", # flake8-datetimez
+	"T10", # flake8-debugger
+	"EM",  # flake8-errmsg
 ]
 
 [tool.ruff.lint.isort]

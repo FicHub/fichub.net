@@ -147,7 +147,8 @@ def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
                 if epubRL is None:
                     # we always generate the epub first, so if we don't have it something went
                     # horribly wrong
-                    raise Exception("uh oh")
+                    msg = "uh oh"
+                    raise Exception(msg)
 
                 slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
                 eh = epubRL.exportFileHash
@@ -431,7 +432,8 @@ def ensure_export(
         elif etype in ["mobi", "pdf"]:
             fname, fhash = ebook.convertEpub(meta, chapters, etype)
         else:
-            raise InvalidEtypeException(f"err: unknown etype: {etype}")
+            msg = f"err: unknown etype: {etype}"
+            raise InvalidEtypeException(msg)
 
         slug = ebook.buildFileSlug(meta.title, meta.author, meta.id)
         suff = ebook.EXPORT_SUFFIXES[etype]

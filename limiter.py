@@ -83,7 +83,8 @@ class Limiter:
             curs.execute("select fichub.fill_limiter(%s, %s)", (self.key, value))
             r = curs.fetchone()
             if r is None:
-                raise Exception("Limiter.retryAfter: no fill limit response")
+                msg = "Limiter.retryAfter: no fill limit response"
+                raise Exception(msg)
             v = float(r[0])
             if v <= 0:
                 return None

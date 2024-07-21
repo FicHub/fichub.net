@@ -73,6 +73,7 @@ extend-select = [
 	"G",   # flake8-logging-format
 	"PIE", # flake8-pie
 	"PYI", # flake8-pyi
+	"PT",  # flake8-pytest-style
 ]
 
 [tool.ruff.lint.isort]

@@ -1,12 +1,10 @@
-from typing import Iterator
-
 from flask import Flask
 from flask.testing import FlaskClient
 import pytest
 
 
 @pytest.fixture()
-def app() -> Iterator[Flask]:
+def app() -> Flask:
     from main import app
 
     app.config.update(
@@ -15,7 +13,7 @@ def app() -> Iterator[Flask]:
         }
     )
 
-    yield app
+    return app
 
 
 @pytest.fixture()

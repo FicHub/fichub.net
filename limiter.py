@@ -102,17 +102,3 @@ class Limiter:
             )
             r = curs.fetchone()
             return float(r[0])
-
-    # def retryAfterResponse(self, db: 'psycopg2.connection', value: float
-    # ) -> Optional[ResponseReturnValue]:
-    # retryAfter = self.retryAfter(db, value)
-    # if retryAfter is None:
-    # return None
-
-    # retryAfter = int(math.ceil(retryAfter))
-
-    # res = make_response(
-    # {'err':-429,'msg':'too many requests','retryAfter':retryAfter},
-    # 429)
-    # res.headers['Retry-After'] = retryAfter
-    # return res

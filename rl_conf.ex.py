@@ -6,7 +6,7 @@ DYNAMIC_RATE_LIMIT = True
 
 # Configuration for static rate limiting (not based on actual request rate).
 # In general this looks like:
-#   1 + (random.random() * base) + extra
+#   1 + (rand() * base) + extra  # noqa: ERA001
 
 # A static set of pre-determined remotes which should have a given base delay.
 # If the remote is not in here nor the NO_LIMIT_UPSTREAMS it will be defaulted

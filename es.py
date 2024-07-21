@@ -124,7 +124,11 @@ def main(argv: List[str]) -> int:
         return 1
 
     es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
-    # dropIndex(es)
+
+    drop_indexes = False
+    if drop_indexes:
+        dropIndex(es)
+
     createIndex(es)
 
     success = False

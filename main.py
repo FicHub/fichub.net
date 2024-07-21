@@ -317,7 +317,6 @@ def ensure_export(
                 f"  limiting {source.description}: v={v:0.3} o={o:0.3} d={limit_d:0.3} ts={time.time()}"
             )
             time.sleep(limit_d)
-        # time.sleep(.1)
 
     notes = []
     axAlive = ax.alive()
@@ -884,8 +883,6 @@ def legacy_epub_export() -> FlaskResponse:
     fixits = res.get("fixits", [])
     if "err" not in res or int(res["err"]) == 0 and "urlId" in res:
         return index_impl(res["urlId"], True)
-        # return redirect(url_for('index', q=q, id=res['urlId'], noscript='true'))
-        # return redirect(url_for('fic_info', urlId=res['urlId']))
     if "fixits" in res:
         del res["fixits"]
     fixits = ["an error ocurred :(", *fixits, "", flask.escape(json.dumps(res))]

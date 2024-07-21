@@ -164,7 +164,6 @@ def main() -> int:
         if len(addr) < 1 or addr == "142.132.180.201":  # gil
             continue
         count += 1
-        # print(f"checking {addr=}")
         if ip_is_datacenter(addr) is None:
             print(addr)
             all_good = False

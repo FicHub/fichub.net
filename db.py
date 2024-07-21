@@ -70,7 +70,7 @@ class FicVersionBump:
 
     @classmethod
     def selectList(cls) -> str:
-        return ", ".join(map(lambda f: f"{cls.tableAlias}.{f}", cls.fields))
+        return ", ".join(f"{cls.tableAlias}.{f}" for f in cls.fields)
 
     def __init__(self, id_: str, value_: int) -> None:
         self.id = id_
@@ -117,7 +117,7 @@ class FicInfo:
 
     @classmethod
     def selectList(cls) -> str:
-        return ", ".join(map(lambda f: f"{cls.tableAlias}.{f}", cls.fields))
+        return ", ".join(f"{cls.tableAlias}.{f}" for f in cls.fields)
 
     # TODO: make sourceId, authorId non-Optional when fully backfilled
     # TODO: make authorUrl, authorLocalId non-Optional when fully backfilled

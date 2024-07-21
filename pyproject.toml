@@ -60,6 +60,9 @@ extend-select = [
 	"I",   # isort
 	"F",   # pyflakes
 	"ARG", # flake8-unused-arguments
+	"YTT", # flake8-2020
+	"A",   # flake8-builtins
+	"C4",  # flake8-comprehensions
 ]
 
 [tool.ruff.lint.isort]

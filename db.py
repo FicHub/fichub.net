@@ -258,15 +258,19 @@ class FicInfo:
             rawExtendedMeta = None
         return FicInfo(
             ficInfo["urlId"],
-            datetime.datetime.now(),
-            datetime.datetime.now(),
+            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.timezone.utc),
             ficInfo["title"],
             ficInfo["author"],
             int(ficInfo["chapters"]),
             int(ficInfo["words"]),
             ficInfo["desc"],
-            datetime.datetime.fromtimestamp(int(ficInfo["published"]) / 1000.0),
-            datetime.datetime.fromtimestamp(int(ficInfo["updated"]) / 1000.0),
+            datetime.datetime.fromtimestamp(
+                int(ficInfo["published"]) / 1000.0, tz=datetime.timezone.utc
+            ),
+            datetime.datetime.fromtimestamp(
+                int(ficInfo["updated"]) / 1000.0, tz=datetime.timezone.utc
+            ),
             ficInfo["status"],
             ficInfo["source"],
             extraMeta,

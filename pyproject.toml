@@ -63,6 +63,7 @@ extend-select = [
 	"YTT", # flake8-2020
 	"A",   # flake8-builtins
 	"C4",  # flake8-comprehensions
+	"DTZ", # flake8-datetimez
 ]
 
 [tool.ruff.lint.isort]

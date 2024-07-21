@@ -66,7 +66,9 @@ def formatRelDatePart(val: int, which: str) -> str:
 
 
 def metaDataString(info: FicInfo) -> str:
-    diff = relativedelta(datetime.datetime.now(), info.ficUpdated)
+    diff = relativedelta(
+        datetime.datetime.now(tz=datetime.timezone.utc), info.ficUpdated
+    )
     parts = [
         (diff.years, "year"),
         (diff.months, "month"),
@@ -142,7 +144,7 @@ def finalizeExport(etype: str, urlId: str, ihash: str, tname: str) -> Tuple[str,
     # record this result so we can immediately return it next time, assuming the
     # input hash and export version have not changed
     try:
-        n = datetime.datetime.now()
+        n = datetime.datetime.now(tz=datetime.timezone.utc)
         el = ExportLog(urlId, exportVersion(etype, urlId), etype, ihash, fhash, n)
         el.upsert()
     except Exception as e:

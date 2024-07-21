@@ -1,5 +1,5 @@
 #!./venv/bin/python3
-from typing import Any, Callable, Dict, List, Optional, ParamSpec, TypeVar
+from typing import Any, Callable, Dict, List, Optional, ParamSpec, Type, TypeVar
 import base64
 import functools
 import inspect
@@ -11,6 +11,7 @@ import resource
 import subprocess
 import sys
 import time
+from types import TracebackType
 
 import psutil
 
@@ -56,7 +57,12 @@ class LoggingTimer:
     def __enter__(self) -> None:
         self.s = time.time()
 
-    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         e = time.time()
         d = e - self.s
         msg = "timing: {}({}) took {}s".format(

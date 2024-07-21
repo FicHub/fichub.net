@@ -126,8 +126,7 @@ def randomTempFile(extra: str, bits: int = 32) -> str:
 def buildExportPath(etype: str, urlId: str, create: bool = False) -> Tuple[str, str]:
     urlId = urlId.lower()
     parts = [etype]
-    for i in range(0, len(urlId), 3):
-        parts.append(urlId[i : i + 3])
+    parts.extend(urlId[i : i + 3] for i in range(0, len(urlId), 3))
     parts.append(urlId)
     fdir = os.path.join(*([PRIMARY_CACHE_DIR] + parts))
     if create and not os.path.isdir(fdir):

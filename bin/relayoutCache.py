@@ -18,9 +18,7 @@ def buildLegacyExportPath(etype: str, urlId: str, create: bool = False) -> str:
 def buildExportPath(etype: str, urlId: str, create: bool = False) -> str:
     urlId = urlId.lower()
     parts = [TARGET_CACHE_DIR, etype]
-    for i in range(0, len(urlId), 3):
-        parts.append(urlId[i : i + 3])
-    parts.append(urlId)
+    parts.extend(urlId[i : i + 3] for i in range(0, len(urlId), 3))
     fdir = os.path.join(*parts)
     if create and not os.path.isdir(fdir):
         os.makedirs(fdir)

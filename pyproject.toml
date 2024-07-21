@@ -88,6 +88,7 @@ extend-select = [
 	"PL",   # Pylint
 	"TRY",  # tryceratops
 	"FLY",  # flynt
+	"PERF", # Perflint
 ]
 
 ignore = [

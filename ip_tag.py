@@ -12,6 +12,16 @@ TAGGED_IP_RANGES: Dict[str, List[IPNetwork]] = {}
 IP_TAG: Dict[str, Optional[str]] = {}
 
 
+def try_parse_ip_network(r: str) -> Optional[IPNetwork]:
+    try:
+        return ipaddress.ip_network(r)
+    except Exception as e:
+        traceback.print_exc()
+        print(e)
+        print(f"try_parse_ip_network: ^ something went wrong parsing {r}")
+    return None
+
+
 def load_azure_ip_ranges() -> None:
     tag = "azure"
     if tag not in TAGGED_IP_RANGES:
@@ -34,13 +44,9 @@ def load_azure_ip_ranges() -> None:
     ranges = extractIpRanges(root)
 
     for r in ranges:
-        try:
-            n = ipaddress.ip_network(r)
+        n = try_parse_ip_network(r)
+        if n is not None:
             TAGGED_IP_RANGES[tag].append(n)
-        except Exception as e:
-            traceback.print_exc()
-            print(e)
-            print(f"load_azure_ip_ranges: ^ something went wrong parsing {r}")
 
     # Load new json format
     with open("./dat/ServiceTags_Public_20230703.json") as f:
@@ -49,13 +55,9 @@ def load_azure_ip_ranges() -> None:
     for val in j["values"]:
         prop = val["properties"]
         for r in prop["addressPrefixes"]:
-            try:
-                n = ipaddress.ip_network(r)
+            n = try_parse_ip_network(r)
+            if n is not None:
                 TAGGED_IP_RANGES[tag].append(n)
-            except Exception as e:
-                traceback.print_exc()
-                print(e)
-                print(f"load_azure_ip_ranges: ^ something went wrong parsing {r}")
 
 
 def load_google_ip_ranges() -> None:
@@ -75,13 +77,9 @@ def load_google_ip_ranges() -> None:
             r = prefix["ipv6Prefix"]
         if r is None:
             continue
-        try:
-            n = ipaddress.ip_network(r)
+        n = try_parse_ip_network(r)
+        if n is not None:
             TAGGED_IP_RANGES[tag].append(n)
-        except Exception as e:
-            traceback.print_exc()
-            print(e)
-            print(f"load_google_ip_ranges: ^ something went wrong parsing {r}")
 
 
 def load_aws_ip_ranges() -> None:
@@ -94,14 +92,12 @@ def load_aws_ip_ranges() -> None:
     j = json.loads(x)
 
     for prefix in j["prefixes"]:
-        try:
-            r = prefix["ip_prefix"]
-            n = ipaddress.ip_network(r)
+        r = prefix.get("ip_prefix")
+        if r is None:
+            continue
+        n = try_parse_ip_network(r)
+        if n is not None:
             TAGGED_IP_RANGES[tag].append(n)
-        except Exception as e:
-            traceback.print_exc()
-            print(e)
-            print(f"load_aws_ip_ranges: ^ something went wrong parsing {r}")
 
 
 def load_asn_list(tag: str, fname: str) -> None:

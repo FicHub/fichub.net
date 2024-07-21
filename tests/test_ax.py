@@ -109,6 +109,14 @@ class AxMock:
             match=self.matchers(),
         )
 
+    def add_raw(self, method: str, url: str, body: str) -> None:
+        self.rsps.add(
+            method,
+            url,
+            body=body,
+            match=self.matchers(),
+        )
+
 
 def test_alive() -> None:
     # initial request blocked, results in False

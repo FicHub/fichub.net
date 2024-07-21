@@ -89,6 +89,8 @@ extend-select = [
 	"TRY",  # tryceratops
 	"FLY",  # flynt
 	"PERF", # Perflint
+	"FURB", # refurb
+	"RUF",  # Ruff-specific rules
 ]
 
 ignore = [

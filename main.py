@@ -878,7 +878,7 @@ def legacy_epub_export() -> FlaskResponse:
         # Rate limited 429
         q = request.args.get("q", "").strip()
         d = res.data.decode("utf-8")
-        fixits = ["an error ocurred :("] + ["", flask.escape(d)]
+        fixits = ["an error ocurred :(", "", flask.escape(d)]
         return render_template("index.html", q=q, fixits=fixits, ficInfo=None), 429
     q = request.args.get("q", "").strip() if "q" not in res else res["q"]
     fixits = res.get("fixits", [])
@@ -888,7 +888,7 @@ def legacy_epub_export() -> FlaskResponse:
         # return redirect(url_for('fic_info', urlId=res['urlId']))
     if "fixits" in res:
         del res["fixits"]
-    fixits = ["an error ocurred :("] + fixits + ["", flask.escape(json.dumps(res))]
+    fixits = ["an error ocurred :(", *fixits, "", flask.escape(json.dumps(res))]
     return render_template("index.html", q=q, fixits=fixits, ficInfo=None)
 
 

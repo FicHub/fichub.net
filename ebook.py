@@ -128,10 +128,10 @@ def buildExportPath(etype: str, urlId: str, create: bool = False) -> Tuple[str, 
     parts = [etype]
     parts.extend(urlId[i : i + 3] for i in range(0, len(urlId), 3))
     parts.append(urlId)
-    fdir = os.path.join(*([PRIMARY_CACHE_DIR] + parts))
+    fdir = os.path.join(*([PRIMARY_CACHE_DIR, *parts]))
     if create and not os.path.isdir(fdir):
         os.makedirs(fdir)
-    sfdir = os.path.join(*([SECONDARY_CACHE_DIR] + parts))
+    sfdir = os.path.join(*([SECONDARY_CACHE_DIR, *parts]))
     return fdir, sfdir
 
 
@@ -301,12 +301,13 @@ def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]) -> Tuple[str, str
         book.add_item(c)
 
     # define Table Of Contents
-    book.toc = [epub.Link("introduction.xhtml", "Introduction", "intro")] + list(
-        chapters.values()
-    )
+    book.toc = [
+        epub.Link("introduction.xhtml", "Introduction", "intro"),
+        *list(chapters.values()),
+    ]
 
     # basic spine
-    book.spine = [intro, nav_page] + list(chapters.values())
+    book.spine = [intro, nav_page, *list(chapters.values())]
 
     # add default NCX file
     book.add_item(epub.EpubNcx())

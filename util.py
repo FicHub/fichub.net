@@ -28,7 +28,7 @@ def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> Dict[Any,
         if retryCount < 1:
             return {
                 "err": -1,
-                "msg": f"reqJson: received status code: {str(r.status_code)}",
+                "msg": f"reqJson: received status code: {r.status_code!s}",
             }
         return reqJson(link, retryCount - 1)
     return cast(Dict[Any, Any], p)

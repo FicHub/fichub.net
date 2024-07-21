@@ -69,7 +69,7 @@ class ExportLog:
 
 class FicVersionBump:
     tableAlias = "fvb"
-    fields = ["id", "value"]
+    fields = ("id", "value")
     fieldCount = len(fields)
 
     @classmethod
@@ -96,7 +96,7 @@ class FicVersionBump:
 
 class FicInfo:
     tableAlias = "fi"
-    fields = [
+    fields = (
         "id",
         "created",
         "updated",
@@ -116,7 +116,7 @@ class FicInfo:
         "authorUrl",
         "authorLocalId",
         "rawExtendedMeta",
-    ]
+    )
     fieldCount = len(fields)
 
     @classmethod

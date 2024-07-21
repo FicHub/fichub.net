@@ -17,7 +17,13 @@ static/style/_.css: frontend/_.sass | dirs
 	sassc -t compressed $< > $@
 
 test:
+	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/ -m "not slow"
+
+test-slow:
 	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/
+
+test-slow-only:
+	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/ -m "slow"
 
 type:
 	./venv/bin/mypy .
@@ -31,9 +37,11 @@ lint:
 lint-fix:
 	./venv/bin/ruff check --fix
 
-check: format type lint
+check: format type lint-fix test
 
-.PHONY: clean dirs beta prod test type format lint lint-fix check
+check-slow: format type lint-fix test-slow
+
+.PHONY: clean dirs beta prod test test-slow test-slow-only type format lint lint-fix check check-slow
 
 clean:
 	rm -f static/js/_.js static/style/_.css

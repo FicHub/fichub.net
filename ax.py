@@ -1,4 +1,5 @@
 from typing import Any, Dict
+import contextlib
 import traceback
 import urllib.parse
 
@@ -13,13 +14,10 @@ class MissingChapterError(Exception):
 
 
 def alive() -> bool:
-    try:
+    with contextlib.suppress(Exception):
         m = util.reqJson(a.AX_STATUS_ENDPOINT, timeout=5.0)
-        if "err" in m and str(m["err"]) != "0":
-            return False
-    except Exception:
-        return False
-    return True
+        return "err" not in m or str(m["err"]) == "0"
+    return False
 
 
 def lookup(query: str, timeout: float = 280.0) -> Dict[str, Any]:

@@ -25,11 +25,10 @@ def load_azure_ip_ranges() -> None:
     def extractIpRanges(e: ElementTree.Element) -> Set[str]:
         if e.tag == "IpRange":
             return {e.attrib["Subnet"]}
-        else:
-            s = set()
-            for child in e:
-                s |= extractIpRanges(child)
-            return s
+        s = set()
+        for child in e:
+            s |= extractIpRanges(child)
+        return s
 
     ranges = extractIpRanges(root)
 

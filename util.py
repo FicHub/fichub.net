@@ -7,11 +7,9 @@ import authentications as a
 
 
 def hashFile(fname: str) -> str:
-    digest = "hash_err"
     with open(fname, "rb") as f:
         data = f.read()
-        digest = hashlib.md5(data).hexdigest()
-    return digest
+        return hashlib.md5(data).hexdigest()
 
 
 def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> Dict[Any, Any]:
@@ -32,6 +30,5 @@ def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> Dict[Any,
                 "err": -1,
                 "msg": f"reqJson: received status code: {str(r.status_code)}",
             }
-        else:
-            return reqJson(link, retryCount - 1)
+        return reqJson(link, retryCount - 1)
     return cast(Dict[Any, Any], p)

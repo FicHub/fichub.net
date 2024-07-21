@@ -43,7 +43,7 @@ EXPORT_MIMETYPES = {
     "mobi": "application/x-mobipocket-ebook",
     "pdf": "application/pdf",
 }
-# TODO the frontend should not have its own copy here
+# TODO: the frontend should not have its own copy here
 EXPORT_DESCRIPTIONS = {
     "epub": "EPUB",
     "html": "zipped HTML",

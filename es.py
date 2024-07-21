@@ -10,7 +10,7 @@ import elasticsearch.helpers
 import authentications as a
 from db import FicBlacklist, FicInfo
 
-# TODO actually log anything :|
+# TODO: actually log anything :|
 logFileName = "./log/es.log"
 
 
@@ -82,7 +82,7 @@ def search(q: str, limit: int = 10) -> List[FicInfo]:
         traceback.print_exc()
         print(e)
         print("fes.search({q}): ^ something went wrong searching es data :/")
-        return []  # TODO
+        return []  # TODO: return something distinct the caller can use
 
 
 def save(fi: FicInfo) -> None:

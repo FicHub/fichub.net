@@ -419,7 +419,7 @@ def ensure_export(
 
     etext = None
     try:
-        # TODO we could be timing this too...
+        # TODO: we could be timing this too...
         metaString = ebook.metaDataString(meta)
         chapters = ax.fetchChapters(meta)
 
@@ -736,8 +736,8 @@ def maybe_limit_request() -> Tuple[Optional[Limiter], Any]:
             resp.headers["Retry-After"] = str(global_ra_v)
             return (source_limiter, resp)
 
-    # TODO instead of blocking outright, insert ip into ip tag table and set the
-    # limit to something much lower? Share a limit across azure/DO address
+    # TODO: instead of blocking outright, insert ip into ip tag table and set
+    # the limit to something much lower? Share a limit across azure/DO address
     # space?
     datacenter = ip_is_datacenter(source.description)
 
@@ -754,7 +754,7 @@ def maybe_limit_request() -> Tuple[Optional[Limiter], Any]:
         print(f"BLOCKING weird QQ: {source.description}")
         return (source_limiter, getErr(WebError.internal_strange))
 
-    # TODO both the testsuite and some annoying mass crawlers >_>
+    # TODO: both the testsuite and some annoying mass crawlers >_>
     automated = request.args.get("automated", None) == "true"
     if automated:
         print(f"BLOCKING DATACENTER IP: automated=true {source.description}")
@@ -785,7 +785,7 @@ def api_v0_epub() -> Any:
     eres = ensure_export("epub", q, urlId)
     if "err" in eres:
         if DYNAMIC_RATE_LIMIT and source_limiter is not None:
-            # TODO maybe only do this when the fic is in the graveyard?
+            # TODO: maybe only do this when the fic is in the graveyard?
             source_limiter.tick(0.500)
         if "q" not in eres:
             eres["q"] = q

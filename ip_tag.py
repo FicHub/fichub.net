@@ -1,12 +1,14 @@
 #!./venv/bin/python
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Union
 import ipaddress
 import json
 import sys
 import traceback
 import xml.etree.ElementTree as ElementTree
 
-TAGGED_IP_RANGES: Dict[str, List[Any]] = {}  # TODO
+IPNetwork = Union[ipaddress.IPv4Network, ipaddress.IPv6Network]
+
+TAGGED_IP_RANGES: Dict[str, List[IPNetwork]] = {}
 IP_TAG: Dict[str, Optional[str]] = {}
 
 

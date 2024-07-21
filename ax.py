@@ -14,8 +14,7 @@ class MissingChapterError(Exception):
 
 def alive() -> bool:
     try:
-        url = "/".join([a.AX_STATUS_ENDPOINT])
-        m = util.reqJson(url, timeout=5.0)
+        m = util.reqJson(a.AX_STATUS_ENDPOINT, timeout=5.0)
         if "err" in m and str(m["err"]) != "0":
             return False
     except Exception:
@@ -24,7 +23,8 @@ def alive() -> bool:
 
 
 def lookup(query: str, timeout: float = 280.0) -> Dict[str, Any]:
-    url = "/".join([a.AX_LOOKUP_ENDPOINT, urllib.parse.quote(query, safe="")])
+    url_q = urllib.parse.quote(query, safe="")
+    url = f"{a.AX_LOOKUP_ENDPOINT}/{url_q}"
     meta = util.reqJson(url, timeout=timeout)
     if "error" in meta and "err" not in meta:
         meta["err"] = meta.pop("error", None)
@@ -56,7 +56,7 @@ class Chapter:
 
 
 def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
-    url = "/".join([a.AX_FIC_ENDPOINT, urlId])
+    url = f"{a.AX_FIC_ENDPOINT}/{urlId}"
     res = util.reqJson(url)
     chapters = {}
     titles = []

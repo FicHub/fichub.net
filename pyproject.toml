@@ -87,6 +87,7 @@ extend-select = [
 	"PGH",  # pygrep-hooks
 	"PL",   # Pylint
 	"TRY",  # tryceratops
+	"FLY",  # flynt
 ]
 
 ignore = [

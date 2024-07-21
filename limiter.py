@@ -7,6 +7,10 @@ DEFAULT_LIMITER_CAPACITY = 30
 DEFAULT_LIMITER_FLOW = 1.0 / 8.6
 
 
+class FillLimiterError(Exception):
+    pass
+
+
 class Limiter:
     def __init__(
         self,
@@ -84,7 +88,7 @@ class Limiter:
             r = curs.fetchone()
             if r is None:
                 msg = "Limiter.retryAfter: no fill limit response"
-                raise Exception(msg)
+                raise FillLimiterError(msg)
             v = float(r[0])
             if v <= 0:
                 return None

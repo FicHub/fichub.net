@@ -52,6 +52,14 @@ EXPORT_DESCRIPTIONS = {
 }
 
 
+class InvalidETypeError(Exception):
+    pass
+
+
+class JanusError(Exception):
+    pass
+
+
 def exportVersion(etype: str, urlId: str) -> int:
     res = EXPORT_VERSION
     if etype in EXPORT_TYPE_VERSIONS:
@@ -213,7 +221,7 @@ def convertEpub(
 ) -> Tuple[str, str]:
     if etype not in EXPORT_TYPES:
         msg = f"convertEpub: invalid etype: {etype}"
-        raise Exception(msg)
+        raise InvalidETypeError(msg)
 
     suff = EXPORT_SUFFIXES[etype]
     tmp_fname = randomTempFile(f"{info.id}{suff}")
@@ -223,17 +231,14 @@ def convertEpub(
     if ee is not None:
         return ee
 
-    try:
-        res = subprocess.run(
-            ["/home/fichub/fichub.net/janus.py", epub_fname, tmp_fname],
-            timeout=60 * 5,
-            check=False,
-        )
-        if res.returncode != 0:
-            msg = f"convertEpub: error: return code {res.returncode} != 0"
-            raise Exception(msg)
-    except:
-        raise
+    res = subprocess.run(
+        ["/home/fichub/fichub.net/janus.py", epub_fname, tmp_fname],
+        timeout=60 * 5,
+        check=False,
+    )
+    if res.returncode != 0:
+        msg = f"convertEpub: error: return code {res.returncode} != 0"
+        raise JanusError(msg)
 
     return finalizeExport(etype, info.id, ehash, tmp_fname)
 

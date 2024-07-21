@@ -8,6 +8,10 @@ import es
 import util
 
 
+class MissingChapterError(Exception):
+    pass
+
+
 def alive() -> bool:
     try:
         url = "/".join([a.AX_STATUS_ENDPOINT])
@@ -51,10 +55,6 @@ class Chapter:
         self.content = content
 
 
-class MissingChapterException(Exception):
-    pass
-
-
 def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
     url = "/".join([a.AX_FIC_ENDPOINT, urlId])
     res = util.reqJson(url)
@@ -85,7 +85,7 @@ def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
             print(f"requestAllChapters: err: {i} not in chapters")
             print(list(chapters.keys()))
             msg = f"err: missing chapter: {i}/{expected}"
-            raise MissingChapterException(msg)
+            raise MissingChapterError(msg)
 
     return chapters
 

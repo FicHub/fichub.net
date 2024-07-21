@@ -76,6 +76,10 @@ TRUSTED_UPSTREAMS = {
 }
 
 
+class MissingExportError(Exception):
+    pass
+
+
 class WebError(IntEnum):
     success = 0
     no_query = -1
@@ -148,7 +152,7 @@ def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
                     # we always generate the epub first, so if we don't have it something went
                     # horribly wrong
                     msg = "uh oh"
-                    raise Exception(msg)
+                    raise MissingExportError(msg)
 
                 slug = ebook.buildFileSlug(ficInfo.title, ficInfo.author, urlId)
                 eh = epubRL.exportFileHash
@@ -264,10 +268,6 @@ def try_ensure_export(etype: str, urlId: str) -> Optional[str]:
     return None
 
 
-class InvalidEtypeException(Exception):
-    pass
-
-
 def get_request_source() -> RequestSource:
     automated = request.args.get("automated", None) == "true"
     remote_addr = request.remote_addr
@@ -276,6 +276,21 @@ def get_request_source() -> RequestSource:
     if remote_addr is None:
         remote_addr = "unknown"
     return RequestSource.upsert(automated, request.url_root, remote_addr)
+
+
+def create_export(
+    etype: str, meta: FicInfo, chapters: Dict[int, ax.Chapter]
+) -> Tuple[str, str]:
+    # returns fname, fhash
+    if etype == "epub":
+        return ebook.createEpub(meta, chapters)
+    if etype == "html":
+        return ebook.createHtmlBundle(meta, chapters)
+    if etype in ["mobi", "pdf"]:
+        return ebook.convertEpub(meta, chapters, etype)
+
+    msg = f"err: unknown etype: {etype}"
+    raise ebook.InvalidETypeError(msg)
 
 
 def ensure_export(
@@ -424,16 +439,7 @@ def ensure_export(
         chapters = ax.fetchChapters(meta)
 
         # actually do the export
-        fname, fhash = "", ""
-        if etype == "epub":
-            fname, fhash = ebook.createEpub(meta, chapters)
-        elif etype == "html":
-            fname, fhash = ebook.createHtmlBundle(meta, chapters)
-        elif etype in ["mobi", "pdf"]:
-            fname, fhash = ebook.convertEpub(meta, chapters, etype)
-        else:
-            msg = f"err: unknown etype: {etype}"
-            raise InvalidEtypeException(msg)
+        fname, fhash = create_export(etype, meta, chapters)
 
         slug = ebook.buildFileSlug(meta.title, meta.author, meta.id)
         suff = ebook.EXPORT_SUFFIXES[etype]
@@ -490,7 +496,7 @@ def ensure_export(
         if (
             e.args is not None
             and len(e.args) > 0
-            and isinstance(e, (ax.MissingChapterException, InvalidEtypeException))
+            and isinstance(e, (ax.MissingChapterError, ebook.InvalidETypeError))
         ):
             etext = e.args[0]
 

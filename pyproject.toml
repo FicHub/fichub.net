@@ -86,6 +86,7 @@ extend-select = [
 	"FIX",  # flake8-fixme
 	"PGH",  # pygrep-hooks
 	"PL",   # Pylint
+	"TRY",  # tryceratops
 ]
 
 ignore = [
@@ -96,6 +97,7 @@ ignore = [
 	"PLR0912", # too-many-branches
 	"PLR0913", # too-many-arguments
 	"PLR0915", # too-many-statements
+	"TRY300",  # try-consider-else
 ]
 
 [tool.ruff.lint.isort]

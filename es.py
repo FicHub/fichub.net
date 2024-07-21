@@ -146,7 +146,7 @@ def main(argv: List[str]) -> int:
     if not success:
         plog("  permanent trouble")
         msg = "block failed"
-        raise Exception(msg)
+        raise Exception(msg)  # noqa: TRY002
 
     return 0
 

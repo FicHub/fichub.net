@@ -23,6 +23,10 @@ EXPECTED_ARG_COUNT = 3
 USE_LOCAL_CALIBRE = False
 
 
+class WaitTimeoutError(Exception):
+    pass
+
+
 def init_logging() -> None:
     if not os.path.isdir("./log"):
         os.makedirs("./log")
@@ -159,7 +163,7 @@ def waitForOurTurn(key: str) -> None:
         else:
             return
     msg = "error: it was never our turn"
-    raise Exception(msg)
+    raise WaitTimeoutError(msg)
 
 
 def limitVirtualMemory() -> None:

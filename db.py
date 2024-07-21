@@ -6,6 +6,10 @@ import json
 from oil import oil
 
 
+class MissingRequestSourceError(Exception):
+    pass
+
+
 class ExportLog:
     fieldCount = 6
 
@@ -491,7 +495,7 @@ class RequestSource:
         src = RequestSource.select(isAutomated, route, description)
         if src is None:
             msg = "RequestSource.upsert: failed to upsert"
-            raise Exception(msg)
+            raise MissingRequestSourceError(msg)
         return src
 
 

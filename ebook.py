@@ -227,6 +227,7 @@ def convertEpub(
         res = subprocess.run(
             ["/home/fichub/fichub.net/janus.py", epub_fname, tmp_fname],
             timeout=60 * 5,
+            check=False,
         )
         if res.returncode != 0:
             msg = f"convertEpub: error: return code {res.returncode} != 0"

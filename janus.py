@@ -2,6 +2,7 @@
 from typing import Any, Callable, Dict, List, Optional, ParamSpec, Type, TypeVar
 import base64
 import functools
+from http import HTTPStatus
 import inspect
 import json
 import logging
@@ -18,6 +19,7 @@ import psutil
 # for calls to janus service
 import requests
 
+EXPECTED_ARG_COUNT = 3
 USE_LOCAL_CALIBRE = False
 
 
@@ -107,13 +109,14 @@ def plog(msg: str, **kwargs: Any) -> None:
 
 
 def getWaitKey(cmdline: List[str]) -> str:
-    if len(cmdline) != 4:
+    if len(cmdline) != (EXPECTED_ARG_COUNT + 1):  # includes python
         return "null"
     return cmdline[-1].split(".")[-1]
 
 
 @trace_timing(["key"])
 def waitForOurTurn(key: str) -> None:
+    max_other_waiting = 3
     delta = 2.5
     usPid = os.getpid()
     usCreated = None
@@ -126,7 +129,7 @@ def waitForOurTurn(key: str) -> None:
                 usCreated = p.create_time()
             cmdl = p.cmdline()
             if (
-                len(cmdl) != 4
+                len(cmdl) != (EXPECTED_ARG_COUNT + 1)  # includes python
                 or cmdl[0] != "python3"
                 or cmdl[1] != "/home/fichub/fichub.net/janus.py"
             ):
@@ -143,8 +146,8 @@ def waitForOurTurn(key: str) -> None:
             and minPid != usPid
             and minCreated < usCreated
         ):
-            if cnt >= 4:
-                plog("there are at least 3 other waiting; aborting")
+            if cnt > max_other_waiting:
+                plog(f"there are at least {max_other_waiting} other waiting; aborting")
                 sys.exit(103)
             plog(
                 "previous export still running",
@@ -170,6 +173,7 @@ def convert_local(epub_fname: str, tmp_fname: str) -> int:
         res = subprocess.run(
             ["/opt/calibre/ebook-convert", epub_fname, tmp_fname],
             timeout=60 * 5,
+            check=False,
         )  # preexec_fn=limitVirtualMemory)
         ret = res.returncode
     except Exception as e:
@@ -200,7 +204,7 @@ def convert_janus(epub_fname: str, tmp_fname: str) -> int:
                 "User-Agent": "fichub.net/janus/0.0.1",
             },
         )
-        if r.status_code != 200:
+        if r.status_code != HTTPStatus.OK:
             try:
                 plog(
                     "janus request returned non-200",
@@ -234,7 +238,7 @@ def convert_janus(epub_fname: str, tmp_fname: str) -> int:
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
+    if len(sys.argv) != EXPECTED_ARG_COUNT:
         return 1
 
     epub_fname = str(sys.argv[1])

@@ -30,7 +30,7 @@ def buildExportPath(etype: str, urlId: str, create: bool = False) -> str:
 for fi in FicInfo.select():
     urlId = fi.id
     print(f"urlId: {urlId}")
-    for etype in {"epub", "html", "mobi", "pdf"}:
+    for etype in ("epub", "html", "mobi", "pdf"):
         odir = buildLegacyExportPath(etype, urlId)
         if not os.path.isdir(odir):
             continue

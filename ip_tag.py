@@ -4,7 +4,7 @@ import ipaddress
 import json
 import sys
 import traceback
-import xml.etree.ElementTree as ElementTree
+from xml.etree import ElementTree
 
 IPNetwork = Union[ipaddress.IPv4Network, ipaddress.IPv6Network]
 
@@ -14,7 +14,6 @@ IP_TAG: Dict[str, Optional[str]] = {}
 
 def load_azure_ip_ranges() -> None:
     tag = "azure"
-    global TAGGED_IP_RANGES
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
@@ -61,7 +60,6 @@ def load_azure_ip_ranges() -> None:
 
 def load_google_ip_ranges() -> None:
     tag = "google"
-    global TAGGED_IP_RANGES
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
@@ -88,7 +86,6 @@ def load_google_ip_ranges() -> None:
 
 def load_aws_ip_ranges() -> None:
     tag = "aws"
-    global TAGGED_IP_RANGES
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
@@ -108,7 +105,6 @@ def load_aws_ip_ranges() -> None:
 
 
 def load_asn_list(tag: str, fname: str) -> None:
-    global TAGGED_IP_RANGES
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
@@ -140,13 +136,10 @@ def load_ip_ranges() -> None:
 
 def ip_is_datacenter(addr: str) -> Optional[str]:
     # If we have a cached value for this IPs tag, return it directly
-    global IP_TAG
     if addr in IP_TAG:
         return IP_TAG[addr]
 
     # Otherwise look for it in the tag sets
-    global TAGGED_IP_RANGES
-
     try:
         ip = ipaddress.ip_address(addr)
 

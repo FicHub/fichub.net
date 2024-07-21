@@ -10,12 +10,11 @@ import elasticsearch.helpers
 import authentications as a
 from db import FicBlacklist, FicInfo
 
-# TODO: actually log anything :|
-logFileName = "./log/es.log"
+RR_SOURCE_ID = 19
 
 
 def plog(msg: str) -> None:
-    global logFileName
+    # TODO: actually log too
     print(f"{int(time.time())}|{msg}")
 
 
@@ -107,7 +106,7 @@ def blacklist(urlId: str) -> None:
 
 def generateFicInfo() -> Iterator[Dict[str, Any]]:
     for fi in FicInfo.select():
-        if fi.sourceId == 19:
+        if fi.sourceId == RR_SOURCE_ID:
             continue
         if FicBlacklist.greylisted(fi.id):
             plog(f"greylisted: {fi.id}")
@@ -125,7 +124,6 @@ def main(argv: List[str]) -> int:
         return 1
 
     es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
-    plog(f"using log {logFileName}")
     # dropIndex(es)
     createIndex(es)
 

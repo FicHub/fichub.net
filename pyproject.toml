@@ -83,9 +83,20 @@ extend-select = [
 	"TCH",  # flake8-type-checking
 	"ARG",  # flake8-unused-arguments
 	"TD",   # flake8-todos
+	"FIX",  # flake8-fixme
+	"PGH",  # pygrep-hooks
+	"PL",   # Pylint
 ]
 
-ignore = ["TD002", "TD003"]
+ignore = [
+	"TD002",   # missing-todo-author
+	"TD003",   # missing-todo-link
+	"FIX002",  # line-contains-todo
+	"PLR0911", # too-many-return-statements
+	"PLR0912", # too-many-branches
+	"PLR0913", # too-many-arguments
+	"PLR0915", # too-many-statements
+]
 
 [tool.ruff.lint.isort]
 force-to-top = ["typing"]

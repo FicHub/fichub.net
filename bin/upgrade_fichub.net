@@ -1,0 +1,36 @@
+#!/usr/bin/bash
+# Start the current version of fichub by switching between master m and n
+set -e
+
+new=""
+old=""
+
+echo "run/: $(ls run/)"
+
+if [[ -f "run/master_n.pid" ]] && [[ -f "run/master_m.pid" ]]; then
+	echo "both m and n exist, aborting"
+	exit 1
+fi
+if [[ ! -f "run/master_n.pid" ]] && [[ ! -f "run/master_m.pid" ]]; then
+	echo "neither m nor n exist, aborting"
+	exit 1
+fi
+
+if [[ -f "run/master_n.pid" ]]; then
+	echo "master n active; switching to master m"
+	new="m"
+	old="n"
+fi
+if [[ -f "run/master_m.pid" ]]; then
+	echo "master m active; switching to master n"
+	new="n"
+	old="m"
+fi
+
+echo old: $old
+echo new: $new
+
+echo "first: ./bin/run_fichub_net.sh $new"
+echo " then: ./bin/stop.sh $old"
+./bin/run_fichub_net.sh "$new" && sleep 30 && ./bin/stop.sh "$old"
+

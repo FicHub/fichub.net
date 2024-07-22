@@ -1,3 +1,30 @@
+[project]
+name = "fichub.net"
+dependencies = [
+	"Flask",
+	"requests",
+	"psycopg2",
+	"python-dateutil",
+	#"EbookLib @ git+https://github.com/FicHub/ebooklib@1dbc0d53d9e24d5da2c71f1907ebde1bc6821551",
+	#"oil @ git+https://github.com/FanFicDev/python-oil",
+	"elasticsearch",
+	"psutil",
+]
+
+[project.optional-dependencies]
+dev = [
+	"ruff",
+	"mypy",
+	"types-requests",
+	"types-python-dateutil",
+	"types-psutil",
+	"types-psycopg2",
+	"pytest",
+	"pytest-cov",
+	"responses",
+	"testcontainers",
+]
+
 [tool.pytest.ini_options]
 markers = [
 	"slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -51,6 +78,10 @@ warn_unreachable = true
 show_error_context = true
 show_column_numbers = true
 show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "testcontainers.*"
+ignore_missing_imports = true
 
 [tool.ruff.lint]
 extend-select = [

@@ -1,2 +1,2 @@
-alter table ficInfo add column authorUrl text ;
-alter table ficInfo add column authorLocalId text ;
+alter table ficInfo add column if not exists authorUrl text ;
+alter table ficInfo add column if not exists authorLocalId text ;

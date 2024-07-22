@@ -1,1 +1,1 @@
-alter table ficInfo add column rawExtendedMeta text ;
+alter table ficInfo add column if not exists rawExtendedMeta text ;

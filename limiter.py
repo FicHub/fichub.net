@@ -11,6 +11,10 @@ class FillLimiterError(Exception):
     pass
 
 
+class MissingLimiterError(Exception):
+    pass
+
+
 class Limiter:
     def __init__(
         self,
@@ -101,4 +105,7 @@ class Limiter:
                 (value, self.key),
             )
             r = curs.fetchone()
+            if r is None:
+                msg = "Limiter.tick: no tick response"
+                raise MissingLimiterError(msg)
             return float(r[0])

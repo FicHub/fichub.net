@@ -29,7 +29,7 @@ def load_azure_ip_ranges() -> None:
 
     # Load legacy xml format
     with open("./dat/PublicIPs_20200824.xml") as f:
-        x = f.read()
+        x = f.read().strip()
 
     root = ElementTree.fromstring(x)
 
@@ -93,6 +93,8 @@ def load_aws_ip_ranges() -> None:
 
     for prefix in j["prefixes"]:
         r = prefix.get("ip_prefix")
+        if r is None:
+            r = prefix.get("ipv6_prefix")
         if r is None:
             continue
         n = try_parse_ip_network(r)

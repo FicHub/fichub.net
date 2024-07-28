@@ -4,6 +4,8 @@ import json
 import time
 from types import TracebackType
 
+from elasticsearch import Elasticsearch
+from oil import oil
 import pytest
 from requests.auth import HTTPBasicAuth
 import responses
@@ -12,7 +14,9 @@ from responses.registries import OrderedRegistry
 
 import authentications as a
 import ax
-from db import FicInfo
+from db import AuthorBlacklist, FicBlacklist, FicBlacklistReason, FicInfo
+import es
+from tests.test_db import build_test_fic_info_dict
 
 EXPECTED_AX_USER_AGENT = "fichub.net/0.1.0"
 
@@ -151,7 +155,107 @@ def test_alive_slow() -> None:
         assert ax.alive()
 
 
-# TODO: test lookup
+def test_lookup() -> None:
+    query = "test/lookup bar"
+    quoted_query = "test%2Flookup%20bar"
+
+    # Simple error cases.
+    with AxMock(expected_timeout=200.0) as rsps:
+        rsps.add("GET", f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}", {"err": -1})
+        r = ax.lookup(query, 200.0)
+        assert r == {"err": -1}
+
+    with AxMock(expected_timeout=280.0) as rsps:
+        rsps.add("GET", f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}", {"error": -2})
+        r = ax.lookup(query)
+        assert r == {"err": -2}
+
+    # Response missing fields.
+    with AxMock(expected_timeout=280.0) as rsps:
+        rsps.add("GET", f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}", {"urlId": "fooax1"})
+        with pytest.raises(KeyError, match="sourceId"):
+            r = ax.lookup(query)
+
+    with AxMock(expected_timeout=280.0) as rsps:
+        rsps.add(
+            "GET",
+            f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}",
+            {"urlId": "fooax1", "sourceId": 1},
+        )
+        with pytest.raises(KeyError, match="authorId"):
+            r = ax.lookup(query)
+
+    # Unavailable exports.
+    with AxMock(expected_timeout=280.0) as rsps:
+        FicInfo.save(build_test_fic_info_dict("fooax3"))
+        FicBlacklist.save("fooax3", FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value)
+        fi_dict = build_test_fic_info_dict("fooax3")
+
+        rsps.add("GET", f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}", fi_dict)
+        r = ax.lookup(query)
+        assert r == ax.FIC_UNAVAILABLE_ERROR
+
+    with AxMock(expected_timeout=280.0) as rsps:
+        fi_dict = build_test_fic_info_dict("fooax4")
+        fi_dict["sourceId"] = "10"
+        fi_dict["authorId"] = "2001"
+        AuthorBlacklist.save(
+            int(fi_dict["sourceId"]),
+            int(fi_dict["authorId"]),
+            FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value,
+        )
+
+        rsps.add("GET", f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}", fi_dict)
+        r = ax.lookup(query)
+        assert r == ax.FIC_UNAVAILABLE_ERROR
+
+        fis = FicInfo.select("fooax4")
+        assert len(fis) == 0
+
+        # Delete the author entry so we don't impact other tests.
+        with oil.open() as db, db.cursor() as curs:
+            curs.execute(
+                "delete from authorBlacklist where sourceId = %s and authorId = %s",
+                (int(fi_dict["sourceId"]), int(fi_dict["authorId"])),
+            )
+
+    # Successful (probably without elastic search).
+    with AxMock(expected_timeout=280.0) as rsps:
+        fi_dict = build_test_fic_info_dict("fooax0")
+        rsps.add("GET", f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}", fi_dict)
+        r = ax.lookup(query)
+        assert r == fi_dict
+
+        fis = FicInfo.select("fooax0")
+        assert len(fis) == 1
+
+
+@pytest.mark.elasticsearch()
+def test_lookup_es(elastic_url: str, capsys: pytest.CaptureFixture[str]) -> None:
+    _ = elastic_url  # suppress unused argument
+
+    query = "test/lookup bar"
+    quoted_query = "test%2Flookup%20bar"
+
+    with AxMock(expected_timeout=280.0) as rsps:
+        fi_dict = build_test_fic_info_dict("fooax2")
+        rsps.add("GET", f"{a.AX_LOOKUP_ENDPOINT}/{quoted_query}", fi_dict)
+        r = ax.lookup(query)
+        assert r == fi_dict
+
+        with capsys.disabled():
+            captured = capsys.readouterr()
+            assert captured.out.find("something went wrong") == -1
+
+        fis = FicInfo.select("fooax2")
+        assert len(fis) == 1
+
+        # Force a refresh so we can actually see the doc we just indexed.
+        assert a.ELASTICSEARCH_HOSTS != []
+        test_es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
+        test_es.indices.refresh(index="fi")
+
+        assert len(es.search("fooax2")) == 1
 
 
 def test_requestAllChapters() -> None:

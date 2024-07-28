@@ -8,6 +8,12 @@ from db import AuthorBlacklist, FicBlacklist, FicInfo
 import es
 import util
 
+FIC_UNAVAILABLE_ERROR = {
+    "ret": 5,
+    "err": -7,
+    "msg": "exports are unavailable for this fic, possibly due to author request",
+}
+
 
 class MissingChapterError(Exception):
     pass
@@ -30,11 +36,7 @@ def lookup(query: str, timeout: float = 280.0) -> Dict[str, Any]:
         if FicBlacklist.check(meta["urlId"]) or AuthorBlacklist.check(
             meta["sourceId"], meta["authorId"]
         ):
-            return {
-                "ret": 5,
-                "err": -7,
-                "msg": "exports are unavailable for this fic, possibly due to author request",
-            }
+            return FIC_UNAVAILABLE_ERROR
         FicInfo.save(meta)
         try:
             fis = FicInfo.select(meta["urlId"])

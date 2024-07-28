@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Iterator, List
 import os
 from pathlib import Path
 import re
@@ -7,6 +7,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 import oil
 import pytest
+import testcontainers.elasticsearch
 import testcontainers.postgres
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.response import BaseHTTPResponse
@@ -19,7 +20,13 @@ def by_slow_marker(item: pytest.Item) -> int:
 
 
 def pytest_collection_modifyitems(items: List[pytest.Item]) -> None:
+    # Order slow tests last.
     items.sort(key=by_slow_marker, reverse=False)
+
+    # Add the elasticsearch marker to any test using the elastic_url fixture.
+    for item in items:
+        if "elastic_url" in getattr(item, "fixturenames", ()):
+            item.add_marker("elasticsearch")
 
 
 @pytest.fixture(autouse=True)
@@ -86,6 +93,21 @@ def pytest_configure() -> None:
 def pytest_unconfigure() -> None:
     if POSTGRES_CONTAINER is not None:
         POSTGRES_CONTAINER.__exit__(None, None, None)
+
+
+@pytest.fixture(scope="session")
+def elastic_url() -> Iterator[str]:
+    with testcontainers.elasticsearch.ElasticSearchContainer(
+        image="elasticsearch:8.8.0",
+        mem_limit="1G",
+    ) as elastic_container:
+        url = elastic_container.get_url()
+
+        import authentications
+
+        authentications.ELASTICSEARCH_HOSTS = [url]
+
+        yield url
 
 
 @pytest.fixture()

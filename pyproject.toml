@@ -28,6 +28,7 @@ dev = [
 [tool.pytest.ini_options]
 markers = [
 	"slow: marks tests as slow (deselect with '-m \"not slow\"')",
+	"elasticsearch: mark tests that use elasticsearch (deselect with '-m \"not elasticsearch\"')",
 ]
 
 [tool.coverage.run]

@@ -66,9 +66,9 @@ def search(q: str, limit: int = 10) -> List[FicInfo]:
                         "query": q,
                         "analyzer": "standard",
                     },
-                }
+                },
+                "size": limit,
             },
-            size=limit,
         )
         print(f"es.search({q}) => {res['hits']['total']['value']} hits")
         fis: List[FicInfo] = []
@@ -80,7 +80,7 @@ def search(q: str, limit: int = 10) -> List[FicInfo]:
     except Exception as e:
         traceback.print_exc()
         print(e)
-        print("fes.search({q}): ^ something went wrong searching es data :/")
+        print(f"es.search({q}): ^ something went wrong searching es data :/")
         return []  # TODO: return something distinct the caller can use
 
 

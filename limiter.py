@@ -70,7 +70,7 @@ class Limiter:
         assert limiter is not None
         return limiter
 
-    def set_parameters(self, capacity: int, flow: float) -> "Limiter":
+    def set_parameters(self, capacity: float, flow: float) -> "Limiter":
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """

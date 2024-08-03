@@ -89,6 +89,8 @@ def pytest_configure() -> None:
                 break
             curs.execute(p.read_text())
 
+        curs.execute(Path("./sql/limiter.sql").read_text())
+
 
 def pytest_unconfigure() -> None:
     if POSTGRES_CONTAINER is not None:

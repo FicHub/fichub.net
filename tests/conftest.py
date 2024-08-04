@@ -48,6 +48,21 @@ def _no_http_requests(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _tmp_ebook_dirs(tmp_path_factory: pytest.TempPathFactory) -> None:
+    import ebook
+
+    tmp_path = tmp_path_factory.mktemp("tmp_ebook_cache_dir")
+    primary = tmp_path / "primary" / "cache"
+    secondary = tmp_path / "secondary" / "cache"
+
+    ebook.PRIMARY_CACHE_DIR = str(primary)
+    ebook.SECONDARY_CACHE_DIR = str(secondary)
+
+    ebook_tmp_dir = tmp_path_factory.mktemp("tmp_ebook_tmp_dir")
+    ebook.TMP_DIR = str(ebook_tmp_dir)
+
+
 def pytest_configure() -> None:
     global POSTGRES_CONTAINER  # noqa: PLW0603
     POSTGRES_CONTAINER = testcontainers.postgres.PostgresContainer(

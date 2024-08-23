@@ -25,6 +25,8 @@ dev-dependencies = [
 	"pytest-cov",
 	"responses",
 	"testcontainers",
+	"tox",
+	"tox-uv",
 ]
 
 [tool.pytest.ini_options]
@@ -171,7 +173,28 @@ ignore = [
 
 #"tests/*" = ["PLR2004"]
 
-
 [tool.ruff.lint.isort]
 force-to-top = ["typing"]
 force-sort-within-sections = true
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = True
+env_list =
+  type, lint, py3.{12,11,10}
+skip_missing_interpreters = true
+
+[testenv]
+commands = pytest -v --tb=short --basetemp={envtmpdir} {posargs}
+
+[testenv:type]
+skip_install = true
+commands = mypy {posargs:src tests}
+
+[testenv:lint]
+skip_install = true
+commands =
+  ruff format {posargs:src tests}
+  ruff check {posargs:src tests}
+"""

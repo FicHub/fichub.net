@@ -55,7 +55,10 @@ tox-lint:
 	uv run tox run -e type
 	uv run tox run -e lint
 
-.PHONY: clean dirs beta prod test test-slow test-slow-only type format lint lint-fix check check-slow venv tox tox-lint
+build: tox
+	uv run hatch build
+
+.PHONY: clean dirs beta prod test test-slow test-slow-only type format lint lint-fix check check-slow venv tox tox-lint build
 
 clean:
 	rm -f static/js/_.js static/style/_.css

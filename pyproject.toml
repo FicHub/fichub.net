@@ -15,19 +15,27 @@ dependencies = [
 
 [tool.uv]
 dev-dependencies = [
-	"ruff",
+	"hatch",
 	"mypy",
-	"types-requests",
-	"types-python-dateutil",
-	"types-psutil",
-	"types-psycopg2",
 	"pytest",
 	"pytest-cov",
 	"responses",
+	"ruff",
 	"testcontainers",
 	"tox",
 	"tox-uv",
+	"types-psutil",
+	"types-psycopg2",
+	"types-python-dateutil",
+	"types-requests",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.pytest.ini_options]
 markers = [

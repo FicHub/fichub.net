@@ -1,6 +1,7 @@
 #!./venv/bin/python3
-from typing import Any, Callable, Dict, List, Optional, ParamSpec, Type, TypeVar
+from typing import Any, ParamSpec, TypeVar
 import base64
+from collections.abc import Callable
 import functools
 from http import HTTPStatus
 import inspect
@@ -55,7 +56,7 @@ def init_logging() -> None:
 
 
 class LoggingTimer:
-    def __init__(self, name: str, args: Dict[str, str]) -> None:
+    def __init__(self, name: str, args: dict[str, str]) -> None:
         self.name = name
         self.args = args
         self.s = time.time()
@@ -65,9 +66,9 @@ class LoggingTimer:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         e = time.time()
         d = e - self.s
@@ -86,7 +87,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-def trace_timing(fspec: List[str]) -> Callable[[Callable[P, T]], Callable[P, T]]:
+def trace_timing(fspec: list[str]) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @functools.wraps(func)
         def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -112,7 +113,7 @@ def plog(msg: str, **kwargs: Any) -> None:
     logging.info(msg)
 
 
-def getWaitKey(cmdline: List[str]) -> str:
+def getWaitKey(cmdline: list[str]) -> str:
     if len(cmdline) != (EXPECTED_ARG_COUNT + 1):  # includes python
         return "null"
     return cmdline[-1].split(".")[-1]
@@ -126,7 +127,7 @@ def waitForOurTurn(key: str) -> None:
     usCreated = None
     for _i in range(int(180 / delta)):
         cnt = 0
-        minPid: Optional[int] = None
+        minPid: int | None = None
         minCreated = 1.0 * 9e9
         for p in psutil.process_iter():
             if p.pid == usPid:

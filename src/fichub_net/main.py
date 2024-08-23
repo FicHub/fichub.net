@@ -1,13 +1,5 @@
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
     cast,
 )
 import contextlib
@@ -24,7 +16,6 @@ import traceback
 import flask
 from flask import (
     Flask,
-    Response,
     make_response,
     redirect,
     render_template,
@@ -32,7 +23,7 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from werkzeug.datastructures import Headers
+from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import NotFound
 
 from fichub_net import ax, ebook
@@ -46,19 +37,6 @@ from fichub_net.rl_conf import (
     NO_LIMIT_UPSTREAMS,
     WEIRD_UPSTREAMS,
 )
-
-FlaskHeaderValue = Union[str, List[str], Tuple[str, ...]]
-FlaskHeaders = Union[
-    Headers, Dict[str, FlaskHeaderValue], List[Tuple[str, FlaskHeaderValue]]
-]
-BasicFlaskResponse = Union[Response, Any, Dict[str, Any], Generator[Any, None, None]]
-FlaskResponse = Union[
-    BasicFlaskResponse,
-    Tuple[BasicFlaskResponse, FlaskHeaders],
-    Tuple[BasicFlaskResponse, int],
-    Tuple[BasicFlaskResponse, int, FlaskHeaders],
-    Callable[[Dict[str, Any], BasicFlaskResponse], Iterable[bytes]],
-]
 
 app = Flask(__name__, static_url_path="", static_folder="../../static/")
 
@@ -108,7 +86,7 @@ errorMessages = {
 }
 
 
-def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def getErr(err: WebError, extra: dict[str, Any] | None = None) -> dict[str, Any]:
     base = {"err": int(err), "msg": errorMessages[err]}
     if extra is not None:
         base.update(extra)
@@ -116,22 +94,22 @@ def getErr(err: WebError, extra: Optional[Dict[str, Any]] = None) -> Dict[str, A
 
 
 @app.errorhandler(404)
-def page_not_found(_e: Exception) -> FlaskResponse:
+def page_not_found(_e: Exception) -> ResponseReturnValue:
     return render_template("404.html"), 404
 
 
 @app.route("/api")
-def api_landing() -> FlaskResponse:
+def api_landing() -> ResponseReturnValue:
     return render_template("api.html")
 
 
 @app.route("/")
-def index() -> FlaskResponse:
+def index() -> ResponseReturnValue:
     urlId = request.args.get("id", "").strip()
     return index_impl(urlId, False)
 
 
-def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
+def index_impl(urlId: str, legacy: bool) -> ResponseReturnValue:
     from_pw = request.args.get("from_pw", "").strip()
 
     blacklisted = False
@@ -213,12 +191,12 @@ def index_impl(urlId: str, legacy: bool) -> FlaskResponse:
 
 
 @app.route("/changes")
-def changes() -> FlaskResponse:
+def changes() -> ResponseReturnValue:
     return redirect(url_for("index"))
 
 
 @app.route("/fic/<urlId>")
-def fic_info(urlId: str) -> FlaskResponse:
+def fic_info(urlId: str) -> ResponseReturnValue:
     allInfo = FicInfo.select(urlId)
     if len(allInfo) < 1:
         # entirely unknown fic, 404
@@ -230,40 +208,42 @@ def fic_info(urlId: str) -> FlaskResponse:
 
 @app.route("/cache/", defaults={"_page": 1})
 @app.route("/cache/<int:_page>")
-def cache_listing_deprecated(_page: int) -> FlaskResponse:
+def cache_listing_deprecated(_page: int) -> ResponseReturnValue:
     return redirect(url_for("index"))
 
 
 @app.route("/cache/today/", defaults={"_page": 1})
 @app.route("/cache/today/<int:_page>")
-def cache_listing_today(_page: int) -> FlaskResponse:
+def cache_listing_today(_page: int) -> ResponseReturnValue:
     return redirect(url_for("index"))
 
 
 @app.route("/cache/<int:_year>/<int:_month>/<int:_day>/", defaults={"_page": 1})
 @app.route("/cache/<int:_year>/<int:_month>/<int:_day>/<int:_page>")
-def cache_listing(_year: int, _month: int, _day: int, _page: int) -> FlaskResponse:
+def cache_listing(
+    _year: int, _month: int, _day: int, _page: int
+) -> ResponseReturnValue:
     return redirect(url_for("index"))
 
 
 @app.route("/popular/", defaults={"_page": 1})
 @app.route("/popular/<int:_page>")
-def popular_listing(_page: int) -> FlaskResponse:
+def popular_listing(_page: int) -> ResponseReturnValue:
     return render_template("popular_outmoded.html")
 
 
 @app.route("/search/author/<_q>")
-def search_author(_q: str) -> FlaskResponse:
+def search_author(_q: str) -> ResponseReturnValue:
     return redirect(url_for("index"))
 
 
-def try_ensure_export(etype: str, urlId: str) -> Optional[str]:
+def try_ensure_export(etype: str, urlId: str) -> str | None:
     key = f"{etype}_fname"
     res = ensure_export(etype, urlId, urlId)
     if "err" in res or key not in res:
         return None
     if res[key] is None or isinstance(res[key], str):
-        return cast(Optional[str], res[key])
+        return cast(str | None, res[key])
     return None
 
 
@@ -278,8 +258,8 @@ def get_request_source() -> RequestSource:
 
 
 def create_export(
-    etype: str, meta: FicInfo, chapters: Dict[int, ax.Chapter]
-) -> Tuple[str, str]:
+    etype: str, meta: FicInfo, chapters: dict[int, ax.Chapter]
+) -> tuple[str, str]:
     # returns fname, fhash
     if etype == "epub":
         return ebook.createEpub(meta, chapters)
@@ -292,9 +272,7 @@ def create_export(
     raise ebook.InvalidETypeError(msg)
 
 
-def ensure_export(
-    etype: str, query: str, urlId: Optional[str] = None
-) -> Dict[str, Any]:
+def ensure_export(etype: str, query: str, urlId: str | None = None) -> dict[str, Any]:
     print(f"ensure_export: query: {query}")
     if etype not in ebook.EXPORT_TYPES:
         return getErr(WebError.invalid_etype, {"fn": "ensure_export", "etype": etype})
@@ -494,7 +472,7 @@ def ensure_export(
         if (
             e.args is not None
             and len(e.args) > 0
-            and isinstance(e, (ax.MissingChapterError, ebook.InvalidETypeError))
+            and isinstance(e, ax.MissingChapterError | ebook.InvalidETypeError)
         ):
             etext = e.args[0]
 
@@ -512,7 +490,7 @@ def ensure_export(
     )
 
 
-def legacy_cache_redirect(etype: str, fname: str) -> FlaskResponse:
+def legacy_cache_redirect(etype: str, fname: str) -> ResponseReturnValue:
     fhash = request.args.get("h", None)
     urlId = fname
     if urlId.find("-") >= 0:
@@ -538,17 +516,17 @@ def legacy_cache_redirect(etype: str, fname: str) -> FlaskResponse:
 
 
 @app.route("/epub/<fname>")
-def get_cached_epub_v0(fname: str) -> FlaskResponse:
+def get_cached_epub_v0(fname: str) -> ResponseReturnValue:
     return legacy_cache_redirect("epub", fname)
 
 
 @app.route("/html/<fname>")
-def get_cached_html_v0(fname: str) -> FlaskResponse:
+def get_cached_html_v0(fname: str) -> ResponseReturnValue:
     return legacy_cache_redirect("html", fname)
 
 
 @app.route("/cache/<etype>/<urlId>/<fname>")
-def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
+def get_cached_export(etype: str, urlId: str, fname: str) -> ResponseReturnValue:
     if etype not in ebook.EXPORT_TYPES:
         # if this is an unsupported export type, 404
         return page_not_found(NotFound())
@@ -617,7 +595,7 @@ def get_cached_export(etype: str, urlId: str, fname: str) -> FlaskResponse:
 
 
 @app.route("/cache/<etype>/<urlId>")
-def get_cached_export_partial(etype: str, urlId: str) -> Any:
+def get_cached_export_partial(etype: str, urlId: str) -> ResponseReturnValue:
     if etype not in ebook.EXPORT_TYPES:
         # if this is an unsupported export type, 404
         return page_not_found(NotFound())
@@ -631,8 +609,8 @@ def get_cached_export_partial(etype: str, urlId: str) -> Any:
     return get_cached_export(etype, urlId, fname)
 
 
-def get_fixits(q: str) -> List[str]:
-    fixits: List[str] = []
+def get_fixits(q: str) -> list[str]:
+    fixits: list[str] = []
     if q.find("tvtropes.org") >= 0:
         fixits += [
             "(note that tvtropes.org is not directly supported; instead, use the url of the actual fic)"
@@ -672,7 +650,7 @@ def get_limiter(key: str) -> Limiter:
     return Limiter.create(key)
 
 
-def maybe_limit_request() -> Tuple[Optional[Limiter], Any]:
+def maybe_limit_request() -> tuple[Limiter | None, ResponseReturnValue | None]:
     source = get_request_source()
 
     source_limiter = None
@@ -870,7 +848,7 @@ def api_v0_meta() -> Any:
 
 
 @app.route("/legacy/epub_export", methods=["GET"])
-def legacy_epub_export() -> FlaskResponse:
+def legacy_epub_export() -> ResponseReturnValue:
     res = api_v0_epub()
     if not isinstance(res, dict):
         # Rate limited 429
@@ -889,13 +867,13 @@ def legacy_epub_export() -> FlaskResponse:
 
 
 @app.route("/api/v0/remote", methods=["GET"])
-def api_v0_remote() -> FlaskResponse:
+def api_v0_remote() -> ResponseReturnValue:
     source = get_request_source()
     return source.__dict__
 
 
 @app.context_processor
-def inject_cache_buster() -> Dict[str, str]:
+def inject_cache_buster() -> dict[str, str]:
     return {
         "CACHE_BUSTER": CACHE_BUSTER,
         "CURRENT_CSS": CURRENT_CSS,
@@ -906,7 +884,7 @@ def inject_cache_buster() -> Dict[str, str]:
 
 
 @app.context_processor
-def inject_suffix_info() -> Dict[str, Any]:
+def inject_suffix_info() -> dict[str, Any]:
     return {
         "EXPORT_SUFFIXES": ebook.EXPORT_SUFFIXES,
         "EXPORT_DESCRIPTIONS": ebook.EXPORT_DESCRIPTIONS,

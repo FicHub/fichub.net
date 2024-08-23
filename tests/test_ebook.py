@@ -1,4 +1,3 @@
-from typing import Tuple
 import datetime
 from pathlib import Path
 import shutil
@@ -109,7 +108,7 @@ EXPORT_PATH_TEST_CASES = [
 
 
 @pytest.mark.parametrize(("urlId", "expected"), EXPORT_PATH_TEST_CASES)
-def test_buildExportPath(urlId: str, expected: Tuple[str, str]) -> None:
+def test_buildExportPath(urlId: str, expected: tuple[str, str]) -> None:
     expected = (
         f"{ebook.PRIMARY_CACHE_DIR}/{expected[0]}",
         f"{ebook.SECONDARY_CACHE_DIR}/{expected[1]}",
@@ -126,7 +125,7 @@ def test_buildExportPath(urlId: str, expected: Tuple[str, str]) -> None:
 )
 @pytest.mark.parametrize(("urlId", "expected"), EXPORT_PATH_TEST_CASES)
 def test_buildExportName(
-    etype: str, fhash: str, suff: str, urlId: str, expected: Tuple[str, str]
+    etype: str, fhash: str, suff: str, urlId: str, expected: tuple[str, str]
 ) -> None:
     names = ebook.buildExportName(etype, urlId, fhash, create=False)
     expected = (

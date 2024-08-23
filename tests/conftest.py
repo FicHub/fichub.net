@@ -1,4 +1,5 @@
-from typing import Any, Iterator, List
+from typing import Any
+from collections.abc import Iterator
 import os
 from pathlib import Path
 import re
@@ -19,7 +20,7 @@ def by_slow_marker(item: pytest.Item) -> int:
     return 0 if item.get_closest_marker("slow") is None else 1
 
 
-def pytest_collection_modifyitems(items: List[pytest.Item]) -> None:
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     # Order slow tests last.
     items.sort(key=by_slow_marker, reverse=False)
 
@@ -127,7 +128,7 @@ def elastic_url() -> Iterator[str]:
         yield url
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     from fichub_net.main import app
 
@@ -140,6 +141,6 @@ def app() -> Flask:
     return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def client(app: Flask) -> FlaskClient:
     return app.test_client()

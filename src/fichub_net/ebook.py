@@ -1,4 +1,3 @@
-from typing import Dict, Optional, Tuple
 import datetime
 import os
 import pathlib
@@ -123,7 +122,7 @@ def randomTempFile(extra: str, bits: int = 32) -> str:
     return os.path.join(tdir, fname)
 
 
-def buildExportPath(etype: str, urlId: str, create: bool = False) -> Tuple[str, str]:
+def buildExportPath(etype: str, urlId: str, create: bool = False) -> tuple[str, str]:
     urlId = urlId.lower()
     parts = [etype]
     parts.extend(urlId[i : i + 3] for i in range(0, len(urlId), 3))
@@ -137,13 +136,13 @@ def buildExportPath(etype: str, urlId: str, create: bool = False) -> Tuple[str, 
 
 def buildExportName(
     etype: str, urlId: str, fhash: str, create: bool = False
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     fdir, sfdir = buildExportPath(etype, urlId, create)
     suff = EXPORT_SUFFIXES[etype]
     return os.path.join(fdir, f"{fhash}{suff}"), os.path.join(sfdir, f"{fhash}{suff}")
 
 
-def finalizeExport(etype: str, urlId: str, ihash: str, tname: str) -> Tuple[str, str]:
+def finalizeExport(etype: str, urlId: str, ihash: str, tname: str) -> tuple[str, str]:
     fhash = util.hashFile(tname)
     fname, _ = buildExportName(etype, urlId, fhash, create=True)
     shutil.move(tname, fname)
@@ -162,7 +161,7 @@ def finalizeExport(etype: str, urlId: str, ihash: str, tname: str) -> Tuple[str,
     return (fname, fhash)
 
 
-def findExistingExport(etype: str, urlId: str, ihash: str) -> Optional[Tuple[str, str]]:
+def findExistingExport(etype: str, urlId: str, ihash: str) -> tuple[str, str] | None:
     try:
         el = ExportLog.lookup(urlId, exportVersion(etype, urlId), etype, ihash)
         if el is None:
@@ -188,14 +187,14 @@ def findExistingExport(etype: str, urlId: str, ihash: str) -> Optional[Tuple[str
     return None
 
 
-ZipDateTime = Tuple[int, int, int, int, int, int]
+ZipDateTime = tuple[int, int, int, int, int, int]
 
 
 def datetimeToZipDateTime(ts: datetime.datetime) -> ZipDateTime:
     return (ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second)
 
 
-def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]) -> Tuple[str, str]:
+def createHtmlBundle(info: FicInfo, chapters: dict[int, Chapter]) -> tuple[str, str]:
     slug = buildFileSlug(info.title, info.author, info.id)
     bundle_fname = slug + ".html"
 
@@ -216,8 +215,8 @@ def createHtmlBundle(info: FicInfo, chapters: Dict[int, Chapter]) -> Tuple[str, 
 
 
 def convertEpub(
-    info: FicInfo, chapters: Dict[int, Chapter], etype: str
-) -> Tuple[str, str]:
+    info: FicInfo, chapters: dict[int, Chapter], etype: str
+) -> tuple[str, str]:
     if etype not in EXPORT_TYPES:
         msg = f"convertEpub: invalid etype: {etype}"
         raise InvalidETypeError(msg)
@@ -242,7 +241,7 @@ def convertEpub(
     return finalizeExport(etype, info.id, ehash, tmp_fname)
 
 
-def buildEpubChapters(chapters: Dict[int, Chapter]) -> Dict[int, epub.EpubHtml]:
+def buildEpubChapters(chapters: dict[int, Chapter]) -> dict[int, epub.EpubHtml]:
     epubChapters = {}
     for n in chapters:
         ch = chapters[n]
@@ -253,7 +252,7 @@ def buildEpubChapters(chapters: Dict[int, Chapter]) -> Dict[int, epub.EpubHtml]:
     return epubChapters
 
 
-def createEpub(info: FicInfo, rawChapters: Dict[int, Chapter]) -> Tuple[str, str]:
+def createEpub(info: FicInfo, rawChapters: dict[int, Chapter]) -> tuple[str, str]:
     print(info.__dict__)
 
     book = epub.EpubBook()

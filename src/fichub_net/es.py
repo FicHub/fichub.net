@@ -1,5 +1,6 @@
 #!./venv/bin/python
-from typing import Any, Dict, Iterator, List
+from typing import Any
+from collections.abc import Iterator
 import sys
 import time
 import traceback
@@ -55,7 +56,7 @@ def createIndex(es: Any) -> None:
     )
 
 
-def search(q: str, limit: int = 10) -> List[FicInfo]:
+def search(q: str, limit: int = 10) -> list[FicInfo]:
     try:
         es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
         res = es.search(
@@ -71,7 +72,7 @@ def search(q: str, limit: int = 10) -> List[FicInfo]:
             },
         )
         print(f"es.search({q}) => {res['hits']['total']['value']} hits")
-        fis: List[FicInfo] = []
+        fis: list[FicInfo] = []
         for hit in res["hits"]["hits"]:
             if len(fis) >= limit:
                 break
@@ -91,7 +92,7 @@ def save(fi: FicInfo) -> None:
     es.index(index="fi", id=_id, body=r)
 
 
-def handleFicInfo(fi: FicInfo) -> Dict[str, Any]:
+def handleFicInfo(fi: FicInfo) -> dict[str, Any]:
     _id = fi.id
     r = dict(fi.__dict__)
     r["urlId"] = r.pop("id", None)
@@ -104,7 +105,7 @@ def blacklist(urlId: str) -> None:
     es.delete(index="fi", id=urlId)
 
 
-def generateFicInfo() -> Iterator[Dict[str, Any]]:
+def generateFicInfo() -> Iterator[dict[str, Any]]:
     for fi in FicInfo.select():
         if fi.sourceId == RR_SOURCE_ID:
             continue
@@ -118,7 +119,7 @@ def generateFicInfo() -> Iterator[Dict[str, Any]]:
         yield handleFicInfo(fi)
 
 
-def main(argv: List[str]) -> int:
+def main(argv: list[str]) -> int:
     if len(argv) not in {1}:
         print(f"usage: {argv[0]}")
         return 1

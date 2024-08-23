@@ -1,4 +1,4 @@
-from typing import Any, Dict, cast
+from typing import Any, cast
 import hashlib
 
 import requests
@@ -12,7 +12,7 @@ def hashFile(fname: str) -> str:
         return hashlib.md5(data).hexdigest()
 
 
-def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> Dict[Any, Any]:
+def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> dict[Any, Any]:
     params = {"apiKey": a.AX_API_KEY}
     headers = {"User-Agent": "fichub.net/0.1.0"}
     r = requests.get(
@@ -31,4 +31,4 @@ def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> Dict[Any,
                 "msg": f"reqJson: received status code: {r.status_code!s}",
             }
         return reqJson(link, retryCount - 1)
-    return cast(Dict[Any, Any], p)
+    return cast(dict[Any, Any], p)

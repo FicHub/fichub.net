@@ -1,18 +1,17 @@
 #!./venv/bin/python
-from typing import Dict, List, Optional, Set, Union
 import ipaddress
 import json
 import sys
 import traceback
-from xml.etree import ElementTree
+import xml.etree.ElementTree as ET
 
-IPNetwork = Union[ipaddress.IPv4Network, ipaddress.IPv6Network]
+IPNetwork = ipaddress.IPv4Network | ipaddress.IPv6Network
 
-TAGGED_IP_RANGES: Dict[str, List[IPNetwork]] = {}
-IP_TAG: Dict[str, Optional[str]] = {}
+TAGGED_IP_RANGES: dict[str, list[IPNetwork]] = {}
+IP_TAG: dict[str, str | None] = {}
 
 
-def try_parse_ip_network(r: str) -> Optional[IPNetwork]:
+def try_parse_ip_network(r: str) -> IPNetwork | None:
     try:
         return ipaddress.ip_network(r)
     except Exception as e:
@@ -31,9 +30,9 @@ def load_azure_ip_ranges() -> None:
     with open("./dat/PublicIPs_20200824.xml") as f:
         x = f.read().strip()
 
-    root = ElementTree.fromstring(x)
+    root = ET.fromstring(x)
 
-    def extractIpRanges(e: ElementTree.Element) -> Set[str]:
+    def extractIpRanges(e: ET.Element) -> set[str]:
         if e.tag == "IpRange":
             return {e.attrib["Subnet"]}
         s = set()
@@ -132,7 +131,7 @@ def load_ip_ranges() -> None:
     load_aws_ip_ranges()
 
 
-def ip_is_datacenter(addr: str) -> Optional[str]:
+def ip_is_datacenter(addr: str) -> str | None:
     # If we have a cached value for this IPs tag, return it directly
     if addr in IP_TAG:
         return IP_TAG[addr]

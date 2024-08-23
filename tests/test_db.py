@@ -1,4 +1,3 @@
-from typing import Dict, Optional
 import datetime
 import json
 
@@ -18,7 +17,7 @@ from fichub_net.db import (
 )
 
 
-def build_test_fic_info_dict(url_id: str) -> Dict[str, str]:
+def build_test_fic_info_dict(url_id: str) -> dict[str, str]:
     return {
         "urlId": url_id,
         "title": "test title",
@@ -267,7 +266,7 @@ class TestFicBlacklist:
         ],
     )
     def test_check(
-        url_id: str, reason: Optional[FicBlacklistReason], expected: bool
+        url_id: str, reason: FicBlacklistReason | None, expected: bool
     ) -> None:
         ir = None if reason is None else reason.value
         assert FicBlacklist.check(url_id, ir) is expected
@@ -320,7 +319,7 @@ class TestAuthorBlacklist:
         ],
     )
     def test_select(
-        source_id: Optional[int], author_id: Optional[int], expected_len: int
+        source_id: int | None, author_id: int | None, expected_len: int
     ) -> None:
         assert len(AuthorBlacklist.select(source_id, author_id)) == expected_len
 
@@ -346,7 +345,7 @@ class TestAuthorBlacklist:
     def test_check(
         source_id: int,
         author_id: int,
-        reason: Optional[FicBlacklistReason],
+        reason: FicBlacklistReason | None,
         expected: bool,
     ) -> None:
         ir = None if reason is None else reason.value

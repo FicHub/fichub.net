@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 import datetime
 from enum import Enum
 import json
@@ -81,7 +81,7 @@ class FicVersionBump:
         self.value = value_
 
     @staticmethod
-    def select(urlId: str) -> List["FicVersionBump"]:
+    def select(urlId: str) -> list["FicVersionBump"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 f"""
@@ -139,13 +139,13 @@ class FicInfo:
         ficUpdated_: datetime.datetime,
         status_: str,
         source_: str,
-        extraMeta_: Optional[str],
-        sourceId_: Optional[int],
-        authorId_: Optional[int],
-        contentHash_: Optional[str],
-        authorUrl_: Optional[str],
-        authorLocalId_: Optional[str],
-        rawExtendedMeta_: Optional[str],
+        extraMeta_: str | None,
+        sourceId_: int | None,
+        authorId_: int | None,
+        contentHash_: str | None,
+        authorUrl_: str | None,
+        authorLocalId_: str | None,
+        rawExtendedMeta_: str | None,
     ) -> None:
         self.id = id_
         self.created = created_
@@ -167,7 +167,7 @@ class FicInfo:
         self.authorLocalId = authorLocalId_
         self.rawExtendedMeta = rawExtendedMeta_
 
-    def toJson(self) -> Dict["str", Any]:
+    def toJson(self) -> dict["str", Any]:
         rawExtendedMeta = None
         try:
             if self.rawExtendedMeta is not None and len(self.rawExtendedMeta) > 0:
@@ -194,7 +194,7 @@ class FicInfo:
         }
 
     @staticmethod
-    def select(urlId: Optional[str] = None) -> List["FicInfo"]:
+    def select(urlId: str | None = None) -> list["FicInfo"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 f"""
@@ -207,7 +207,7 @@ class FicInfo:
             return [FicInfo(*r) for r in curs.fetchall()]
 
     @staticmethod
-    def save(ficInfo: Dict[str, str]) -> None:
+    def save(ficInfo: dict[str, str]) -> None:
         with oil.open() as db, db.cursor() as curs:
             fi = FicInfo.parse(ficInfo)
             curs.execute(
@@ -253,7 +253,7 @@ class FicInfo:
             )
 
     @staticmethod
-    def parse(ficInfo: Dict[str, str]) -> "FicInfo":
+    def parse(ficInfo: dict[str, str]) -> "FicInfo":
         extraMeta = ficInfo.get("extraMeta")
         if extraMeta is not None and len(extraMeta.strip()) < 1:
             extraMeta = None
@@ -312,7 +312,7 @@ class FicBlacklist:
         self.reason = reason_
 
     @staticmethod
-    def select(urlId: Optional[str] = None) -> List["FicBlacklist"]:
+    def select(urlId: str | None = None) -> list["FicBlacklist"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -325,7 +325,7 @@ class FicBlacklist:
             return [FicBlacklist(*r) for r in curs.fetchall()]
 
     @staticmethod
-    def check(urlId: str, reason: Optional[int] = None) -> bool:
+    def check(urlId: str, reason: int | None = None) -> bool:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -394,8 +394,8 @@ class AuthorBlacklist:
 
     @staticmethod
     def select(
-        sourceId: Optional[int] = None, authorId: Optional[int] = None
-    ) -> List["AuthorBlacklist"]:
+        sourceId: int | None = None, authorId: int | None = None
+    ) -> list["AuthorBlacklist"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -409,7 +409,7 @@ class AuthorBlacklist:
             return [AuthorBlacklist(*r) for r in curs.fetchall()]
 
     @staticmethod
-    def check(sourceId: int, authorId: int, reason: Optional[int] = None) -> bool:
+    def check(sourceId: int, authorId: int, reason: int | None = None) -> bool:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -508,12 +508,12 @@ class RequestLog:
         etype_: str,
         query_: str,
         infoRequestMs_: int,
-        urlId_: Optional[str],
-        ficInfo_: Optional[str],
-        exportMs_: Optional[int],
-        exportFileName_: Optional[str],
-        exportFileHash_: Optional[str],
-        url_: Optional[str],
+        urlId_: str | None,
+        ficInfo_: str | None,
+        exportMs_: int | None,
+        exportFileName_: str | None,
+        exportFileHash_: str | None,
+        url_: str | None,
     ) -> None:
         self.id = id_
         self.created = created_
@@ -552,12 +552,12 @@ class RequestLog:
         etype: str,
         query: str,
         infoRequestMs: int,
-        urlId: Optional[str],
-        ficInfo: Optional[str],
-        exportMs: Optional[int],
-        exportFileName: Optional[str],
-        exportFileHash: Optional[str],
-        url: Optional[str],
+        urlId: str | None,
+        ficInfo: str | None,
+        exportMs: int | None,
+        exportFileName: str | None,
+        exportFileHash: str | None,
+        url: str | None,
     ) -> None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(

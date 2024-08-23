@@ -86,7 +86,7 @@ class Limiter:
         assert limiter is not None
         return limiter
 
-    def retryAfter(self, value: float) -> Optional[float]:
+    def retryAfter(self, value: float) -> float | None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute("select fichub.fill_limiter(%s, %s)", (self.key, value))
             r = curs.fetchone()

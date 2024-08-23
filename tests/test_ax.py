@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any
+from collections.abc import Callable
 import datetime
 import json
 import time
@@ -38,7 +39,7 @@ EXAMPLE_FIC_CHAPTER = ax.Chapter(
 def basic_auth_value(username: str, password: str) -> str:
     class Req:
         def __init__(self) -> None:
-            self.headers: Dict[str, str] = {}
+            self.headers: dict[str, str] = {}
 
     r = Req()
     HTTPBasicAuth(username, password)(r)
@@ -74,21 +75,21 @@ class AxMock:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if self.manage_rsps:
             self.rsps.__exit__(exc_type, exc_value, traceback)
 
-    def matchers(self) -> List[Callable[..., Any]]:
+    def matchers(self) -> list[Callable[..., Any]]:
         return [
             matchers.request_kwargs_matcher(self.expected_kwargs),
             matchers.query_param_matcher(self.expected_params),
             matchers.header_matcher(self.expected_headers),
         ]
 
-    def add(self, method: str, url: str, body: Dict[str, Any]) -> None:
+    def add(self, method: str, url: str, body: dict[str, Any]) -> None:
         self.rsps.add(
             method,
             url,
@@ -97,11 +98,11 @@ class AxMock:
         )
 
     def add_delayed(
-        self, method: str, url: str, body: Dict[str, Any], delay: float
+        self, method: str, url: str, body: dict[str, Any], delay: float
     ) -> None:
-        def request_callback(_request: Any) -> Tuple[int, Dict[str, str], str]:
+        def request_callback(_request: Any) -> tuple[int, dict[str, str], str]:
             time.sleep(delay)
-            headers: Dict[str, str] = {}
+            headers: dict[str, str] = {}
             return (200, headers, json.dumps(body))
 
         self.rsps.add_callback(
@@ -141,7 +142,7 @@ def test_alive() -> None:
         assert ax.alive()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_alive_slow() -> None:
     # OK response that is a little delayed is up
     with AxMock() as rsps:
@@ -229,7 +230,7 @@ def test_lookup() -> None:
         assert len(fis) == 1
 
 
-@pytest.mark.elasticsearch()
+@pytest.mark.elasticsearch
 def test_lookup_es(elastic_url: str, capsys: pytest.CaptureFixture[str]) -> None:
     _ = elastic_url  # suppress unused argument
 
@@ -307,7 +308,7 @@ def test_requestAllChapters() -> None:
 
 
 @pytest.mark.parametrize("extra", [{}, {"title": ""}])
-def test_requestAllChapters_missing_title(extra: Dict[str, str]) -> None:
+def test_requestAllChapters_missing_title(extra: dict[str, str]) -> None:
     urlId = "foo"
     with AxMock(expected_timeout=300.0) as rsps:
         rsps.add(

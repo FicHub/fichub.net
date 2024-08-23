@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 import contextlib
 import traceback
 import urllib.parse
@@ -25,7 +25,7 @@ def alive() -> bool:
     return False
 
 
-def lookup(query: str, timeout: float = 280.0) -> Dict[str, Any]:
+def lookup(query: str, timeout: float = 280.0) -> dict[str, Any]:
     url_q = urllib.parse.quote(query, safe="")
     url = f"{a.AX_LOOKUP_ENDPOINT}/{url_q}"
     meta = util.reqJson(url, timeout=timeout)
@@ -54,7 +54,7 @@ class Chapter:
         self.content = content
 
 
-def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
+def requestAllChapters(urlId: str, expected: int) -> dict[int, Chapter]:
     url = f"{a.AX_FIC_ENDPOINT}/{urlId}"
     res = util.reqJson(url)
     chapters = {}
@@ -89,7 +89,7 @@ def requestAllChapters(urlId: str, expected: int) -> Dict[int, Chapter]:
     return chapters
 
 
-def fetchChapters(info: FicInfo) -> Dict[int, Chapter]:
+def fetchChapters(info: FicInfo) -> dict[int, Chapter]:
     # try to grab all chapters with the new /all endpoint first
     try:
         return requestAllChapters(info.id, info.chapters)

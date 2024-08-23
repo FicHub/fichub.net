@@ -16,32 +16,39 @@ static/js/_.js: frontend/_.ts | dirs
 static/style/_.css: frontend/_.sass | dirs
 	sassc -t compressed $< > $@
 
+.PHONY: requirements.txt
+requirements.txt: pyproject.toml
+	uv pip compile pyproject.toml -o requirements.txt
+
+venv:
+	uv pip sync pyproject.toml
+
 test:
-	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/ -m "not slow"
+	uv run python -m pytest --cov=. --cov-report html --cov-branch -vv tests/ -m "not slow"
 
 test-slow:
-	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/
+	uv run python -m pytest --cov=. --cov-report html --cov-branch -vv tests/
 
 test-slow-only:
-	./venv/bin/python -m pytest --cov=. --cov-report html --cov-branch -vv tests/ -m "slow"
+	uv run python -m pytest --cov=. --cov-report html --cov-branch -vv tests/ -m "slow"
 
 type:
-	./venv/bin/mypy .
+	uv run mypy src/ tests/
 
 format:
-	./venv/bin/ruff format
+	uv run ruff format
 
 lint:
-	./venv/bin/ruff check
+	uv run ruff check
 
 lint-fix:
-	./venv/bin/ruff check --fix
+	uv run ruff check --fix
 
 check: format type lint-fix test
 
 check-slow: format type lint-fix test-slow
 
-.PHONY: clean dirs beta prod test test-slow test-slow-only type format lint lint-fix check check-slow
+.PHONY: clean dirs beta prod test test-slow test-slow-only type format lint lint-fix check check-slow venv
 
 clean:
 	rm -f static/js/_.js static/style/_.css

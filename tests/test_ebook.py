@@ -7,11 +7,9 @@ from flask import Flask
 from oil import oil
 import pytest
 
-import ax
-from db import ExportLog, FicInfo
-import ebook
+from fichub_net import ax, ebook, util
+from fichub_net.db import ExportLog, FicInfo
 from tests.test_db import build_test_fic_info, build_test_fic_info_dict
-import util
 
 
 def test_exportVersion() -> None:

@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-import authentications as a
+from fichub_net import util
+import fichub_net.authentications as a
 from tests.test_ax import AxMock
-import util
 
 
 def test_hashFile(tmp_path: Path) -> None:

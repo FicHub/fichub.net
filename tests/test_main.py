@@ -3,7 +3,7 @@ from http import HTTPStatus
 from flask.testing import FlaskClient
 import pytest
 
-import main
+from fichub_net import main
 
 
 def test_uwsgi_init() -> None:

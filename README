@@ -17,7 +17,7 @@ If you'd like to support iris the creator, they have a patreon:
 # Setup
 
 There are several additional components needed that are not currently covered
-by requirements.txt if you want a fully functioning instance of FicHub, though
+by pyproject.toml if you want a fully functioning instance of FicHub, though
 several of these may be omitted:
 
 	python-oil:

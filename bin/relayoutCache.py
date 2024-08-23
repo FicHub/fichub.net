@@ -2,7 +2,7 @@
 import os
 import shutil
 
-from db import FicInfo
+from fichub_net.db import FicInfo
 
 LEGACY_CACHE_DIR = "/veil/fichub_net_cache"
 TARGET_CACHE_DIR = "/veil/new_fichub_net_cache"

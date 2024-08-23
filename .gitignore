@@ -4,6 +4,8 @@ rl_conf.py
 cache/
 tmp/
 venv/
+/.venv
+__pycache__/
 
 run/
 log/

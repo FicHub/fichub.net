@@ -3,7 +3,7 @@ import hashlib
 
 import requests
 
-import authentications as a
+import fichub_net.authentications as a
 
 
 def hashFile(fname: str) -> str:

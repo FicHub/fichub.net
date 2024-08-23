@@ -6,7 +6,7 @@ import unittest.mock
 
 import pytest
 
-import ip_tag
+from fichub_net import ip_tag
 
 
 @contextlib.contextmanager

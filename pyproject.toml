@@ -1,18 +1,20 @@
 [project]
-name = "fichub.net"
+name = "fichub-net"
+requires-python = ">=3.10"
+version = "0.1.0"
 dependencies = [
 	"Flask",
 	"requests",
 	"psycopg2",
 	"python-dateutil",
-	#"EbookLib @ git+https://github.com/FicHub/ebooklib@1dbc0d53d9e24d5da2c71f1907ebde1bc6821551",
-	#"oil @ git+https://github.com/FanFicDev/python-oil",
+	"EbookLib @ git+https://github.com/FicHub/ebooklib@ef040aa",
+	"oil @ git+https://github.com/FanFicDev/python-oil@b575c0c",
 	"elasticsearch",
 	"psutil",
 ]
 
-[project.optional-dependencies]
-dev = [
+[tool.uv]
+dev-dependencies = [
 	"ruff",
 	"mypy",
 	"types-requests",
@@ -30,6 +32,7 @@ markers = [
 	"slow: marks tests as slow (deselect with '-m \"not slow\"')",
 	"elasticsearch: mark tests that use elasticsearch (deselect with '-m \"not elasticsearch\"')",
 ]
+pythonpath = ["src/"]
 
 [tool.coverage.run]
 omit = ["tests/*"]

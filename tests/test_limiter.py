@@ -4,8 +4,8 @@ from oil import oil
 import psycopg2.errors
 import pytest
 
-import limiter
-from limiter import Limiter
+from fichub_net import limiter
+from fichub_net.limiter import Limiter
 
 
 class TestLimiter:

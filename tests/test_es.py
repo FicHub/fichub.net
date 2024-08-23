@@ -4,9 +4,9 @@ import elasticsearch
 from elasticsearch import Elasticsearch
 import pytest
 
-import authentications as a
-from db import FicInfo
-import es
+from fichub_net import es
+import fichub_net.authentications as a
+from fichub_net.db import FicInfo
 from tests.test_db import build_test_fic_info, build_test_fic_info_dict
 
 

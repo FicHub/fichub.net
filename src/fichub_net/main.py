@@ -35,12 +35,11 @@ from flask import (
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import NotFound
 
-import ax
-from db import FicBlacklist, FicInfo, RequestLog, RequestSource
-import ebook
-from ip_tag import TAGGED_IP_RANGES, ip_is_datacenter, load_ip_ranges
-from limiter import Limiter
-from rl_conf import (
+from fichub_net import ax, ebook
+from fichub_net.db import FicBlacklist, FicInfo, RequestLog, RequestSource
+from fichub_net.ip_tag import TAGGED_IP_RANGES, ip_is_datacenter, load_ip_ranges
+from fichub_net.limiter import Limiter
+from fichub_net.rl_conf import (
     DYNAMIC_RATE_LIMIT,
     LIMIT_UPSTREAMS,
     LIMIT_UPSTREAMS_EXTRA,
@@ -61,7 +60,7 @@ FlaskResponse = Union[
     Callable[[Dict[str, Any], BasicFlaskResponse], Iterable[bytes]],
 ]
 
-app = Flask(__name__, static_url_path="")
+app = Flask(__name__, static_url_path="", static_folder="../../static/")
 
 NODE_NAME = "orion"
 CACHE_BUSTER = "26"
@@ -654,7 +653,7 @@ def get_fixits(q: str) -> List[str]:
         ]
 
     with contextlib.suppress(Exception):
-        import es
+        from fichub_net import es
 
         fis = es.search(q, limit=15)
         for fi in fis:
@@ -927,7 +926,7 @@ def uwsgi_init() -> None:
         print(f"reset CURRENT_CSS to len {len(CURRENT_CSS)}")
 
     if os.path.isfile("./static/js/_.js"):
-        import util
+        from fichub_net import util
 
         jshash = util.hashFile("./static/js/_.js")
         if len(jshash) > 0:

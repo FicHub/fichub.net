@@ -3,10 +3,9 @@ import contextlib
 import traceback
 import urllib.parse
 
-import authentications as a
-from db import AuthorBlacklist, FicBlacklist, FicInfo
-import es
-import util
+from fichub_net import es, util
+import fichub_net.authentications as a
+from fichub_net.db import AuthorBlacklist, FicBlacklist, FicInfo
 
 FIC_UNAVAILABLE_ERROR = {
     "ret": 5,

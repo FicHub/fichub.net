@@ -50,7 +50,7 @@ def _no_http_requests(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def _tmp_ebook_dirs(tmp_path_factory: pytest.TempPathFactory) -> None:
-    import ebook
+    from fichub_net import ebook
 
     tmp_path = tmp_path_factory.mktemp("tmp_ebook_cache_dir")
     primary = tmp_path / "primary" / "cache"
@@ -92,7 +92,7 @@ def pytest_configure() -> None:
     os.environ["OIL_DB_PASSWORD"] = "fichub_test_pw"
 
     # Reset oil.oil from environment.
-    conn_parms = oil.OilConnectionParameters.fromEnvironment()
+    conn_parms = oil.OilConnectionParameters.from_environment()
     oil.oil = conn_parms
 
     # Setup the initial schema and do delayed initialization.
@@ -120,7 +120,7 @@ def elastic_url() -> Iterator[str]:
     ) as elastic_container:
         url = elastic_container.get_url()
 
-        import authentications
+        from fichub_net import authentications
 
         authentications.ELASTICSEARCH_HOSTS = [url]
 
@@ -129,7 +129,7 @@ def elastic_url() -> Iterator[str]:
 
 @pytest.fixture()
 def app() -> Flask:
-    from main import app
+    from fichub_net.main import app
 
     app.config.update(
         {

@@ -7,8 +7,8 @@ import traceback
 from elasticsearch import Elasticsearch
 import elasticsearch.helpers
 
-import authentications as a
-from db import FicBlacklist, FicInfo
+import fichub_net.authentications as a
+from fichub_net.db import FicBlacklist, FicInfo
 
 RR_SOURCE_ID = 19
 

@@ -14,9 +14,9 @@ from dateutil.relativedelta import relativedelta
 from ebooklib import epub
 from flask import render_template
 
-from ax import Chapter, FicInfo
-from db import ExportLog, FicVersionBump
-import util
+from fichub_net import util
+from fichub_net.ax import Chapter, FicInfo
+from fichub_net.db import ExportLog, FicVersionBump
 
 TMP_DIR = "tmp"
 PRIMARY_CACHE_DIR = "/mnt/selene_fichub/cache"

@@ -12,10 +12,9 @@ import responses
 from responses import matchers
 from responses.registries import OrderedRegistry
 
-import authentications as a
-import ax
-from db import AuthorBlacklist, FicBlacklist, FicBlacklistReason, FicInfo
-import es
+from fichub_net import ax, es
+import fichub_net.authentications as a
+from fichub_net.db import AuthorBlacklist, FicBlacklist, FicBlacklistReason, FicInfo
 from tests.test_db import build_test_fic_info_dict
 
 EXPECTED_AX_USER_AGENT = "fichub.net/0.1.0"

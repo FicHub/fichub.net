@@ -6,7 +6,7 @@ from oil import oil
 import psycopg2.errors
 import pytest
 
-from db import (
+from fichub_net.db import (
     AuthorBlacklist,
     ExportLog,
     FicBlacklist,

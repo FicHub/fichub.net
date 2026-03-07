@@ -229,9 +229,13 @@ def convertEpub(
     if ee is not None:
         return ee
 
+    timeout = (60 * 5) - 10
+    if "CONVERT_TIMEOUT" in os.environ:
+        timeout = int(os.environ["CONVERT_TIMEOUT"])
+
     res = subprocess.run(
         ["/home/fichub/fichub.net/janus.py", epub_fname, tmp_fname],
-        timeout=60 * 5,
+        timeout=timeout,
         check=False,
     )
     if res.returncode != 0:

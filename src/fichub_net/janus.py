@@ -197,6 +197,11 @@ def convert_janus(epub_fname: str, tmp_fname: str) -> int:
         content = f.read()
     content_b64 = base64.b64encode(content).decode("utf-8")
 
+    timeout_s = 285.1
+    if "CONVERT_TIMEOUT" in os.environ:
+        timeout_s = int(os.environ["CONVERT_TIMEOUT"]) - 10.1
+        plog("janus request timeout", timeout_s=timeout_s)
+
     try:
         r = requests.post(
             "http://localhost:8001/convert",
@@ -204,6 +209,7 @@ def convert_janus(epub_fname: str, tmp_fname: str) -> int:
                 "input_filename": input_filename,
                 "output_filename": output_filename,
                 "content": content_b64,
+                "timeout_s": timeout_s,
             },
             headers={
                 "User-Agent": "fichub.net/janus/0.0.1",

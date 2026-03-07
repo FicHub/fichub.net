@@ -43,6 +43,8 @@ create table if not exists ficInfo (
 	updated timestamp not null default(current_timestamp),
 	title text not null,
 	author text not null,
+	authorUrl text,
+	authorLocalId text,
 	chapters int4 not null,
 	words int8 not null,
 	description text not null,
@@ -51,6 +53,7 @@ create table if not exists ficInfo (
 	status text not null,
 	source text not null,
 	extraMeta text,
+	rawExtendedMeta text,
 	sourceId int8 null, -- TODO: make non-nullable when backfilled
 	authorId int8 null, -- TODO: make non-nullable when backfilled
 	contentHash varchar(256) null

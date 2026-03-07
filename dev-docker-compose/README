@@ -1,0 +1,33 @@
+Create an authentications.py file, based on authentications.ex.py. You can
+simply copy it to use the fake alexandria api included for testing:
+
+1. cp authentications.ex.py authentications.py
+
+Start the services:
+
+1. docker compose up -d
+
+This starts and initializes several components:
+1. `db` (postgres), and `app-migrate` runs the sql migrations
+2. `es` (elasicsearch), and `es-init` creates the initial index
+3. `ax` (alexandria), fake alexandria api for testing
+4. `app` -- the actual fichub.net service, flask dev mode
+
+Whenever you make changes or first get started, build the dev image:
+
+1. docker compose build
+
+Restart the app container:
+
+1. docker compose restart app
+
+
+Access the site running in the container at http://localhost:59294/ 
+
+When using the fake alexandria, the responses it gives are based on the content
+in the tests/dat/ax directory. By default you can search for and export the
+"foo" fic which gets a urlId of "foo".
+
+This currently only supports epub, the Dockerfile.dev does not currently
+install calibre which is required for most other filetypes currently.
+

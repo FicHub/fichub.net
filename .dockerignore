@@ -1,0 +1,5 @@
+*
+!pyproject.toml
+!src/
+!static/
+!epub_style.css

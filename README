@@ -16,6 +16,10 @@ If you'd like to support iris the creator, they have a patreon:
 
 # Setup
 
+If you're setting this up for development, please look at the
+./dev-docker-compose/README which has simple orchestration for a development
+environment.
+
 There are several additional components needed that are not currently covered
 by pyproject.toml if you want a fully functioning instance of FicHub, though
 several of these may be omitted:

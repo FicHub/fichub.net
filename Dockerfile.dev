@@ -1,0 +1,20 @@
+FROM astral/uv:python3.13-trixie
+
+RUN useradd -ms /bin/bash fichub_net
+
+RUN mkdir -p /app /mnt/selene_fichub/cache && \
+	chown fichub_net:fichub_net /app /mnt/selene_fichub /mnt/selene_fichub/cache
+
+USER fichub_net
+
+WORKDIR /app
+COPY --chown=fichub_net pyproject.toml .
+RUN mkdir -p src/fichub_net && touch src/fichub_net/__init.py__ && uv sync && rm -r src
+
+COPY --chown=fichub_net src src
+COPY --chown=fichub_net static static
+COPY --chown=fichub_net epub_style.css .
+
+RUN uv sync
+
+CMD ["uv", "run", "flask", "run", "--host", "0.0.0.0"]

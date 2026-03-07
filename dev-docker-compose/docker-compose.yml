@@ -1,0 +1,83 @@
+name: fichub-dev
+
+x-app-defaults: &x-app-defaults
+  image: fichub/fichub_net:0.0.1
+  pull_policy: never
+  environment:
+    FLASK_APP: ./src/fichub_net/main.py
+    FLASK_ENV: development
+
+    OIL_DB_HOST: db
+    OIL_DB_DBNAME: fichub
+    OIL_DB_USER: fichub
+    OIL_DB_PASSWORD: pgpass
+    OIL_DB_SSLMODE: disable
+  volumes:
+    - ./authentications.py:/app/src/fichub_net/authentications.py:ro
+  depends_on:
+    - db
+    - es
+
+services:
+  db:
+    image: postgres:14.8
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: pgpass
+      POSTGRES_USER: fichub
+      POSTGRES_DB: fichub
+      PGDATA: /var/lib/postgresql/data/fichub
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  es:
+    image: elasticsearch:8.8.0
+    restart: always
+    environment:
+      - node.name=fichub_es_1
+      - cluster.name=fichub_es
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=espass
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+  es-init:
+    <<: *x-app-defaults
+    restart: on-failure
+    command: ["uv", "run", "./src/fichub_net/es.py"]
+  app-migrate:
+    <<: *x-app-defaults
+    restart: on-failure
+    volumes:
+      - ../sql:/app/sql:ro
+    command: ["uv", "run", "./src/fichub_net/db.py", "migrate"]
+  ax:
+    <<: *x-app-defaults
+    restart: always
+    volumes:
+      - ../tests/dat/ax:/app/ax_dat:ro"
+    command: ["uv", "run", "python", "-m", "http.server", "-d", "ax_dat"]
+  app:
+    <<: *x-app-defaults
+    build:
+      context: ..
+      dockerfile: Dockerfile.dev
+    image: fichub/fichub_net:0.0.1
+    restart: always
+    ports:
+      - "59294:5000"
+    depends_on:
+      - db
+      - es
+      - es-init
+      - app-migrate
+      - ax
+
+volumes:
+  db_data:
+  es_data:

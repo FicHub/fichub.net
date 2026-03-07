@@ -1,0 +1,19 @@
+{
+  "urlId": "foo",
+  "sourceId": 1,
+  "authorId": 1,
+  "title": "dummy fic",
+  "author": "dummy-author",
+  "chapters": 1,
+  "words": 100,
+  "desc": "dummy fic desc",
+  "published": 1772917383000,
+  "updated": 1772917393000,
+  "status": "complete",
+  "source": "dummy-source",
+  "extraMeta": "extra meta",
+  "rawExtendedMeta": "{\"foo\":\"bar\",\"extra meta\":\"yes :)\"}",
+  "contentHash": "0000",
+  "authorUrl": "http://dummy/author/1",
+  "authorLocalId": "1"
+}

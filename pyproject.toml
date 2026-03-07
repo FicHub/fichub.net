@@ -37,6 +37,9 @@ build-backend = "hatchling.build"
 [tool.hatch.metadata]
 allow-direct-references = true
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/fichub_net"]
+
 [tool.pytest.ini_options]
 markers = [
 	"slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -96,6 +99,9 @@ show_error_codes = true
 [[tool.mypy.overrides]]
 module = "testcontainers.*"
 ignore_missing_imports = true
+
+[tool.ruff]
+exclude = ["dev-docker-compose"]
 
 [tool.ruff.lint]
 extend-select = [

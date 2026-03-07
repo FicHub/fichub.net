@@ -2,6 +2,8 @@ from typing import Any, Optional
 import datetime
 from enum import Enum
 import json
+from pathlib import Path
+import sys
 
 from oil import oil
 
@@ -579,3 +581,30 @@ class RequestLog:
                     url,
                 ),
             )
+
+
+def cmd_migrate() -> int:
+    with oil.open() as db, db.cursor() as curs:
+        for sql_path in ["./sql/fichub_net.sql", "./sql/limiter.sql"]:
+            sql = Path(sql_path).read_text()
+            curs.execute(sql)
+
+        for i in range(2, 1_000):
+            p = Path(f"./sql/upgrade{i}.sql")
+            if not p.is_file():
+                break
+            curs.execute(p.read_text())
+
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) != 2 or argv[1] != "migrate":  # noqa: PLR2004
+        print("usage: uv run ./src/fichub_net/db.py migrate -- migrate the db")
+        return 1
+
+    return cmd_migrate()
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

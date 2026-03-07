@@ -130,7 +130,8 @@ def main(argv: list[str]) -> int:
     if drop_indexes:
         dropIndex(es)
 
-    createIndex(es)
+    if not es.indices.exists(index="fi"):
+        createIndex(es)
 
     success = False
     cnt = 0

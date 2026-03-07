@@ -9,7 +9,7 @@ dependencies = [
 	"python-dateutil",
 	"EbookLib @ git+https://github.com/FicHub/ebooklib@ef040aa",
 	"oil @ git+https://github.com/FanFicDev/python-oil@b575c0c",
-	"elasticsearch",
+	"elasticsearch==8.19.3",
 	"psutil",
 ]
 

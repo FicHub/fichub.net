@@ -69,5 +69,5 @@ def test_popular_listing(client: FlaskClient, page: str) -> None:
     response = client.get(f"/popular/{page}")
     assert response.status_code == HTTPStatus.OK
     assert b"FicHub" in response.data
-    assert b"Fic.AI" in response.data
+    assert (b"Fic." + "❤️".encode()) in response.data
     assert b"Need to report an issue," in response.data

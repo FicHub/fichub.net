@@ -98,6 +98,11 @@ def page_not_found(_e: Exception) -> ResponseReturnValue:
     return render_template("404.html"), 404
 
 
+@app.route("/api/")
+def api_landing_trailing_slash() -> ResponseReturnValue:
+    return redirect(url_for("api_landing"))
+
+
 @app.route("/api")
 def api_landing() -> ResponseReturnValue:
     return render_template("api.html")

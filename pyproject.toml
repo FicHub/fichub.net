@@ -110,7 +110,7 @@ extend-select = [
 	"W",     # pycodestyle warning
 	# "C90",   # mccabe
 	"I",     # isort
-	# "N",     # pep8-naming
+	"N",     # pep8-naming
 	# "D",     # pydocstyle
 	"UP",    # pyupgrade
 	"YTT",   # flake8-2020
@@ -175,6 +175,7 @@ ignore = [
 	"PLR0913", # too-many-arguments
 	"PLR0915", # too-many-statements
 	"TRY300",  # try-consider-else
+	"N999",   # invalid-module-name
 ]
 
 # "ANN101", "ANN102", "COM812"

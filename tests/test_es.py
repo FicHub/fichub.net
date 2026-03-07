@@ -23,7 +23,7 @@ def test_reset_es() -> None:
     # clean state.
     test_es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
     with contextlib.suppress(elasticsearch.NotFoundError):
-        es.dropIndex(test_es)
+        es.drop_index(test_es)
 
 
 def test_search_before_init(capsys: pytest.CaptureFixture[str]) -> None:
@@ -38,15 +38,15 @@ def test_search_before_init(capsys: pytest.CaptureFixture[str]) -> None:
         assert captured.err.find("index_not_found_exception") >= 0
 
 
-def test_dropIndex_before_init() -> None:
+def test_drop_index_before_init() -> None:
     test_es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
     with pytest.raises(elasticsearch.NotFoundError, match="no such index"):
-        es.dropIndex(test_es)
+        es.drop_index(test_es)
 
 
-def test_createIndex() -> None:
+def test_create_index() -> None:
     test_es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
-    es.createIndex(test_es)
+    es.create_index(test_es)
 
 
 def test_search_no_results(capsys: pytest.CaptureFixture[str]) -> None:
@@ -58,9 +58,9 @@ def test_search_no_results(capsys: pytest.CaptureFixture[str]) -> None:
         assert captured.err == ""
 
 
-def test_handleFicInfo() -> None:
+def test_handle_fic_info() -> None:
     fi = build_test_fic_info("fooes")
-    fi_doc = es.handleFicInfo(fi)
+    fi_doc = es.handle_fic_info(fi)
     assert fi_doc["_id"] == "fooes"
     assert fi_doc["urlId"] == "fooes"
 

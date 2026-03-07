@@ -6,13 +6,13 @@ import requests
 import fichub_net.authentications as a
 
 
-def hashFile(fname: str) -> str:
+def hash_file(fname: str) -> str:
     with open(fname, "rb") as f:
         data = f.read()
         return hashlib.md5(data).hexdigest()
 
 
-def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> dict[Any, Any]:
+def req_json(link: str, retry_count: int = 5, timeout: float = 300.0) -> dict[Any, Any]:
     params = {"apiKey": a.AX_API_KEY}
     headers = {"User-Agent": "fichub.net/0.1.0"}
     r = requests.get(
@@ -25,10 +25,10 @@ def reqJson(link: str, retryCount: int = 5, timeout: float = 300.0) -> dict[Any,
     try:
         p = r.json()
     except ValueError:
-        if retryCount < 1:
+        if retry_count < 1:
             return {
                 "err": -1,
-                "msg": f"reqJson: received status code: {r.status_code!s}",
+                "msg": f"req_json: received status code: {r.status_code!s}",
             }
-        return reqJson(link, retryCount - 1)
+        return req_json(link, retry_count - 1)
     return cast(dict[Any, Any], p)

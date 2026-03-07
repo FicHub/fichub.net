@@ -134,30 +134,40 @@ class TestFicInfo:
     def test_init(self) -> None:
         build_test_fic_info("foo3")
 
-    def test_toJson(self) -> None:
+    def test_to_json(self) -> None:
         fic_info = build_test_fic_info("foo3")
         expected_extended_meta = {"foo": "bar", "foos": [1, 2, 3]}
-        fic_info.rawExtendedMeta = json.dumps(expected_extended_meta)
+        fic_info.raw_extended_meta = json.dumps(expected_extended_meta)
 
-        j = fic_info.toJson()
+        j = fic_info.to_json()
         assert j["id"] == "foo3"
 
         expected = fic_info.__dict__
-        expected["created"] = expected["ficCreated"].isoformat()
-        expected["updated"] = expected["ficUpdated"].isoformat()
+        expected["created"] = expected.pop("fic_created").isoformat()
+        expected["updated"] = expected.pop("fic_updated").isoformat()
+        for renames in [
+            ("authorUrl", "author_url"),
+            ("authorLocalId", "author_local_id"),
+            ("authorId", "author_id"),
+            ("extraMeta", "extra_meta"),
+            ("sourceId", "source_id"),
+        ]:
+            expected[renames[0]] = expected.pop(renames[1])
         expected["rawExtendedMeta"] = expected_extended_meta
 
         for k in j:
             assert j[k] == expected[k]
 
         # Test when rawExtendedMeta cannot be parsed
-        fic_info.rawExtendedMeta = "not json"
-        j = fic_info.toJson()
+        fic_info = build_test_fic_info("foo3")
+        fic_info.raw_extended_meta = "not json"
+        j = fic_info.to_json()
         assert j["rawExtendedMeta"] is None
 
         # Test when rawExtendedMeta is empty
-        fic_info.rawExtendedMeta = ""
-        j = fic_info.toJson()
+        fic_info = build_test_fic_info("foo3")
+        fic_info.raw_extended_meta = ""
+        j = fic_info.to_json()
         assert j["rawExtendedMeta"] is None
 
     @staticmethod
@@ -178,24 +188,24 @@ class TestFicInfo:
     def test_parse() -> None:
         fi_dict = build_test_fic_info_dict("foo3")
         fi = FicInfo.parse(fi_dict)
-        assert fi.extraMeta is None
-        assert fi.rawExtendedMeta is None
+        assert fi.extra_meta is None
+        assert fi.raw_extended_meta is None
 
         fi_dict["extraMeta"] = ""
         fi = FicInfo.parse(fi_dict)
-        assert fi.extraMeta is None
+        assert fi.extra_meta is None
 
         fi_dict["extraMeta"] = "bar"
         fi = FicInfo.parse(fi_dict)
-        assert fi.extraMeta == "bar"
+        assert fi.extra_meta == "bar"
 
         fi_dict["rawExtendedMeta"] = ""
         fi = FicInfo.parse(fi_dict)
-        assert fi.rawExtendedMeta is None
+        assert fi.raw_extended_meta is None
 
         fi_dict["rawExtendedMeta"] = "baz"
         fi = FicInfo.parse(fi_dict)
-        assert fi.rawExtendedMeta == "baz"
+        assert fi.raw_extended_meta == "baz"
 
 
 class TestFicBlacklist:
@@ -453,8 +463,8 @@ class TestRequestLog:
         )
 
     @staticmethod
-    def test_mostRecentByUrlId_not_found() -> None:
-        assert RequestLog.mostRecentByUrlId("epub", "foo5-no-exports") is None
+    def test_most_recent_by_url_id_not_found() -> None:
+        assert RequestLog.most_recent_by_url_id("epub", "foo5-no-exports") is None
 
     @staticmethod
     def test_insert() -> None:
@@ -471,10 +481,10 @@ class TestRequestLog:
             None,
         )
 
-        rl0 = RequestLog.mostRecentByUrlId("epub", "foo5-url-id")
+        rl0 = RequestLog.most_recent_by_url_id("epub", "foo5-url-id")
         assert rl0 is not None
 
-        rl1 = RequestLog.mostRecentByUrlId("epub", "foo5-url-id")
+        rl1 = RequestLog.most_recent_by_url_id("epub", "foo5-url-id")
         assert rl1.__dict__ == rl0.__dict__
 
         RequestLog.insert(
@@ -490,10 +500,10 @@ class TestRequestLog:
             None,
         )
 
-        rl2 = RequestLog.mostRecentByUrlId("epub", "foo5-url-id")
+        rl2 = RequestLog.most_recent_by_url_id("epub", "foo5-url-id")
         assert rl2.__dict__ != rl0.__dict__
 
     @staticmethod
-    def test_mostRecentByUrlId() -> None:
-        rl0 = RequestLog.mostRecentByUrlId("epub", "foo5-url-id")
+    def test_most_recent_by_url_id() -> None:
+        rl0 = RequestLog.most_recent_by_url_id("epub", "foo5-url-id")
         assert rl0 is not None

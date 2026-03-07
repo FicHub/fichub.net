@@ -8,17 +8,17 @@ LEGACY_CACHE_DIR = "/veil/fichub_net_cache"
 TARGET_CACHE_DIR = "/veil/new_fichub_net_cache"
 
 
-def buildLegacyExportPath(etype: str, urlId: str, create: bool = False) -> str:
-    fdir = os.path.join(LEGACY_CACHE_DIR, etype, urlId)
+def build_legacy_export_path(etype: str, url_id: str, create: bool = False) -> str:
+    fdir = os.path.join(LEGACY_CACHE_DIR, etype, url_id)
     if create and not os.path.isdir(fdir):
         os.makedirs(fdir)
     return fdir
 
 
-def buildExportPath(etype: str, urlId: str, create: bool = False) -> str:
-    urlId = urlId.lower()
+def build_export_path(etype: str, url_id: str, create: bool = False) -> str:
+    url_id = url_id.lower()
     parts = [TARGET_CACHE_DIR, etype]
-    parts.extend(urlId[i : i + 3] for i in range(0, len(urlId), 3))
+    parts.extend(url_id[i : i + 3] for i in range(0, len(url_id), 3))
     fdir = os.path.join(*parts)
     if create and not os.path.isdir(fdir):
         os.makedirs(fdir)
@@ -26,13 +26,13 @@ def buildExportPath(etype: str, urlId: str, create: bool = False) -> str:
 
 
 for fi in FicInfo.select():
-    urlId = fi.id
-    print(f"urlId: {urlId}")
+    url_id = fi.id
+    print(f"url_id: {url_id}")
     for etype in ("epub", "html", "mobi", "pdf"):
-        odir = buildLegacyExportPath(etype, urlId)
+        odir = build_legacy_export_path(etype, url_id)
         if not os.path.isdir(odir):
             continue
-        tdir = buildExportPath(etype, urlId, create=True)
+        tdir = build_export_path(etype, url_id, create=True)
         for entry in os.scandir(odir):
             src = entry.path
             dst = os.path.join(tdir, entry.name)

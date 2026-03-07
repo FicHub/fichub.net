@@ -258,33 +258,33 @@ def test_lookup_es(elastic_url: str, capsys: pytest.CaptureFixture[str]) -> None
         assert len(es.search("fooax2")) == 1
 
 
-def test_requestAllChapters() -> None:
-    urlId = "foo"
+def test_request_all_chapters() -> None:
+    url_id = "foo"
 
     with AxMock(expected_timeout=300.0) as rsps:
-        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{urlId}", {})
+        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{url_id}", {})
         with pytest.raises(KeyError, match="chapters"):
-            r = ax.requestAllChapters(urlId, 1)
+            r = ax.request_all_chapters(url_id, 1)
 
     with AxMock(expected_timeout=300.0) as rsps:
-        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{urlId}", {"chapters": []})
+        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{url_id}", {"chapters": []})
         with pytest.raises(ax.MissingChapterError, match="missing chapter: 1/1"):
-            r = ax.requestAllChapters(urlId, 1)
+            r = ax.request_all_chapters(url_id, 1)
 
     with AxMock(expected_timeout=300.0) as rsps:
         rsps.add(
             "GET",
-            f"{a.AX_FIC_ENDPOINT}/{urlId}",
+            f"{a.AX_FIC_ENDPOINT}/{url_id}",
             EXAMPLE_FIC_RESPONSE,
         )
-        r = ax.requestAllChapters(urlId, 1)
+        r = ax.request_all_chapters(url_id, 1)
         assert 1 in r
         assert r[1].__dict__ == EXAMPLE_FIC_CHAPTER.__dict__
 
     with AxMock(expected_timeout=300.0) as rsps:
         rsps.add(
             "GET",
-            f"{a.AX_FIC_ENDPOINT}/{urlId}",
+            f"{a.AX_FIC_ENDPOINT}/{url_id}",
             {
                 "chapters": [
                     {
@@ -295,7 +295,7 @@ def test_requestAllChapters() -> None:
                 ]
             },
         )
-        r = ax.requestAllChapters(urlId, 1)
+        r = ax.request_all_chapters(url_id, 1)
         assert 1 in r
         assert (
             r[1].__dict__
@@ -308,12 +308,12 @@ def test_requestAllChapters() -> None:
 
 
 @pytest.mark.parametrize("extra", [{}, {"title": ""}])
-def test_requestAllChapters_missing_title(extra: dict[str, str]) -> None:
-    urlId = "foo"
+def test_request_all_chapters_missing_title(extra: dict[str, str]) -> None:
+    url_id = "foo"
     with AxMock(expected_timeout=300.0) as rsps:
         rsps.add(
             "GET",
-            f"{a.AX_FIC_ENDPOINT}/{urlId}",
+            f"{a.AX_FIC_ENDPOINT}/{url_id}",
             {
                 "chapters": [
                     {
@@ -324,7 +324,7 @@ def test_requestAllChapters_missing_title(extra: dict[str, str]) -> None:
                 ]
             },
         )
-        r = ax.requestAllChapters(urlId, 1)
+        r = ax.request_all_chapters(url_id, 1)
         assert 1 in r
         assert (
             r[1].__dict__
@@ -336,11 +336,11 @@ def test_requestAllChapters_missing_title(extra: dict[str, str]) -> None:
         )
 
 
-def test_fetchChapters() -> None:
-    urlId = "foo"
+def test_fetch_chapters() -> None:
+    url_id = "foo"
 
-    ficInfo = FicInfo(
-        urlId,
+    fic_info = FicInfo(
+        url_id,
         datetime.datetime.now(tz=datetime.timezone.utc),
         datetime.datetime.now(tz=datetime.timezone.utc),
         "test title",
@@ -362,21 +362,21 @@ def test_fetchChapters() -> None:
     )
 
     with AxMock(expected_timeout=300.0) as rsps:
-        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{urlId}", {})
+        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{url_id}", {})
         with pytest.raises(KeyError, match="chapters"):
-            r = ax.fetchChapters(ficInfo)
+            r = ax.fetch_chapters(fic_info)
 
     with AxMock(expected_timeout=300.0) as rsps:
-        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{urlId}", {"chapters": []})
+        rsps.add("GET", f"{a.AX_FIC_ENDPOINT}/{url_id}", {"chapters": []})
         with pytest.raises(ax.MissingChapterError, match="missing chapter: 1/1"):
-            r = ax.fetchChapters(ficInfo)
+            r = ax.fetch_chapters(fic_info)
 
     with AxMock(expected_timeout=300.0) as rsps:
         rsps.add(
             "GET",
-            f"{a.AX_FIC_ENDPOINT}/{urlId}",
+            f"{a.AX_FIC_ENDPOINT}/{url_id}",
             EXAMPLE_FIC_RESPONSE,
         )
-        r = ax.fetchChapters(ficInfo)
+        r = ax.fetch_chapters(fic_info)
         assert 1 in r
         assert r[1].__dict__ == EXAMPLE_FIC_CHAPTER.__dict__

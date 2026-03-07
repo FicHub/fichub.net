@@ -113,25 +113,25 @@ def plog(msg: str, **kwargs: Any) -> None:
     logging.info(msg)
 
 
-def getWaitKey(cmdline: list[str]) -> str:
+def get_wait_key(cmdline: list[str]) -> str:
     if len(cmdline) != (EXPECTED_ARG_COUNT + 1):  # includes python
         return "null"
     return cmdline[-1].split(".")[-1]
 
 
 @trace_timing(["key"])
-def waitForOurTurn(key: str) -> None:
+def wait_for_our_turn(key: str) -> None:
     max_other_waiting = 3
     delta = 2.5
-    usPid = os.getpid()
-    usCreated = None
+    us_pid = os.getpid()
+    us_created = None
     for _i in range(int(180 / delta)):
         cnt = 0
-        minPid: int | None = None
-        minCreated = 1.0 * 9e9
+        min_pid: int | None = None
+        min_created = 1.0 * 9e9
         for p in psutil.process_iter():
-            if p.pid == usPid:
-                usCreated = p.create_time()
+            if p.pid == us_pid:
+                us_created = p.create_time()
             cmdl = p.cmdline()
             if (
                 len(cmdl) != (EXPECTED_ARG_COUNT + 1)  # includes python
@@ -140,25 +140,25 @@ def waitForOurTurn(key: str) -> None:
             ):
                 continue
             cnt += 1
-            if getWaitKey(cmdl) != key:
+            if get_wait_key(cmdl) != key:
                 continue
-            if minPid is None or p.create_time() < minCreated:
-                minPid = p.pid
-                minCreated = p.create_time()
+            if min_pid is None or p.create_time() < min_created:
+                min_pid = p.pid
+                min_created = p.create_time()
         if (
-            minCreated is not None
-            and usCreated is not None
-            and minPid != usPid
-            and minCreated < usCreated
+            min_created is not None
+            and us_created is not None
+            and min_pid != us_pid
+            and min_created < us_created
         ):
             if cnt > max_other_waiting:
                 plog(f"there are at least {max_other_waiting} other waiting; aborting")
                 sys.exit(103)
             plog(
                 "previous export still running",
-                min_pid=minPid,
-                min_created=minCreated,
-                us_created=usCreated,
+                min_pid=min_pid,
+                min_created=min_created,
+                us_created=us_created,
             )
             time.sleep(delta)
         else:
@@ -167,9 +167,9 @@ def waitForOurTurn(key: str) -> None:
     raise WaitTimeoutError(msg)
 
 
-def limitVirtualMemory() -> None:
-    MAX_VIRTUAL_MEMORY = int(1024 * 1024 * 1024 * 2.5)  # 2.5 GiB
-    resource.setrlimit(resource.RLIMIT_AS, (MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
+def limit_virtual_memory() -> None:
+    max_virtual_memory = int(1024 * 1024 * 1024 * 2.5)  # 2.5 GiB
+    resource.setrlimit(resource.RLIMIT_AS, (max_virtual_memory, resource.RLIM_INFINITY))
 
 
 def convert_local(epub_fname: str, tmp_fname: str) -> int:
@@ -179,7 +179,7 @@ def convert_local(epub_fname: str, tmp_fname: str) -> int:
             ["/opt/calibre/ebook-convert", epub_fname, tmp_fname],
             timeout=60 * 5,
             check=False,
-        )  # preexec_fn=limitVirtualMemory)
+        )  # preexec_fn=limit_virtual_memory)
         ret = res.returncode
     except Exception as e:
         plog("unhandled exception in convert_local", err=f"{e}")
@@ -255,15 +255,15 @@ def main() -> int:
     epub_fname = str(sys.argv[1])
     tmp_fname = str(sys.argv[2])
 
-    usPid = os.getpid()
+    us_pid = os.getpid()
     key = "null"
     for p in psutil.process_iter():
-        if p.pid == usPid:
+        if p.pid == us_pid:
             plog("cmdline", cmdline=p.cmdline())
-            key = getWaitKey(p.cmdline())
+            key = get_wait_key(p.cmdline())
 
     plog("waiting on key", key=key)
-    waitForOurTurn(key)
+    wait_for_our_turn(key)
 
     ret = 255
 

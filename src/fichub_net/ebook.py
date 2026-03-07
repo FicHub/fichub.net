@@ -59,48 +59,48 @@ class JanusError(Exception):
     pass
 
 
-def exportVersion(etype: str, urlId: str) -> int:
+def export_version(etype: str, url_id: str) -> int:
     res = EXPORT_VERSION
     if etype in EXPORT_TYPE_VERSIONS:
         res += EXPORT_TYPE_VERSIONS[etype]
-    for fvb in FicVersionBump.select(urlId):
+    for fvb in FicVersionBump.select(url_id):
         res += fvb.value
     return res
 
 
-def formatRelDatePart(val: int, which: str) -> str:
+def format_rel_date_part(val: int, which: str) -> str:
     return f"{val} {which}{'s' if val > 1 else ''} " if val > 0 else ""
 
 
-def metaDataString(info: FicInfo) -> str:
+def metadata_string(info: FicInfo) -> str:
     diff = relativedelta(
-        datetime.datetime.now(tz=datetime.timezone.utc), info.ficUpdated
+        datetime.datetime.now(tz=datetime.timezone.utc), info.fic_updated
     )
     parts = [
         (diff.years, "year"),
         (diff.months, "month"),
         (diff.days, "day"),
     ]
-    diffString = ""
+    diff_string = ""
     for val, which in parts:
-        diffString += formatRelDatePart(val, which)
-    if len(diffString) < 1:
-        diffString = "today"
+        diff_string += format_rel_date_part(val, which)
+    if len(diff_string) < 1:
+        diff_string = "today"
     else:
-        diffString += " ago"
+        diff_string += " ago"
 
     return "\n".join(
         [
             f"{info.title} by {info.author}",
             f"{info.words} words in {info.chapters} chapters",
             f"Status: {info.status}",
-            f"Updated: {info.ficUpdated.date()} - {diffString}",
+            f"Updated: {info.fic_updated.date()} - {diff_string}",
             "",
         ]
     )
 
 
-def buildFileSlug(title: str, author: str, urlId: str) -> str:
+def build_file_slug(title: str, author: str, url_id: str) -> str:
     slug = f"{title} by {author}"
     slug = re.sub(r"[^\w\-_]+", "_", slug)
     slug = re.sub("_+", "_", slug)
@@ -110,10 +110,10 @@ def buildFileSlug(title: str, author: str, urlId: str) -> str:
         slug = t
     except Exception:
         pass
-    return f"{slug}-{urlId}"
+    return f"{slug}-{url_id}"
 
 
-def randomTempFile(extra: str, bits: int = 32) -> str:
+def random_temp_file(extra: str, bits: int = 32) -> str:
     tdir = os.path.join(TMP_DIR, str(os.getpid()))
     if not os.path.isdir(tdir):
         os.makedirs(tdir)
@@ -122,11 +122,11 @@ def randomTempFile(extra: str, bits: int = 32) -> str:
     return os.path.join(tdir, fname)
 
 
-def buildExportPath(etype: str, urlId: str, create: bool = False) -> tuple[str, str]:
-    urlId = urlId.lower()
+def build_export_path(etype: str, url_id: str, create: bool = False) -> tuple[str, str]:
+    url_id = url_id.lower()
     parts = [etype]
-    parts.extend(urlId[i : i + 3] for i in range(0, len(urlId), 3))
-    parts.append(urlId)
+    parts.extend(url_id[i : i + 3] for i in range(0, len(url_id), 3))
+    parts.append(url_id)
     fdir = os.path.join(*([PRIMARY_CACHE_DIR, *parts]))
     if create and not os.path.isdir(fdir):
         os.makedirs(fdir)
@@ -134,48 +134,48 @@ def buildExportPath(etype: str, urlId: str, create: bool = False) -> tuple[str, 
     return fdir, sfdir
 
 
-def buildExportName(
-    etype: str, urlId: str, fhash: str, create: bool = False
+def build_export_name(
+    etype: str, url_id: str, fhash: str, create: bool = False
 ) -> tuple[str, str]:
-    fdir, sfdir = buildExportPath(etype, urlId, create)
+    fdir, sfdir = build_export_path(etype, url_id, create)
     suff = EXPORT_SUFFIXES[etype]
     return os.path.join(fdir, f"{fhash}{suff}"), os.path.join(sfdir, f"{fhash}{suff}")
 
 
-def finalizeExport(etype: str, urlId: str, ihash: str, tname: str) -> tuple[str, str]:
-    fhash = util.hashFile(tname)
-    fname, _ = buildExportName(etype, urlId, fhash, create=True)
+def finalize_export(etype: str, url_id: str, ihash: str, tname: str) -> tuple[str, str]:
+    fhash = util.hash_file(tname)
+    fname, _ = build_export_name(etype, url_id, fhash, create=True)
     shutil.move(tname, fname)
 
     # record this result so we can immediately return it next time, assuming the
     # input hash and export version have not changed
     try:
         n = datetime.datetime.now(tz=datetime.timezone.utc)
-        el = ExportLog(urlId, exportVersion(etype, urlId), etype, ihash, fhash, n)
+        el = ExportLog(url_id, export_version(etype, url_id), etype, ihash, fhash, n)
         el.upsert()
     except Exception as e:
         traceback.print_exc()
         print(e)
-        print("finalizeExport: ^ something went wrong :/")
+        print("finalize_export: ^ something went wrong :/")
 
     return (fname, fhash)
 
 
-def findExistingExport(etype: str, urlId: str, ihash: str) -> tuple[str, str] | None:
+def find_existing_export(etype: str, url_id: str, ihash: str) -> tuple[str, str] | None:
     try:
-        el = ExportLog.lookup(urlId, exportVersion(etype, urlId), etype, ihash)
+        el = ExportLog.lookup(url_id, export_version(etype, url_id), etype, ihash)
         if el is None:
             return None
-        fname, sfname = buildExportName(etype, urlId, el.exportHash)
+        fname, sfname = build_export_name(etype, url_id, el.exportHash)
         if not os.path.isfile(fname) and os.path.isfile(sfname):
-            _, _ = buildExportPath(etype, urlId, True)
+            _, _ = build_export_path(etype, url_id, True)
             try:
                 shutil.move(sfname, fname)
             except Exception as ie:
                 traceback.print_exc()
                 print(ie)
                 print(
-                    "findExistingExport: ^ something went wrong trying to move existing export :/"
+                    "find_existing_export: ^ something went wrong trying to move existing export :/"
                 )
         if not os.path.isfile(fname):
             return None
@@ -183,49 +183,51 @@ def findExistingExport(etype: str, urlId: str, ihash: str) -> tuple[str, str] | 
     except Exception as e:
         traceback.print_exc()
         print(e)
-        print("findExistingExport: ^ something went wrong :/")
+        print("find_existing_export: ^ something went wrong :/")
     return None
 
 
 ZipDateTime = tuple[int, int, int, int, int, int]
 
 
-def datetimeToZipDateTime(ts: datetime.datetime) -> ZipDateTime:
+def datetime_to_zip_datetime(ts: datetime.datetime) -> ZipDateTime:
     return (ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second)
 
 
-def createHtmlBundle(info: FicInfo, chapters: dict[int, Chapter]) -> tuple[str, str]:
-    slug = buildFileSlug(info.title, info.author, info.id)
+def create_html_bundle(info: FicInfo, chapters: dict[int, Chapter]) -> tuple[str, str]:
+    slug = build_file_slug(info.title, info.author, info.id)
     bundle_fname = slug + ".html"
 
-    _, ehash = createEpub(info, chapters)
-    ee = findExistingExport("html", info.id, ehash)
+    _, ehash = create_epub(info, chapters)
+    ee = find_existing_export("html", info.id, ehash)
     if ee is not None:
         return ee
 
-    tmp_fname = randomTempFile(f"{info.id}.zip")
+    tmp_fname = random_temp_file(f"{info.id}.zip")
 
     nchaps = chapters.values()
     data = render_template("full_fic.html", info=info, chapters=nchaps)
     with zipfile.ZipFile(tmp_fname, "w") as zf:
-        zinfo = zipfile.ZipInfo(bundle_fname, datetimeToZipDateTime(info.ficUpdated))
+        zinfo = zipfile.ZipInfo(
+            bundle_fname, datetime_to_zip_datetime(info.fic_updated)
+        )
         zf.writestr(zinfo, data, compress_type=zipfile.ZIP_DEFLATED)
 
-    return finalizeExport("html", info.id, ehash, tmp_fname)
+    return finalize_export("html", info.id, ehash, tmp_fname)
 
 
-def convertEpub(
+def convert_epub(
     info: FicInfo, chapters: dict[int, Chapter], etype: str
 ) -> tuple[str, str]:
     if etype not in EXPORT_TYPES:
-        msg = f"convertEpub: invalid etype: {etype}"
+        msg = f"convert_epub: invalid etype: {etype}"
         raise InvalidETypeError(msg)
 
     suff = EXPORT_SUFFIXES[etype]
-    tmp_fname = randomTempFile(f"{info.id}{suff}")
+    tmp_fname = random_temp_file(f"{info.id}{suff}")
 
-    epub_fname, ehash = createEpub(info, chapters)
-    ee = findExistingExport(etype, info.id, ehash)
+    epub_fname, ehash = create_epub(info, chapters)
+    ee = find_existing_export(etype, info.id, ehash)
     if ee is not None:
         return ee
 
@@ -239,24 +241,24 @@ def convertEpub(
         check=False,
     )
     if res.returncode != 0:
-        msg = f"convertEpub: error: return code {res.returncode} != 0"
+        msg = f"convert_epub: error: return code {res.returncode} != 0"
         raise JanusError(msg)
 
-    return finalizeExport(etype, info.id, ehash, tmp_fname)
+    return finalize_export(etype, info.id, ehash, tmp_fname)
 
 
-def buildEpubChapters(chapters: dict[int, Chapter]) -> dict[int, epub.EpubHtml]:
-    epubChapters = {}
+def build_epub_chapters(chapters: dict[int, Chapter]) -> dict[int, epub.EpubHtml]:
+    epub_chapters = {}
     for n in chapters:
         ch = chapters[n]
         c = epub.EpubHtml(title=ch.title, file_name=f"chap_{n}.xhtml", lang="en")
         c.title = ch.title
         c.content = ch.content
-        epubChapters[n] = c
-    return epubChapters
+        epub_chapters[n] = c
+    return epub_chapters
 
 
-def createEpub(info: FicInfo, rawChapters: dict[int, Chapter]) -> tuple[str, str]:
+def create_epub(info: FicInfo, raw_chapters: dict[int, Chapter]) -> tuple[str, str]:
     print(info.__dict__)
 
     book = epub.EpubBook()
@@ -298,7 +300,7 @@ def createEpub(info: FicInfo, rawChapters: dict[int, Chapter]) -> tuple[str, str
     book.add_item(nav_page)
 
     # actual chapter content
-    chapters = buildEpubChapters(rawChapters)
+    chapters = build_epub_chapters(raw_chapters)
     for _, c in sorted(chapters.items()):
         c.add_item(doc_style)
         book.add_item(c)
@@ -315,10 +317,10 @@ def createEpub(info: FicInfo, rawChapters: dict[int, Chapter]) -> tuple[str, str
     # add default NCX file
     book.add_item(epub.EpubNcx())
 
-    tmp_fname = randomTempFile(f"{info.id}.epub")
+    tmp_fname = random_temp_file(f"{info.id}.epub")
     epub.write_epub(
-        tmp_fname, book, {"mtime": info.ficUpdated, "play_order": {"enabled": True}}
+        tmp_fname, book, {"mtime": info.fic_updated, "play_order": {"enabled": True}}
     )
 
-    ihash = "upstream" if info.contentHash is None else info.contentHash
-    return finalizeExport("epub", info.id, ihash, tmp_fname)
+    ihash = "upstream" if info.content_hash is None else info.content_hash
+    return finalize_export("epub", info.id, ihash, tmp_fname)

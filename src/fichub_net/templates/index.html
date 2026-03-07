@@ -26,14 +26,14 @@
 		{% if blacklisted %}
 			<p>This work is unavailable through FicHub. This may appear due to an
 			author request.</p>
-		{% elif ficInfo is not none %}
-			<h1>{{ ficInfo.title }} by {{ ficInfo.author }}</h1>
+		{% elif fic_info is not none %}
+			<h1>{{ fic_info.title }} by {{ fic_info.author }}</h1>
 
-			{%- if (ficInfo.description|striptags).strip()
-				!= ficInfo.title ~ " by " ~ ficInfo.author %}
-			<p>{{ ficInfo.description|striptags }}</p>
+			{%- if (fic_info.description|striptags).strip()
+				!= fic_info.title ~ " by " ~ fic_info.author %}
+			<p>{{ fic_info.description|striptags }}</p>
 			{% endif -%}
-			<p>{{ ficInfo.words }} words in {{ ficInfo.chapters }} chapters</p>
+			<p>{{ fic_info.words }} words in {{ fic_info.chapters }} chapters</p>
 
 			{% if greylisted %}
 				<p>Exports for this work are unavailable. This may appear if an author

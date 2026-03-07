@@ -19,11 +19,11 @@ def plog(msg: str) -> None:
     print(f"{int(time.time())}|{msg}")
 
 
-def dropIndex(es: Any) -> None:
+def drop_index(es: Any) -> None:
     es.indices.delete(index="fi")
 
 
-def createIndex(es: Any) -> None:
+def create_index(es: Any) -> None:
     # TODO: DeprecationWarning: The 'body' parameter is deprecated and will be
     # removed in a future version. Instead use individiual parameters.
     es.indices.create(
@@ -87,12 +87,12 @@ def search(q: str, limit: int = 10) -> list[FicInfo]:
 
 def save(fi: FicInfo) -> None:
     es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
-    r = handleFicInfo(fi)
+    r = handle_fic_info(fi)
     _id = r.pop("_id", fi.id)
     es.index(index="fi", id=_id, body=r)
 
 
-def handleFicInfo(fi: FicInfo) -> dict[str, Any]:
+def handle_fic_info(fi: FicInfo) -> dict[str, Any]:
     _id = fi.id
     r = dict(fi.__dict__)
     r["urlId"] = r.pop("id", None)
@@ -100,14 +100,14 @@ def handleFicInfo(fi: FicInfo) -> dict[str, Any]:
     return r
 
 
-def blacklist(urlId: str) -> None:
+def blacklist(url_id: str) -> None:
     es = Elasticsearch(hosts=a.ELASTICSEARCH_HOSTS)
-    es.delete(index="fi", id=urlId)
+    es.delete(index="fi", id=url_id)
 
 
-def generateFicInfo() -> Iterator[dict[str, Any]]:
+def generate_fic_info() -> Iterator[dict[str, Any]]:
     for fi in FicInfo.select():
-        if fi.sourceId == RR_SOURCE_ID:
+        if fi.source_id == RR_SOURCE_ID:
             continue
         if FicBlacklist.greylisted(fi.id):
             plog(f"greylisted: {fi.id}")
@@ -116,7 +116,7 @@ def generateFicInfo() -> Iterator[dict[str, Any]]:
             plog(f"blacklisted: {fi.id}")
             continue
         plog(f"  indexing {fi.id}")
-        yield handleFicInfo(fi)
+        yield handle_fic_info(fi)
 
 
 def main(argv: list[str]) -> int:
@@ -128,10 +128,10 @@ def main(argv: list[str]) -> int:
 
     drop_indexes = False
     if drop_indexes:
-        dropIndex(es)
+        drop_index(es)
 
     if not es.indices.exists(index="fi"):
-        createIndex(es)
+        create_index(es)
 
     success = False
     cnt = 0
@@ -141,7 +141,9 @@ def main(argv: list[str]) -> int:
         if t > 0:
             time.sleep(5)
         try:
-            elasticsearch.helpers.bulk(client=es, index="fi", actions=generateFicInfo())
+            elasticsearch.helpers.bulk(
+                client=es, index="fi", actions=generate_fic_info()
+            )
             cnt += 1
             success = True
         except SystemExit:

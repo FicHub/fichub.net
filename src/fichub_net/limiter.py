@@ -23,23 +23,23 @@ class Limiter:
         capacity_: float,
         flow_: float,
         value_: float,
-        lastDrain_: datetime.datetime,
+        last_drain_: datetime.datetime,
     ) -> None:
         self.id = id_
         self.key = key_
         self.capacity = capacity_
         self.flow = flow_
         self.value = value_
-        self.lastDrain = lastDrain_
+        self.last_drain = last_drain_
 
     def burst(self) -> float:
         return max(0, self.capacity - self.value)
 
-    def isAnon(self) -> bool:
+    def is_anon(self) -> bool:
         return self.key.startswith("anon:")
 
     @staticmethod
-    def fromRow(row: Any) -> "Limiter":
+    def from_row(row: Any) -> "Limiter":
         return Limiter(*row)
 
     @staticmethod
@@ -54,7 +54,7 @@ class Limiter:
                 (key,),
             )
             r = curs.fetchone()
-            return None if r is None else Limiter.fromRow(r)
+            return None if r is None else Limiter.from_row(r)
 
     @staticmethod
     def create(key: str) -> "Limiter":
@@ -86,7 +86,7 @@ class Limiter:
         assert limiter is not None
         return limiter
 
-    def retryAfter(self, value: float) -> float | None:
+    def retry_after(self, value: float) -> float | None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute("select fichub.fill_limiter(%s, %s)", (self.key, value))
             r = curs.fetchone()

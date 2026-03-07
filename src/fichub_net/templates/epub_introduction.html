@@ -8,16 +8,16 @@
 	<p><b>By: {{info.author}}</b></p>
 	<p>{{info.description|safe}}</p>
 	<p>Status: {{info.status}}</p>
-	<p>Published: {{info.ficCreated.date()}}</p>
-	{% if info.ficCreated != info.ficUpdated %}
-	<p>Updated: {{info.ficUpdated.date()}}</p>
+	<p>Published: {{info.fic_created.date()}}</p>
+	{% if info.fic_created != info.fic_updated %}
+	<p>Updated: {{info.fic_updated.date()}}</p>
 	{% endif %}
 	<p>Words: {{info.words}}</p>
 	{% if info.chapters > 1 %}
 	<p>Chapters: {{info.chapters}}</p>
 	{% endif %}
-	{% if info.extraMeta is not none and info.extraMeta|length %}
-	<p>{{info.extraMeta}}</p>
+	{% if info.extra_meta is not none and info.extra_meta|length %}
+	<p>{{info.extra_meta}}</p>
 	{% endif %}
 	{% if info.source|length %}
 	<p>Original source:

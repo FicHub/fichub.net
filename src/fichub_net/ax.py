@@ -20,7 +20,7 @@ class MissingChapterError(Exception):
 
 def alive() -> bool:
     with contextlib.suppress(Exception):
-        m = util.reqJson(a.AX_STATUS_ENDPOINT, timeout=5.0)
+        m = util.req_json(a.AX_STATUS_ENDPOINT, timeout=5.0)
         return "err" not in m or str(m["err"]) == "0"
     return False
 
@@ -28,7 +28,7 @@ def alive() -> bool:
 def lookup(query: str, timeout: float = 280.0) -> dict[str, Any]:
     url_q = urllib.parse.quote(query, safe="")
     url = f"{a.AX_LOOKUP_ENDPOINT}/{url_q}"
-    meta = util.reqJson(url, timeout=timeout)
+    meta = util.req_json(url, timeout=timeout)
     if "error" in meta and "err" not in meta:
         meta["err"] = meta.pop("error", None)
     if "err" not in meta:
@@ -54,9 +54,9 @@ class Chapter:
         self.content = content
 
 
-def requestAllChapters(urlId: str, expected: int) -> dict[int, Chapter]:
-    url = f"{a.AX_FIC_ENDPOINT}/{urlId}"
-    res = util.reqJson(url)
+def request_all_chapters(url_id: str, expected: int) -> dict[int, Chapter]:
+    url = f"{a.AX_FIC_ENDPOINT}/{url_id}"
+    res = util.req_json(url)
     chapters = {}
     titles = []
     for ch in res["chapters"]:
@@ -69,9 +69,9 @@ def requestAllChapters(urlId: str, expected: int) -> dict[int, Chapter]:
             title = f"Chapter {n}"
 
         # extract chapter content and prepend with chapter title header
-        titleHeader = f"<h2>{title}</h2>"
-        content = titleHeader + str(ch["content"]).strip()
-        if len(content) <= len(titleHeader):
+        title_header = f"<h2>{title}</h2>"
+        content = title_header + str(ch["content"]).strip()
+        if len(content) <= len(title_header):
             print(f"note: {url} {n} has an empty content body")
             content += "<p></p>"
         ch["content"] = None
@@ -81,7 +81,7 @@ def requestAllChapters(urlId: str, expected: int) -> dict[int, Chapter]:
     # ensure we got the number of expected chapters
     for i in range(1, expected + 1):
         if i not in chapters:
-            print(f"requestAllChapters: err: {i} not in chapters")
+            print(f"request_all_chapters: err: {i} not in chapters")
             print(list(chapters.keys()))
             msg = f"err: missing chapter: {i}/{expected}"
             raise MissingChapterError(msg)
@@ -89,12 +89,12 @@ def requestAllChapters(urlId: str, expected: int) -> dict[int, Chapter]:
     return chapters
 
 
-def fetchChapters(info: FicInfo) -> dict[int, Chapter]:
+def fetch_chapters(info: FicInfo) -> dict[int, Chapter]:
     # try to grab all chapters with the new /all endpoint first
     try:
-        return requestAllChapters(info.id, info.chapters)
+        return request_all_chapters(info.id, info.chapters)
     except Exception as e:
         traceback.print_exc()
         print(e)
-        print("fetchChapters: ^ something went wrong :/")
+        print("fetch_chapters: ^ something went wrong :/")
         raise

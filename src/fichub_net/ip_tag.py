@@ -32,15 +32,15 @@ def load_azure_ip_ranges() -> None:
 
     root = ET.fromstring(x)
 
-    def extractIpRanges(e: ET.Element) -> set[str]:
+    def extract_ip_ranges(e: ET.Element) -> set[str]:
         if e.tag == "IpRange":
             return {e.attrib["Subnet"]}
         s = set()
         for child in e:
-            s |= extractIpRanges(child)
+            s |= extract_ip_ranges(child)
         return s
 
-    ranges = extractIpRanges(root)
+    ranges = extract_ip_ranges(root)
 
     for r in ranges:
         n = try_parse_ip_network(r)

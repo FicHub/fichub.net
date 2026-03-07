@@ -13,27 +13,27 @@ class MissingRequestSourceError(Exception):
 
 
 class ExportLog:
-    fieldCount = 6
+    field_count = 6
 
     def __init__(
         self,
-        urlId_: str,
+        url_id_: str,
         version_: int,
         etype_: str,
-        inputHash_: str,
-        exportHash_: str,
+        input_hash_: str,
+        export_hash_: str,
         created_: datetime.datetime,
     ) -> None:
-        self.urlId = urlId_
+        self.url_id = url_id_
         self.version = version_
         self.etype = etype_
-        self.inputHash = inputHash_
-        self.exportHash = exportHash_
+        self.input_hash = input_hash_
+        self.exportHash = export_hash_
         self.created = created_
 
     @staticmethod
     def lookup(
-        urlId: str, version: int, etype: str, inputHash: str
+        url_id: str, version: int, etype: str, input_hash: str
     ) -> Optional["ExportLog"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
@@ -45,10 +45,10 @@ class ExportLog:
                   and e.etype = %s
                   and e.inputHash = %s
                 """,
-                (urlId, version, etype, inputHash),
+                (url_id, version, etype, input_hash),
             )
             r = curs.fetchone()
-            return ExportLog(*r[: ExportLog.fieldCount]) if r is not None else None
+            return ExportLog(*r[: ExportLog.field_count]) if r is not None else None
 
     def upsert(self) -> "ExportLog":
         with oil.open() as db, db.cursor() as curs:
@@ -60,9 +60,15 @@ class ExportLog:
                 update set exportHash = EXCLUDED.exportHash
                 where exportLog.created < EXCLUDED.created
                 """,
-                (self.urlId, self.version, self.etype, self.inputHash, self.exportHash),
+                (
+                    self.url_id,
+                    self.version,
+                    self.etype,
+                    self.input_hash,
+                    self.exportHash,
+                ),
             )
-        el = ExportLog.lookup(self.urlId, self.version, self.etype, self.inputHash)
+        el = ExportLog.lookup(self.url_id, self.version, self.etype, self.input_hash)
         assert el is not None
         self.exportHash = el.exportHash
         self.created = el.created
@@ -70,34 +76,34 @@ class ExportLog:
 
 
 class FicVersionBump:
-    tableAlias = "fvb"
+    table_alias = "fvb"
     fields = ("id", "value")
-    fieldCount = len(fields)
+    field_count = len(fields)
 
     @classmethod
-    def selectList(cls) -> str:
-        return ", ".join(f"{cls.tableAlias}.{f}" for f in cls.fields)
+    def select_list(cls) -> str:
+        return ", ".join(f"{cls.table_alias}.{f}" for f in cls.fields)
 
     def __init__(self, id_: str, value_: int) -> None:
         self.id = id_
         self.value = value_
 
     @staticmethod
-    def select(urlId: str) -> list["FicVersionBump"]:
+    def select(url_id: str) -> list["FicVersionBump"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 f"""
-                select {FicVersionBump.selectList()}
-                from ficVersionBump {FicVersionBump.tableAlias}
+                select {FicVersionBump.select_list()}
+                from ficVersionBump {FicVersionBump.table_alias}
                 where id = %s
                 """,
-                (urlId,),
+                (url_id,),
             )
             return [FicVersionBump(*r) for r in curs.fetchall()]
 
 
 class FicInfo:
-    tableAlias = "fi"
+    table_alias = "fi"
     fields = (
         "id",
         "created",
@@ -119,11 +125,11 @@ class FicInfo:
         "authorLocalId",
         "rawExtendedMeta",
     )
-    fieldCount = len(fields)
+    field_count = len(fields)
 
     @classmethod
-    def selectList(cls) -> str:
-        return ", ".join(f"{cls.tableAlias}.{f}" for f in cls.fields)
+    def select_list(cls) -> str:
+        return ", ".join(f"{cls.table_alias}.{f}" for f in cls.fields)
 
     # TODO: make sourceId, authorId non-Optional when fully backfilled
     # TODO: make authorUrl, authorLocalId non-Optional when fully backfilled
@@ -137,17 +143,17 @@ class FicInfo:
         chapters_: int,
         words_: int,
         description_: str,
-        ficCreated_: datetime.datetime,
-        ficUpdated_: datetime.datetime,
+        fic_created_: datetime.datetime,
+        fic_updated_: datetime.datetime,
         status_: str,
         source_: str,
-        extraMeta_: str | None,
-        sourceId_: int | None,
-        authorId_: int | None,
-        contentHash_: str | None,
-        authorUrl_: str | None,
-        authorLocalId_: str | None,
-        rawExtendedMeta_: str | None,
+        extra_meta_: str | None,
+        source_id_: int | None,
+        author_id_: int | None,
+        content_hash_: str | None,
+        author_url_: str | None,
+        author_local_id_: str | None,
+        raw_extended_meta_: str | None,
     ) -> None:
         self.id = id_
         self.created = created_
@@ -157,29 +163,29 @@ class FicInfo:
         self.chapters = chapters_
         self.words = words_
         self.description = description_
-        self.ficCreated = ficCreated_
-        self.ficUpdated = ficUpdated_
+        self.fic_created = fic_created_
+        self.fic_updated = fic_updated_
         self.status = status_
         self.source = source_
-        self.extraMeta = extraMeta_
-        self.sourceId = sourceId_
-        self.authorId = authorId_
-        self.contentHash = contentHash_
-        self.authorUrl = authorUrl_
-        self.authorLocalId = authorLocalId_
-        self.rawExtendedMeta = rawExtendedMeta_
+        self.extra_meta = extra_meta_
+        self.source_id = source_id_
+        self.author_id = author_id_
+        self.content_hash = content_hash_
+        self.author_url = author_url_
+        self.author_local_id = author_local_id_
+        self.raw_extended_meta = raw_extended_meta_
 
-    def toJson(self) -> dict["str", Any]:
-        rawExtendedMeta = None
+    def to_json(self) -> dict["str", Any]:
+        raw_extended_meta = None
         try:
-            if self.rawExtendedMeta is not None and len(self.rawExtendedMeta) > 0:
-                rawExtendedMeta = json.loads(self.rawExtendedMeta)
+            if self.raw_extended_meta is not None and len(self.raw_extended_meta) > 0:
+                raw_extended_meta = json.loads(self.raw_extended_meta)
         except Exception:
             pass
         return {
             "id": self.id,
-            "created": self.ficCreated.isoformat(),
-            "updated": self.ficUpdated.isoformat(),
+            "created": self.fic_created.isoformat(),
+            "updated": self.fic_updated.isoformat(),
             "title": self.title,
             "author": self.author,
             "chapters": self.chapters,
@@ -187,31 +193,31 @@ class FicInfo:
             "description": self.description,
             "status": self.status,
             "source": self.source,
-            "extraMeta": self.extraMeta,
-            "rawExtendedMeta": rawExtendedMeta,
-            "authorUrl": self.authorUrl,
-            "authorLocalId": self.authorLocalId,
-            "sourceId": self.sourceId,
-            "authorId": self.authorId,
+            "extraMeta": self.extra_meta,
+            "rawExtendedMeta": raw_extended_meta,
+            "authorUrl": self.author_url,
+            "authorLocalId": self.author_local_id,
+            "sourceId": self.source_id,
+            "authorId": self.author_id,
         }
 
     @staticmethod
-    def select(urlId: str | None = None) -> list["FicInfo"]:
+    def select(url_id: str | None = None) -> list["FicInfo"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 f"""
-                select {FicInfo.selectList()}
-                from ficInfo {FicInfo.tableAlias}
+                select {FicInfo.select_list()}
+                from ficInfo {FicInfo.table_alias}
                 where %s is null or id = %s
                 """,
-                (urlId, urlId),
+                (url_id, url_id),
             )
             return [FicInfo(*r) for r in curs.fetchall()]
 
     @staticmethod
-    def save(ficInfo: dict[str, str]) -> None:
+    def save(fic_info: dict[str, str]) -> None:
         with oil.open() as db, db.cursor() as curs:
-            fi = FicInfo.parse(ficInfo)
+            fi = FicInfo.parse(fic_info)
             curs.execute(
                 """
                 insert into ficInfo(
@@ -240,52 +246,52 @@ class FicInfo:
                     fi.chapters,
                     fi.words,
                     fi.description,
-                    fi.ficCreated,
-                    fi.ficUpdated,
+                    fi.fic_created,
+                    fi.fic_updated,
                     fi.status,
                     fi.source,
-                    fi.extraMeta,
-                    fi.sourceId,
-                    fi.authorId,
-                    fi.contentHash,
-                    fi.authorUrl,
-                    fi.authorLocalId,
-                    fi.rawExtendedMeta,
+                    fi.extra_meta,
+                    fi.source_id,
+                    fi.author_id,
+                    fi.content_hash,
+                    fi.author_url,
+                    fi.author_local_id,
+                    fi.raw_extended_meta,
                 ),
             )
 
     @staticmethod
-    def parse(ficInfo: dict[str, str]) -> "FicInfo":
-        extraMeta = ficInfo.get("extraMeta")
-        if extraMeta is not None and len(extraMeta.strip()) < 1:
-            extraMeta = None
-        rawExtendedMeta = ficInfo.get("rawExtendedMeta")
-        if rawExtendedMeta is not None and len(rawExtendedMeta.strip()) < 1:
-            rawExtendedMeta = None
+    def parse(fic_info: dict[str, str]) -> "FicInfo":
+        extra_meta = fic_info.get("extraMeta")
+        if extra_meta is not None and len(extra_meta.strip()) < 1:
+            extra_meta = None
+        raw_extended_meta = fic_info.get("rawExtendedMeta")
+        if raw_extended_meta is not None and len(raw_extended_meta.strip()) < 1:
+            raw_extended_meta = None
         return FicInfo(
-            ficInfo["urlId"],
+            fic_info["urlId"],
             datetime.datetime.now(tz=datetime.timezone.utc),
             datetime.datetime.now(tz=datetime.timezone.utc),
-            ficInfo["title"],
-            ficInfo["author"],
-            int(ficInfo["chapters"]),
-            int(ficInfo["words"]),
-            ficInfo["desc"],
+            fic_info["title"],
+            fic_info["author"],
+            int(fic_info["chapters"]),
+            int(fic_info["words"]),
+            fic_info["desc"],
             datetime.datetime.fromtimestamp(
-                int(ficInfo["published"]) / 1000.0, tz=datetime.timezone.utc
+                int(fic_info["published"]) / 1000.0, tz=datetime.timezone.utc
             ),
             datetime.datetime.fromtimestamp(
-                int(ficInfo["updated"]) / 1000.0, tz=datetime.timezone.utc
+                int(fic_info["updated"]) / 1000.0, tz=datetime.timezone.utc
             ),
-            ficInfo["status"],
-            ficInfo["source"],
-            extraMeta,
-            int(ficInfo["sourceId"]),
-            int(ficInfo["authorId"]),
-            ficInfo["contentHash"],
-            ficInfo.get("authorUrl"),
-            ficInfo.get("authorLocalId"),
-            rawExtendedMeta,
+            fic_info["status"],
+            fic_info["source"],
+            extra_meta,
+            int(fic_info["sourceId"]),
+            int(fic_info["authorId"]),
+            fic_info["contentHash"],
+            fic_info.get("authorUrl"),
+            fic_info.get("authorLocalId"),
+            raw_extended_meta,
         )
 
 
@@ -303,18 +309,18 @@ class FicBlacklistReason(Enum):
 class FicBlacklist:
     def __init__(
         self,
-        urlId_: str,
+        url_id_: str,
         created_: datetime.datetime,
         updated_: datetime.datetime,
         reason_: int,
     ) -> None:
-        self.urlId = urlId_
+        self.url_id = url_id_
         self.created = created_
         self.updated = updated_
         self.reason = reason_
 
     @staticmethod
-    def select(urlId: str | None = None) -> list["FicBlacklist"]:
+    def select(url_id: str | None = None) -> list["FicBlacklist"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -322,12 +328,12 @@ class FicBlacklist:
                 from ficBlacklist
                 where %s is null or urlId = %s
                 """,
-                (urlId, urlId),
+                (url_id, url_id),
             )
             return [FicBlacklist(*r) for r in curs.fetchall()]
 
     @staticmethod
-    def check(urlId: str, reason: int | None = None) -> bool:
+    def check(url_id: str, reason: int | None = None) -> bool:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -343,30 +349,30 @@ class FicBlacklist:
                 where fi.id = %s
                   and ((fb.reason is not null or ab.reason is not null) or fi.sourceId = 19)
                 """,
-                (reason, reason, reason, reason, urlId),
+                (reason, reason, reason, reason, url_id),
             )
             return len(curs.fetchall()) > 0
 
     @staticmethod
-    def blacklisted(urlId: str) -> bool:
+    def blacklisted(url_id: str) -> bool:
         return FicBlacklist.check(
-            urlId, FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value
+            url_id, FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value
         )
 
     @staticmethod
-    def greylisted(urlId: str) -> bool:
-        if FicBlacklist.check(urlId, FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value):
+    def greylisted(url_id: str) -> bool:
+        if FicBlacklist.check(url_id, FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value):
             return True
         if FicBlacklist.check(
-            urlId, FicBlacklistReason.REAL_AUTHOR_PLAGIRAISM_TAKEDOWN_REQUEST.value
+            url_id, FicBlacklistReason.REAL_AUTHOR_PLAGIRAISM_TAKEDOWN_REQUEST.value
         ):
             return True
         return FicBlacklist.check(
-            urlId, FicBlacklistReason.THIRD_PARTY_PLAGIRAISM_TAKEDOWN_REQUEST.value
+            url_id, FicBlacklistReason.THIRD_PARTY_PLAGIRAISM_TAKEDOWN_REQUEST.value
         )
 
     @staticmethod
-    def save(urlId: str, reason: int) -> None:
+    def save(url_id: str, reason: int) -> None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -375,28 +381,28 @@ class FicBlacklist:
                 on conflict(urlId, reason) do
                 update set updated = current_timestamp
                 """,
-                (urlId, reason),
+                (url_id, reason),
             )
 
 
 class AuthorBlacklist:
     def __init__(
         self,
-        sourceId_: int,
-        authorId_: int,
+        source_id_: int,
+        author_id_: int,
         created_: datetime.datetime,
         updated_: datetime.datetime,
         reason_: int,
     ) -> None:
-        self.sourceId = sourceId_
-        self.authorId = authorId_
+        self.source_id = source_id_
+        self.author_id = author_id_
         self.created = created_
         self.updated = updated_
         self.reason = reason_
 
     @staticmethod
     def select(
-        sourceId: int | None = None, authorId: int | None = None
+        source_id: int | None = None, author_id: int | None = None
     ) -> list["AuthorBlacklist"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
@@ -406,12 +412,12 @@ class AuthorBlacklist:
                 where (%s is null or sourceId = %s)
                   and (%s is null or authorId = %s)
                 """,
-                (sourceId, sourceId, authorId, authorId),
+                (source_id, source_id, author_id, author_id),
             )
             return [AuthorBlacklist(*r) for r in curs.fetchall()]
 
     @staticmethod
-    def check(sourceId: int, authorId: int, reason: int | None = None) -> bool:
+    def check(source_id: int, author_id: int, reason: int | None = None) -> bool:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -419,24 +425,24 @@ class AuthorBlacklist:
                 where sourceId = %s and authorId = %s
                   and ((%s is null or reason = %s) or sourceId = 19)
                 """,
-                (sourceId, authorId, reason, reason),
+                (source_id, author_id, reason, reason),
             )
             return len(curs.fetchall()) > 0
 
     @staticmethod
-    def blacklisted(sourceId: int, authorId: int) -> bool:
+    def blacklisted(source_id: int, author_id: int) -> bool:
         return AuthorBlacklist.check(
-            sourceId, authorId, FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value
+            source_id, author_id, FicBlacklistReason.AUTHOR_BLACKLIST_REQUEST.value
         )
 
     @staticmethod
-    def greylisted(sourceId: int, authorId: int) -> bool:
+    def greylisted(source_id: int, author_id: int) -> bool:
         return AuthorBlacklist.check(
-            sourceId, authorId, FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value
+            source_id, author_id, FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value
         )
 
     @staticmethod
-    def save(sourceId: int, authorId: int, reason: int) -> None:
+    def save(source_id: int, author_id: int, reason: int) -> None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -445,7 +451,7 @@ class AuthorBlacklist:
                 on conflict(sourceId, authorId, reason) do
                 update set updated = current_timestamp
                 """,
-                (sourceId, authorId, reason),
+                (source_id, author_id, reason),
             )
 
 
@@ -454,19 +460,19 @@ class RequestSource:
         self,
         id_: int,
         created_: datetime.datetime,
-        isAutomated_: bool,
+        is_automated_: bool,
         route_: str,
         description_: str,
     ) -> None:
         self.id = id_
         self.created = created_
-        self.isAutomated = isAutomated_
+        self.is_automated = is_automated_
         self.route = route_
         self.description = description_
 
     @staticmethod
     def select(
-        isAutomated: bool, route: str, description: str
+        is_automated: bool, route: str, description: str
     ) -> Optional["RequestSource"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
@@ -475,14 +481,14 @@ class RequestSource:
                 from requestSource rs
                 where rs.isAutomated = %s and route = %s and description = %s
                 """,
-                (isAutomated, route, description),
+                (is_automated, route, description),
             )
             r = curs.fetchone()
             return None if r is None else RequestSource(*r)
 
     @staticmethod
-    def upsert(isAutomated: bool, route: str, description: str) -> "RequestSource":
-        existing = RequestSource.select(isAutomated, route, description)
+    def upsert(is_automated: bool, route: str, description: str) -> "RequestSource":
+        existing = RequestSource.select(is_automated, route, description)
         if existing is not None:
             return existing
         with oil.open() as db, db.cursor() as curs:
@@ -492,9 +498,9 @@ class RequestSource:
                 values (%s, %s, %s)
                 on conflict(isAutomated, route, description) do nothing
                 """,
-                (isAutomated, route, description),
+                (is_automated, route, description),
             )
-        src = RequestSource.select(isAutomated, route, description)
+        src = RequestSource.select(is_automated, route, description)
         if src is None:
             msg = "RequestSource.upsert: failed to upsert"
             raise MissingRequestSourceError(msg)
@@ -506,32 +512,32 @@ class RequestLog:
         self,
         id_: int,
         created_: datetime.datetime,
-        sourceId_: int,
+        source_id_: int,
         etype_: str,
         query_: str,
-        infoRequestMs_: int,
-        urlId_: str | None,
-        ficInfo_: str | None,
-        exportMs_: int | None,
-        exportFileName_: str | None,
-        exportFileHash_: str | None,
+        info_request_ms_: int,
+        url_id_: str | None,
+        fic_info_: str | None,
+        export_ms_: int | None,
+        export_file_name_: str | None,
+        export_file_hash_: str | None,
         url_: str | None,
     ) -> None:
         self.id = id_
         self.created = created_
-        self.sourceId = sourceId_
+        self.source_id = source_id_
         self.etype = etype_
         self.query = query_
-        self.infoRequestMs = infoRequestMs_
-        self.urlId = urlId_
-        self.ficInfo = ficInfo_
-        self.exportMs = exportMs_
-        self.exportFileName = exportFileName_
-        self.exportFileHash = exportFileHash_
+        self.infoRequestMs = info_request_ms_
+        self.url_id = url_id_
+        self.fic_info = fic_info_
+        self.exportMs = export_ms_
+        self.export_file_name = export_file_name_
+        self.export_file_hash = export_file_hash_
         self.url = url_
 
     @staticmethod
-    def mostRecentByUrlId(etype: str, urlId: str) -> Optional["RequestLog"]:
+    def most_recent_by_url_id(etype: str, url_id: str) -> Optional["RequestLog"]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -543,7 +549,7 @@ class RequestLog:
                 order by r.created desc
                 limit 1
                 """,
-                (etype, urlId),
+                (etype, url_id),
             )
             r = curs.fetchone()
             return None if r is None else RequestLog(*r)
@@ -553,12 +559,12 @@ class RequestLog:
         source: RequestSource,
         etype: str,
         query: str,
-        infoRequestMs: int,
-        urlId: str | None,
-        ficInfo: str | None,
-        exportMs: int | None,
-        exportFileName: str | None,
-        exportFileHash: str | None,
+        info_request_ms: int,
+        url_id: str | None,
+        fic_info: str | None,
+        export_ms: int | None,
+        export_file_name: str | None,
+        export_file_hash: str | None,
         url: str | None,
     ) -> None:
         with oil.open() as db, db.cursor() as curs:
@@ -572,12 +578,12 @@ class RequestLog:
                     source.id,
                     etype,
                     query,
-                    infoRequestMs,
-                    urlId,
-                    ficInfo,
-                    exportMs,
-                    exportFileName,
-                    exportFileHash,
+                    info_request_ms,
+                    url_id,
+                    fic_info,
+                    export_ms,
+                    export_file_name,
+                    export_file_hash,
                     url,
                 ),
             )

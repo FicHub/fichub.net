@@ -57,10 +57,10 @@ class TestLimiter:
         ("key", "is_anon"),
         [("test-foo-0", False), ("test-foo-1", False), ("anon:test-foo-2", True)],
     )
-    def test_isAnon(self, key: str, is_anon: bool) -> None:
+    def test_is_anon(self, key: str, is_anon: bool) -> None:
         lim = Limiter.select(key)
         assert lim is not None
-        assert lim.isAnon() is is_anon
+        assert lim.is_anon() is is_anon
 
     def test_set_parameters(self) -> None:
         lim1 = Limiter.select("test-foo-1")
@@ -92,21 +92,21 @@ class TestLimiter:
         assert lim1.capacity == capacity
         assert new_lim1.capacity == new_capacity
 
-    def test_retryAfter(self) -> None:
+    def test_retry_after(self) -> None:
         lim1 = Limiter.select("test-foo-1")
         assert lim1 is not None
         burst = lim1.burst()
         for _i in range(int(burst)):
-            assert lim1.retryAfter(1.0) is None
+            assert lim1.retry_after(1.0) is None
 
-        res = lim1.retryAfter(1.0)
+        res = lim1.retry_after(1.0)
         assert res is not None
         assert res > 0.5  # noqa: PLR2004
         assert res < 2.0  # noqa: PLR2004
 
         new_flow_s = 120.0
         lim1.set_parameters(lim1.capacity, 1.0 / new_flow_s)
-        res = lim1.retryAfter(1.0)
+        res = lim1.retry_after(1.0)
         assert res is not None
         assert res > (new_flow_s - 1.0)
         assert res < (new_flow_s + 1.0)
@@ -121,8 +121,8 @@ class TestLimiter:
         assert Limiter.select(lim1.key) is None
 
         missing_limiter_s = 60.0
-        assert lim1.retryAfter(1.0) == missing_limiter_s
-        assert lim1.retryAfter(0.0) == missing_limiter_s
+        assert lim1.retry_after(1.0) == missing_limiter_s
+        assert lim1.retry_after(0.0) == missing_limiter_s
 
     def test_tick(self) -> None:
         lim0 = Limiter.select("test-foo-0")

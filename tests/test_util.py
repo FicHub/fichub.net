@@ -13,12 +13,10 @@ def test_hash_file(tmp_path: Path) -> None:
     assert p.read_text() == "foo bar baz"
     assert len(list(tmp_path.iterdir())) == 1
 
-    assert (
-        util.hash_file(str(tmp_path / "test.txt")) == "ab07acbb1e496801937adfa772424bf7"
-    )
+    assert util.hash_file(tmp_path / "test.txt") == "ab07acbb1e496801937adfa772424bf7"
 
     with pytest.raises(FileNotFoundError, match="not-test.txt"):
-        util.hash_file(str(tmp_path / "not-test.txt"))
+        util.hash_file(tmp_path / "not-test.txt")
 
 
 def test_req_json() -> None:

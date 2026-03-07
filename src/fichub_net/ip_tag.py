@@ -1,6 +1,7 @@
 #!./venv/bin/python
 import ipaddress
 import json
+from pathlib import Path
 import sys
 import traceback
 import xml.etree.ElementTree as ET
@@ -27,7 +28,7 @@ def load_azure_ip_ranges() -> None:
         TAGGED_IP_RANGES[tag] = []
 
     # Load legacy xml format
-    with open("./dat/PublicIPs_20200824.xml") as f:
+    with Path("./dat/PublicIPs_20200824.xml").open() as f:
         x = f.read().strip()
 
     root = ET.fromstring(x)
@@ -48,7 +49,7 @@ def load_azure_ip_ranges() -> None:
             TAGGED_IP_RANGES[tag].append(n)
 
     # Load new json format
-    with open("./dat/ServiceTags_Public_20230703.json") as f:
+    with Path("./dat/ServiceTags_Public_20230703.json").open() as f:
         x = f.read()
     j = json.loads(x)
     for val in j["values"]:
@@ -64,7 +65,7 @@ def load_google_ip_ranges() -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    with open("./dat/google_cloud.json") as f:
+    with Path("./dat/google_cloud.json").open() as f:
         x = f.read()
     j = json.loads(x)
 
@@ -86,7 +87,7 @@ def load_aws_ip_ranges() -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    with open("./dat/aws-ip-ranges.json") as f:
+    with Path("./dat/aws-ip-ranges.json").open() as f:
         x = f.read()
     j = json.loads(x)
 
@@ -105,7 +106,7 @@ def load_asn_list(tag: str, fname: str) -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    with open(fname) as f:
+    with Path(fname).open() as f:
         x = f.readlines()
 
     for xx in x:

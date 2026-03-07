@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import os.path
+from pathlib import Path
 import resource
 import subprocess
 import sys
@@ -29,8 +30,8 @@ class WaitTimeoutError(Exception):
 
 
 def init_logging() -> None:
-    if not os.path.isdir("./log"):
-        os.makedirs("./log")
+    if not Path("./log").is_dir():
+        Path("./log").mkdir(parents=True)
 
     from logging.handlers import RotatingFileHandler
 
@@ -190,10 +191,10 @@ def convert_local(epub_fname: str, tmp_fname: str) -> int:
 def convert_janus(epub_fname: str, tmp_fname: str) -> int:
     ret = 255
 
-    input_filename = os.path.basename(epub_fname)
-    output_filename = os.path.basename(tmp_fname)
+    input_filename = Path(epub_fname).name
+    output_filename = Path(tmp_fname).name
 
-    with open(epub_fname, "rb") as f:
+    with Path(epub_fname).open("rb") as f:
         content = f.read()
     content_b64 = base64.b64encode(content).decode("utf-8")
 
@@ -239,7 +240,7 @@ def convert_janus(epub_fname: str, tmp_fname: str) -> int:
         del j["content"]
 
         plog("janus request returned 200", response=j)
-        with open(tmp_fname, "wb") as f:
+        with Path(tmp_fname).open("wb") as f:
             f.write(content)
 
         ret = j["code"]

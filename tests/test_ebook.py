@@ -84,19 +84,18 @@ def test_random_temp_file() -> None:
     ebook_tmp = Path(ebook.TMP_DIR)
 
     test_path = ebook.random_temp_file("test")
-    assert len(test_path) > 0
-    test_path_obj = Path(test_path)
+    assert len(str(test_path)) > 0
     assert ebook_tmp.is_dir()
-    assert not test_path_obj.is_file()
-    assert len(test_path_obj.parts) > len(ebook_tmp.parts)
-    assert path_starts_with(test_path_obj, ebook_tmp)
+    assert not test_path.is_file()
+    assert len(test_path.parts) > len(ebook_tmp.parts)
+    assert path_starts_with(test_path, ebook_tmp)
 
-    test_path2_obj = Path(ebook.random_temp_file("test"))
-    assert not test_path2_obj.is_file()
-    assert len(test_path2_obj.parts) > len(ebook_tmp.parts)
-    assert path_starts_with(test_path2_obj, ebook_tmp)
+    test_path2 = ebook.random_temp_file("test")
+    assert not test_path2.is_file()
+    assert len(test_path2.parts) > len(ebook_tmp.parts)
+    assert path_starts_with(test_path2, ebook_tmp)
 
-    assert test_path2_obj != test_path_obj
+    assert test_path2 != test_path
 
 
 EXPORT_PATH_TEST_CASES = [
@@ -109,11 +108,11 @@ EXPORT_PATH_TEST_CASES = [
 
 @pytest.mark.parametrize(("url_id", "expected"), EXPORT_PATH_TEST_CASES)
 def test_build_export_path(url_id: str, expected: tuple[str, str]) -> None:
-    expected = (
-        f"{ebook.PRIMARY_CACHE_DIR}/{expected[0]}",
-        f"{ebook.SECONDARY_CACHE_DIR}/{expected[1]}",
+    expected_objs = (
+        Path(ebook.PRIMARY_CACHE_DIR) / expected[0],
+        Path(ebook.SECONDARY_CACHE_DIR) / expected[1],
     )
-    assert ebook.build_export_path("epub", url_id, create=False) == expected
+    assert ebook.build_export_path("epub", url_id, create=False) == expected_objs
 
 
 @pytest.mark.parametrize(
@@ -136,8 +135,8 @@ def test_build_export_name(
         expected[0].replace("/epub/", f"/{etype}/"),
         expected[1].replace("/epub/", f"/{etype}/"),
     )
-    assert names[0] == f"{expected[0]}/{fhash}{suff}"
-    assert names[1] == f"{expected[1]}/{fhash}{suff}"
+    assert names[0] == Path(f"{expected[0]}/{fhash}{suff}")
+    assert names[1] == Path(f"{expected[1]}/{fhash}{suff}")
 
 
 def test_finalize_export(tmp_path: Path) -> None:
@@ -145,7 +144,7 @@ def test_finalize_export(tmp_path: Path) -> None:
 
     with pytest.raises(FileNotFoundError, match="does-not-exist"):
         ebook.finalize_export(
-            etype, url_id, "inputhash0", str(tmp_path / "does-not-exist.epub")
+            etype, url_id, "inputhash0", tmp_path / "does-not-exist.epub"
         )
 
     test_content = "test epub content"
@@ -160,12 +159,12 @@ def test_finalize_export(tmp_path: Path) -> None:
     el = ExportLog.lookup(url_id, version, etype, ihash)
     assert el is None
 
-    fname, fhash = ebook.finalize_export(etype, url_id, ihash, str(tname))
-    assert fname.startswith(ebook.PRIMARY_CACHE_DIR)
+    fname, fhash = ebook.finalize_export(etype, url_id, ihash, tname)
+    assert str(fname).startswith(ebook.PRIMARY_CACHE_DIR)
     assert fhash == test_hash
     assert not tname.is_file()
-    assert Path(fname).is_file()
-    assert Path(fname).read_text() == test_content
+    assert fname.is_file()
+    assert fname.read_text() == test_content
 
     # no FicInfo present, case shouldn't happen unless we failed to test create_html_bundle, convert_epub, create_epub
     el = ExportLog.lookup(url_id, version, etype, ihash)
@@ -177,7 +176,7 @@ def test_finalize_export(tmp_path: Path) -> None:
     tname.write_text(test_content)
     assert tname.is_file()
 
-    fname2, fhash2 = ebook.finalize_export(etype, url_id, ihash, str(tname))
+    fname2, fhash2 = ebook.finalize_export(etype, url_id, ihash, tname)
     assert fname2 == fname
     assert fhash2 == fhash
 

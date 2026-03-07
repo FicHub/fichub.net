@@ -149,7 +149,7 @@ extend-select = [
 	"TCH",   # flake8-type-checking
 	"INT",   # flake8-gettext
 	"ARG",   # flake8-unused-arguments
-	# "PTH",   # flake8-use-pathlib
+	"PTH",   # flake8-use-pathlib
 	"TD",    # flake8-todos
 	"FIX",   # flake8-fixme
 	"ERA",   # eradicate

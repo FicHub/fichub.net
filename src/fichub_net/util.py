@@ -1,13 +1,14 @@
 from typing import Any, cast
 import hashlib
+from pathlib import Path
 
 import requests
 
 import fichub_net.authentications as a
 
 
-def hash_file(fname: str) -> str:
-    with open(fname, "rb") as f:
+def hash_file(fname: Path) -> str:
+    with fname.open("rb") as f:
         data = f.read()
         return hashlib.md5(data).hexdigest()
 

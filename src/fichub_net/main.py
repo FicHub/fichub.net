@@ -6,8 +6,7 @@ import contextlib
 from enum import IntEnum
 import json
 import math
-import os
-import os.path
+from pathlib import Path
 import random
 import shutil
 import time
@@ -264,7 +263,7 @@ def get_request_source() -> RequestSource:
 
 def create_export(
     etype: str, meta: FicInfo, chapters: dict[int, ax.Chapter]
-) -> tuple[str, str]:
+) -> tuple[Path, str]:
     # returns fname, fhash
     if etype == "epub":
         return ebook.create_epub(meta, chapters)
@@ -389,7 +388,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
                 meta.id,
                 json.dumps(lres),
                 export_ms,
-                fname,
+                str(fname),
                 fhash,
                 export_url,
             )
@@ -445,7 +444,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
             meta.id,
             json.dumps(lres),
             export_ms,
-            fname,
+            str(fname),
             fhash,
             export_url,
         )
@@ -558,12 +557,10 @@ def get_cached_export(etype: str, url_id: str, fname: str) -> ResponseReturnValu
         # if the request is for a specific slug, try to serve it directly
         rname = fname
         fname = f"{fhash}{suff}"
-        if not os.path.isfile(os.path.join(fdir, fname)) and os.path.isfile(
-            os.path.join(sfdir, fname)
-        ):
-            os.makedirs(fdir)
-            shutil.move(os.path.join(sfdir, fname), os.path.join(fdir, fname))
-        if os.path.isfile(os.path.join(fdir, fname)):
+        if not (fdir / fname).is_file() and (sfdir / fname).is_file():
+            fdir.mkdir(parents=True)
+            shutil.move((sfdir / fname), (fdir / fname))
+        if (fdir / fname).is_file():
             return send_from_directory(
                 fdir,
                 fname,
@@ -585,7 +582,7 @@ def get_cached_export(etype: str, url_id: str, fname: str) -> ResponseReturnValu
     if rl is None:
         return page_not_found(NotFound())
 
-    if not os.path.isfile(os.path.join(fdir, f"{rl.export_file_hash}{suff}")):
+    if (fdir / f"{rl.export_file_hash}{suff}").is_file():
         # the most recent export is missing for some reason... regenerate it
         return get_cached_export_partial(etype, url_id)
 
@@ -905,15 +902,15 @@ def uwsgi_init() -> None:
     JS_CACHE_BUSTER = CSS_CACHE_BUSTER
     print(f"reset JS/CSS CACHE_BUSTER: {JS_CACHE_BUSTER}")
 
-    if os.path.isfile("./static/style/_.css"):
-        with open("./static/style/_.css") as f:
+    if Path("./static/style/_.css").is_file():
+        with Path("./static/style/_.css").open() as f:
             CURRENT_CSS = f.read().strip()
         print(f"reset CURRENT_CSS to len {len(CURRENT_CSS)}")
 
-    if os.path.isfile("./static/js/_.js"):
+    if Path("./static/js/_.js").is_file():
         from fichub_net import util
 
-        jshash = util.hash_file("./static/js/_.js")
+        jshash = util.hash_file(Path("./static/js/_.js"))
         if len(jshash) > 0:
             JS_CACHE_BUSTER = jshash
         print(f"reset JS_CACHE_BUSTER: {JS_CACHE_BUSTER}")

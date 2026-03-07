@@ -1,6 +1,7 @@
 import datetime
 import os
 import pathlib
+from pathlib import Path
 import random
 import re
 import shutil
@@ -113,36 +114,40 @@ def build_file_slug(title: str, author: str, url_id: str) -> str:
     return f"{slug}-{url_id}"
 
 
-def random_temp_file(extra: str, bits: int = 32) -> str:
-    tdir = os.path.join(TMP_DIR, str(os.getpid()))
-    if not os.path.isdir(tdir):
-        os.makedirs(tdir)
+def random_temp_file(extra: str, bits: int = 32) -> Path:
+    tdir = Path(TMP_DIR) / str(os.getpid())
+    if not tdir.is_dir():
+        tdir.mkdir(parents=True)
     rbits = random.getrandbits(bits)
     fname = f"{threading.get_ident()}_{rbits:x}_{extra}"
-    return os.path.join(tdir, fname)
+    return tdir / fname
 
 
-def build_export_path(etype: str, url_id: str, create: bool = False) -> tuple[str, str]:
+def build_export_path(
+    etype: str, url_id: str, create: bool = False
+) -> tuple[Path, Path]:
     url_id = url_id.lower()
     parts = [etype]
     parts.extend(url_id[i : i + 3] for i in range(0, len(url_id), 3))
     parts.append(url_id)
-    fdir = os.path.join(*([PRIMARY_CACHE_DIR, *parts]))
-    if create and not os.path.isdir(fdir):
-        os.makedirs(fdir)
-    sfdir = os.path.join(*([SECONDARY_CACHE_DIR, *parts]))
+    fdir = Path(PRIMARY_CACHE_DIR).joinpath(*parts)
+    if create and not fdir.is_dir():
+        fdir.mkdir(parents=True)
+    sfdir = Path(SECONDARY_CACHE_DIR).joinpath(*parts)
     return fdir, sfdir
 
 
 def build_export_name(
     etype: str, url_id: str, fhash: str, create: bool = False
-) -> tuple[str, str]:
+) -> tuple[Path, Path]:
     fdir, sfdir = build_export_path(etype, url_id, create)
     suff = EXPORT_SUFFIXES[etype]
-    return os.path.join(fdir, f"{fhash}{suff}"), os.path.join(sfdir, f"{fhash}{suff}")
+    return (fdir / f"{fhash}{suff}"), (sfdir / f"{fhash}{suff}")
 
 
-def finalize_export(etype: str, url_id: str, ihash: str, tname: str) -> tuple[str, str]:
+def finalize_export(
+    etype: str, url_id: str, ihash: str, tname: Path
+) -> tuple[Path, str]:
     fhash = util.hash_file(tname)
     fname, _ = build_export_name(etype, url_id, fhash, create=True)
     shutil.move(tname, fname)
@@ -161,13 +166,15 @@ def finalize_export(etype: str, url_id: str, ihash: str, tname: str) -> tuple[st
     return (fname, fhash)
 
 
-def find_existing_export(etype: str, url_id: str, ihash: str) -> tuple[str, str] | None:
+def find_existing_export(
+    etype: str, url_id: str, ihash: str
+) -> tuple[Path, str] | None:
     try:
         el = ExportLog.lookup(url_id, export_version(etype, url_id), etype, ihash)
         if el is None:
             return None
         fname, sfname = build_export_name(etype, url_id, el.exportHash)
-        if not os.path.isfile(fname) and os.path.isfile(sfname):
+        if not fname.is_file() and sfname.is_file():
             _, _ = build_export_path(etype, url_id, True)
             try:
                 shutil.move(sfname, fname)
@@ -177,7 +184,7 @@ def find_existing_export(etype: str, url_id: str, ihash: str) -> tuple[str, str]
                 print(
                     "find_existing_export: ^ something went wrong trying to move existing export :/"
                 )
-        if not os.path.isfile(fname):
+        if not fname.is_file():
             return None
         return (fname, el.exportHash)
     except Exception as e:
@@ -194,7 +201,7 @@ def datetime_to_zip_datetime(ts: datetime.datetime) -> ZipDateTime:
     return (ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second)
 
 
-def create_html_bundle(info: FicInfo, chapters: dict[int, Chapter]) -> tuple[str, str]:
+def create_html_bundle(info: FicInfo, chapters: dict[int, Chapter]) -> tuple[Path, str]:
     slug = build_file_slug(info.title, info.author, info.id)
     bundle_fname = slug + ".html"
 
@@ -218,7 +225,7 @@ def create_html_bundle(info: FicInfo, chapters: dict[int, Chapter]) -> tuple[str
 
 def convert_epub(
     info: FicInfo, chapters: dict[int, Chapter], etype: str
-) -> tuple[str, str]:
+) -> tuple[Path, str]:
     if etype not in EXPORT_TYPES:
         msg = f"convert_epub: invalid etype: {etype}"
         raise InvalidETypeError(msg)
@@ -258,7 +265,7 @@ def build_epub_chapters(chapters: dict[int, Chapter]) -> dict[int, epub.EpubHtml
     return epub_chapters
 
 
-def create_epub(info: FicInfo, raw_chapters: dict[int, Chapter]) -> tuple[str, str]:
+def create_epub(info: FicInfo, raw_chapters: dict[int, Chapter]) -> tuple[Path, str]:
     print(info.__dict__)
 
     book = epub.EpubBook()

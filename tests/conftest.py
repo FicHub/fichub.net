@@ -28,6 +28,8 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     for item in items:
         if "elastic_url" in getattr(item, "fixturenames", ()):
             item.add_marker("elasticsearch")
+            # These tests themselves aren't very slow, but ES takes ~10s to spin up
+            item.add_marker("slow")
 
 
 @pytest.fixture(autouse=True)

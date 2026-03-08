@@ -13,8 +13,8 @@ dependencies = [
 	"psutil",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
 	"hatch",
 	"mypy",
 	"pytest",
@@ -133,7 +133,7 @@ extend-select = [
 	"ISC",   # flake8-implicit-str-concat
 	"ICN",   # flake8-import-conventions
 	"LOG",   # flake8-logging
-	"G",     # flake8-logging-format
+	# "G",     # flake8-logging-format
 	"INP",   # flake8-no-pep420
 	"PIE",   # flake8-pie
 	# "T20",   # flake8-print -- switch to logging
@@ -175,7 +175,8 @@ ignore = [
 	"PLR0913", # too-many-arguments
 	"PLR0915", # too-many-statements
 	"TRY300",  # try-consider-else
-	"N999",   # invalid-module-name
+	"N999",    # invalid-module-name
+	"EXE003",  # shebang-missing-python
 ]
 
 # "ANN101", "ANN102", "COM812"

@@ -1,4 +1,4 @@
-#!./venv/bin/python3
+#!/usr/bin/env -S uv run --quiet
 from typing import Any, ParamSpec, TypeVar
 import base64
 from collections.abc import Callable
@@ -22,7 +22,10 @@ import psutil
 import requests
 
 EXPECTED_ARG_COUNT = 3
-USE_LOCAL_CALIBRE = False
+USE_LOCAL_CALIBRE = os.environ.get("JANUS_USE_LOCAL_CALIBRE", "false").lower() == "true"
+EBOOK_CONVERT_PATH = os.environ.get(
+    "JANUS_EBOOK_CONVERT_PATH", "/opt/calibre/ebook-convert"
+)
 
 
 class WaitTimeoutError(Exception):
@@ -177,7 +180,7 @@ def convert_local(epub_fname: str, tmp_fname: str) -> int:
     ret = 255
     try:
         res = subprocess.run(
-            ["/opt/calibre/ebook-convert", epub_fname, tmp_fname],
+            [EBOOK_CONVERT_PATH, epub_fname, tmp_fname],
             timeout=60 * 5,
             check=False,
         )  # preexec_fn=limit_virtual_memory)

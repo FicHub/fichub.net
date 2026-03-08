@@ -10,7 +10,6 @@ from pathlib import Path
 import random
 import shutil
 import time
-import traceback
 
 import flask
 from flask import (
@@ -246,8 +245,10 @@ def try_ensure_export(etype: str, url_id: str) -> str | None:
     res = ensure_export(etype, url_id, url_id)
     if "err" in res or key not in res:
         return None
+    if res[key] is None or isinstance(res[key], Path):
+        return cast(str | None, str(res[key]))
     if res[key] is None or isinstance(res[key], str):
-        return cast(str | None, res[key])
+        return cast(str | None, str(res[key]))
     return None
 
 
@@ -277,7 +278,7 @@ def create_export(
 
 
 def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str, Any]:
-    print(f"ensure_export: query: {query}")
+    app.logger.info(f"ensure_export: query: {query}")
     if etype not in ebook.EXPORT_TYPES:
         return get_err(WebError.invalid_etype, {"fn": "ensure_export", "etype": etype})
 
@@ -294,7 +295,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
             v = LIMIT_UPSTREAMS[source.description]
             o = LIMIT_UPSTREAMS_EXTRA.get(source.description, 0.0)
             limit_d = 1 + (random.random() * v) + o
-            print(
+            app.logger.info(
                 f"  limiting {source.description}: v={v:0.3} o={o:0.3} d={limit_d:0.3} ts={time.time()}"
             )
             time.sleep(limit_d)
@@ -302,7 +303,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
     notes = []
     ax_alive = ax.alive()
     if not ax_alive:
-        print("ensure_export: ax is not alive :(")
+        app.logger.info("ensure_export: ax is not alive :(")
         if url_id is None or len(FicInfo.select(url_id)) != 1:
             return get_err(WebError.ax_dead)
         # otherwise fallthrough
@@ -333,10 +334,8 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
                 lres["upstream"] = True
                 return lres
             meta = FicInfo.parse(lres)
-    except Exception as e:
-        traceback.print_exc()
-        print(e)
-        print("ensure_export: ^ something went wrong doing ax.lookup :/")
+    except Exception:
+        app.logger.exception("ensure_export: ^ something went wrong doing ax.lookup :/")
 
         return get_err(WebError.lookup_failed)
 
@@ -361,7 +360,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
             existing_export = ebook.find_existing_export(etype, meta.id, ehash)
 
         if existing_export is not None:
-            print(
+            app.logger.info(
                 f"ensure_export({etype}, {query}): attempting to reuse previous export for {meta.id}"
             )
             fname, fhash = existing_export
@@ -393,7 +392,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
                 export_url,
             )
 
-            print(
+            app.logger.info(
                 f"ensure_export({etype}, {query}): reusing previous export for {meta.id}"
             )
             return {
@@ -407,10 +406,8 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
                 "hashes": {etype: fhash},
                 "notes": notes,
             }
-    except Exception as e:
-        traceback.print_exc()
-        print(e)
-        print(
+    except Exception:
+        app.logger.exception(
             "ensure_export: ^ something went wrong trying to reuse existing export :/"
         )
 
@@ -482,9 +479,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
         ):
             etext = e.args[0]
 
-        traceback.print_exc()
-        print(e)
-        print("ensure_export: ^ something went wrong :/")
+        app.logger.exception("ensure_export: ^ something went wrong :/")
 
     return get_err(
         WebError.export_failed,
@@ -582,7 +577,7 @@ def get_cached_export(etype: str, url_id: str, fname: str) -> ResponseReturnValu
     if rl is None:
         return page_not_found(NotFound())
 
-    if (fdir / f"{rl.export_file_hash}{suff}").is_file():
+    if not (fdir / f"{rl.export_file_hash}{suff}").is_file():
         # the most recent export is missing for some reason... regenerate it
         return get_cached_export_partial(etype, url_id)
 
@@ -686,7 +681,9 @@ def maybe_limit_request() -> tuple[Limiter | None, ResponseReturnValue | None]:
         source_limiter = get_limiter(f"remote:{source.description}")
         user_agent = request.headers.get("User-Agent", "")
         if user_agent.lower().find("headlesschrome") >= 0:
-            print(f"HEADLESSCHROME: lowering params for: {source.description}")
+            app.logger.info(
+                f"HEADLESSCHROME: lowering params for: {source.description}"
+            )
             source_limiter = source_limiter.set_parameters(3, 1.0 / 99.0)
 
     if DYNAMIC_RATE_LIMIT:
@@ -696,7 +693,9 @@ def maybe_limit_request() -> tuple[Limiter | None, ResponseReturnValue | None]:
             source_ra = source_limiter.retry_after(1.0)
         if source_ra is not None:
             source_ra_v = int(math.ceil(source_ra + 1))
-            print(f"rate limiting {source.description}, retry after={source_ra_v}")
+            app.logger.info(
+                f"rate limiting {source.description}, retry after={source_ra_v}"
+            )
 
             resp = make_response(
                 {"err": -429, "msg": "too many requests", "retry_after": source_ra_v},
@@ -709,7 +708,7 @@ def maybe_limit_request() -> tuple[Limiter | None, ResponseReturnValue | None]:
         global_ra = global_limiter.retry_after(1.0)
         if global_ra is not None:
             global_ra_v = int(math.ceil(global_ra + 1))
-            print(f"rate limiting global, retry after={global_ra_v}")
+            app.logger.info(f"rate limiting global, retry after={global_ra_v}")
 
             resp = make_response(
                 {
@@ -730,20 +729,22 @@ def maybe_limit_request() -> tuple[Limiter | None, ResponseReturnValue | None]:
     # If we haven't seen a valid Authorization header, block anything that looks
     # like an autonomous network
     if datacenter is not None and not authorized:
-        print(f"BLOCKING DATACENTER IP: {datacenter} {source.description}")
+        app.logger.info(f"BLOCKING DATACENTER IP: {datacenter} {source.description}")
         return (source_limiter, get_err(WebError.internal_datacenter))
 
     if datacenter is not None and authorized:
-        print(f"allowing datacenter ip, authorized: {datacenter} {source.description}")
+        app.logger.info(
+            f"allowing datacenter ip, authorized: {datacenter} {source.description}"
+        )
 
     if source.description in WEIRD_UPSTREAMS:
-        print(f"BLOCKING weird QQ: {source.description}")
+        app.logger.info(f"BLOCKING weird QQ: {source.description}")
         return (source_limiter, get_err(WebError.internal_strange))
 
     # TODO: both the testsuite and some annoying mass crawlers >_>
     automated = request.args.get("automated", None) == "true"
     if automated:
-        print(f"BLOCKING DATACENTER IP: automated=true {source.description}")
+        app.logger.info(f"BLOCKING DATACENTER IP: automated=true {source.description}")
         return (source_limiter, get_err(WebError.internal_datacenter))
 
     return (source_limiter, None)
@@ -767,7 +768,7 @@ def api_v0_epub() -> Any:
             },
         )
 
-    print(f"api_v0_epub: query: {q}")
+    app.logger.info(f"api_v0_epub: query: {q}")
     eres = ensure_export("epub", q, url_id)
     if "err" in eres:
         if DYNAMIC_RATE_LIMIT and source_limiter is not None:
@@ -900,12 +901,12 @@ def uwsgi_init() -> None:
 
     CSS_CACHE_BUSTER = str(time.time())
     JS_CACHE_BUSTER = CSS_CACHE_BUSTER
-    print(f"reset JS/CSS CACHE_BUSTER: {JS_CACHE_BUSTER}")
+    app.logger.info(f"reset JS/CSS CACHE_BUSTER: {JS_CACHE_BUSTER}")
 
     if Path("./static/style/_.css").is_file():
         with Path("./static/style/_.css").open() as f:
             CURRENT_CSS = f.read().strip()
-        print(f"reset CURRENT_CSS to len {len(CURRENT_CSS)}")
+        app.logger.info(f"reset CURRENT_CSS to len {len(CURRENT_CSS)}")
 
     if Path("./static/js/_.js").is_file():
         from fichub_net import util
@@ -913,17 +914,15 @@ def uwsgi_init() -> None:
         jshash = util.hash_file(Path("./static/js/_.js"))
         if len(jshash) > 0:
             JS_CACHE_BUSTER = jshash
-        print(f"reset JS_CACHE_BUSTER: {JS_CACHE_BUSTER}")
-    print()
+        app.logger.info(f"reset JS_CACHE_BUSTER: {JS_CACHE_BUSTER}")
 
-    print("loading IP ranges")
+    app.logger.info("loading IP ranges")
     load_ip_ranges()
     for tag in TAGGED_IP_RANGES:
-        print(f"  loaded {tag=}: {len(TAGGED_IP_RANGES[tag])} IP ranges")
+        app.logger.info(f"  loaded {tag=}: {len(TAGGED_IP_RANGES[tag])} IP ranges")
 
 
-print()
-print(__name__)
+app.logger.info(__name__)
 
 if __name__ == "__main__":
     app.run(debug=True)

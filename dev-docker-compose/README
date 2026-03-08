@@ -13,7 +13,9 @@ This starts and initializes several components:
 3. `ax` (alexandria), fake alexandria api for testing
 4. `app` -- the actual fichub.net service, flask dev mode
 
-Whenever you make changes or first get started, build the dev image:
+The container mounts the source code and runs flask in debug mode which suports
+hot reloading. If changes don't appear live you may need to rebuild the
+container:
 
 1. docker compose build
 

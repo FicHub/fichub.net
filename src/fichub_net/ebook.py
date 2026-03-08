@@ -22,6 +22,8 @@ TMP_DIR = "tmp"
 PRIMARY_CACHE_DIR = "/mnt/selene_fichub/cache"
 SECONDARY_CACHE_DIR = "/mnt/atem_fichub/cache"
 
+DEFAULT_JANUS_PATH = "/home/fichub/fichub.net/janus.py"
+
 # total version is EXPORT_VERSION + EXPORT_TYPE_VERSIONS[etype]
 EXPORT_VERSION = 1
 EXPORT_TYPES = ["epub", "html", "mobi", "pdf"]
@@ -242,8 +244,12 @@ def convert_epub(
     if "CONVERT_TIMEOUT" in os.environ:
         timeout = int(os.environ["CONVERT_TIMEOUT"])
 
+    janus_path = DEFAULT_JANUS_PATH
+    if "JANUS_PATH" in os.environ:
+        janus_path = os.environ["JANUS_PATH"]
+
     res = subprocess.run(
-        ["/home/fichub/fichub.net/janus.py", epub_fname, tmp_fname],
+        [janus_path, epub_fname, tmp_fname],
         timeout=timeout,
         check=False,
     )

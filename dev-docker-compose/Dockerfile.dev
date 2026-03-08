@@ -1,5 +1,10 @@
 FROM astral/uv:python3.13-trixie
 
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends calibre && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
+
 RUN useradd -ms /bin/bash fichub_net
 
 RUN mkdir -p /app /mnt/selene_fichub/cache && \
@@ -17,4 +22,4 @@ COPY --chown=fichub_net epub_style.css .
 
 RUN uv sync
 
-CMD ["uv", "run", "flask", "run", "--host", "0.0.0.0"]
+CMD ["uv", "run", "flask", "run", "--debug", "--host", "0.0.0.0"]

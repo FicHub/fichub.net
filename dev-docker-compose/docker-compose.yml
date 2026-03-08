@@ -12,8 +12,14 @@ x-app-defaults: &x-app-defaults
     OIL_DB_USER: fichub
     OIL_DB_PASSWORD: pgpass
     OIL_DB_SSLMODE: disable
+
+    JANUS_PATH: /app/src/fichub_net/janus.py
+    JANUS_USE_LOCAL_CALIBRE: "true"
+    JANUS_EBOOK_CONVERT_PATH: /usr/bin/ebook-convert
   volumes:
+    - ../src:/app/src:ro
     - ./authentications.py:/app/src/fichub_net/authentications.py:ro
+    - ./rl_conf.dev.py:/app/src/fichub_net/rl_conf.py:ro
   depends_on:
     - db
     - es
@@ -66,7 +72,7 @@ services:
     <<: *x-app-defaults
     build:
       context: ..
-      dockerfile: Dockerfile.dev
+      dockerfile: ./dev-docker-compose/Dockerfile.dev
     image: fichub/fichub_net:0.0.1
     restart: always
     ports:

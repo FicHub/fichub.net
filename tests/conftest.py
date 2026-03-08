@@ -53,7 +53,7 @@ def _no_http_requests(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def _tmp_ebook_dirs(tmp_path_factory: pytest.TempPathFactory) -> None:
-    from fichub_net import ebook
+    from fichub_net import ebook  # noqa: PLC0415
 
     tmp_path = tmp_path_factory.mktemp("tmp_ebook_cache_dir")
     primary = tmp_path / "primary" / "cache"
@@ -121,9 +121,12 @@ def elastic_url() -> Iterator[str]:
         image="elasticsearch:8.8.0",
         mem_limit="1G",
     ) as elastic_container:
-        url = elastic_container.get_url()
+        host = elastic_container.get_container_host_ip()
+        port = elastic_container.get_exposed_port(elastic_container.port)
 
-        from fichub_net import authentications
+        url = f"http://{host}:{port}"
+
+        from fichub_net import authentications  # noqa: PLC0415
 
         authentications.ELASTICSEARCH_HOSTS = [url]
 
@@ -132,15 +135,15 @@ def elastic_url() -> Iterator[str]:
 
 @pytest.fixture
 def app() -> Flask:
-    from fichub_net.main import app
+    from fichub_net.main import app as fichub_app  # noqa: PLC0415
 
-    app.config.update(
+    fichub_app.config.update(
         {
             "TESTING": True,
         }
     )
 
-    return app
+    return fichub_app
 
 
 @pytest.fixture

@@ -141,8 +141,8 @@ def ip_is_datacenter(addr: str) -> str | None:
     try:
         ip = ipaddress.ip_address(addr)
 
-        for tag in TAGGED_IP_RANGES:
-            for ip_range in TAGGED_IP_RANGES[tag]:
+        for tag, tagged_ip_range in TAGGED_IP_RANGES.items():
+            for ip_range in tagged_ip_range:
                 if ip in ip_range:
                     IP_TAG[addr] = tag
                     return IP_TAG[addr]

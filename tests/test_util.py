@@ -15,7 +15,7 @@ def test_hash_file(tmp_path: Path) -> None:
 
     assert util.hash_file(tmp_path / "test.txt") == "ab07acbb1e496801937adfa772424bf7"
 
-    with pytest.raises(FileNotFoundError, match="not-test.txt"):
+    with pytest.raises(FileNotFoundError, match="not-test\\.txt"):
         util.hash_file(tmp_path / "not-test.txt")
 
 

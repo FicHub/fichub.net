@@ -35,7 +35,7 @@ class TestLimiter:
         assert lim1.key == "test-foo-1"
 
         with pytest.raises(
-            psycopg2.errors.UniqueViolation, match=".key.=.test-foo-1. already exists"
+            psycopg2.errors.UniqueViolation, match=r".key.=.test-foo-1. already exists"
         ):
             Limiter.create("test-foo-1")
 

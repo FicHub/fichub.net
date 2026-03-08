@@ -32,4 +32,4 @@ def req_json(link: str, retry_count: int = 5, timeout: float = 300.0) -> dict[An
                 "msg": f"req_json: received status code: {r.status_code!s}",
             }
         return req_json(link, retry_count - 1)
-    return cast(dict[Any, Any], p)
+    return cast("dict[Any, Any]", p)

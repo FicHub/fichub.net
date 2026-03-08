@@ -11,7 +11,6 @@ import random
 import shutil
 import time
 
-import flask
 from flask import (
     Flask,
     make_response,
@@ -22,9 +21,10 @@ from flask import (
     url_for,
 )
 from flask.typing import ResponseReturnValue
+import markupsafe
 from werkzeug.exceptions import NotFound
 
-from fichub_net import ax, ebook
+from fichub_net import ax, ebook, es, util
 from fichub_net.db import FicBlacklist, FicInfo, RequestLog, RequestSource
 from fichub_net.ip_tag import TAGGED_IP_RANGES, ip_is_datacenter, load_ip_ranges
 from fichub_net.limiter import Limiter
@@ -246,9 +246,9 @@ def try_ensure_export(etype: str, url_id: str) -> str | None:
     if "err" in res or key not in res:
         return None
     if res[key] is None or isinstance(res[key], Path):
-        return cast(str | None, str(res[key]))
+        return cast("str | None", str(res[key]))
     if res[key] is None or isinstance(res[key], str):
-        return cast(str | None, str(res[key]))
+        return cast("str | None", str(res[key]))
     return None
 
 
@@ -356,7 +356,7 @@ def ensure_export(etype: str, query: str, url_id: str | None = None) -> dict[str
         if etype == "epub":
             existing_export = existing_epub
         elif existing_epub is not None:
-            epub_fname, ehash = existing_epub
+            _epub_fname, ehash = existing_epub
             existing_export = ebook.find_existing_export(etype, meta.id, ehash)
 
         if existing_export is not None:
@@ -497,8 +497,7 @@ def legacy_cache_redirect(etype: str, fname: str) -> ResponseReturnValue:
     if url_id.find("-") >= 0:
         url_id = url_id.split("-")[-1]
     suff = ebook.EXPORT_SUFFIXES[etype]
-    if url_id.endswith(suff):
-        url_id = url_id[: -len(suff)]
+    url_id = url_id.removesuffix(suff)
     if fhash is None:
         return redirect(
             url_for(
@@ -538,7 +537,7 @@ def get_cached_export(etype: str, url_id: str, fname: str) -> ResponseReturnValu
         # we have a request for the wrong extension, 404
         return page_not_found(NotFound())
 
-    source_limiter, limit_resp = maybe_limit_request()
+    _source_limiter, limit_resp = maybe_limit_request()
     if limit_resp is not None:
         return limit_resp
 
@@ -630,8 +629,6 @@ def get_fixits(q: str) -> list[str]:
         ]
 
     with contextlib.suppress(Exception):
-        from fichub_net import es
-
         fis = es.search(q, limit=15)
         for fi in fis:
             fixits += [
@@ -692,7 +689,7 @@ def maybe_limit_request() -> tuple[Limiter | None, ResponseReturnValue | None]:
             source_limiter.tick(0.200)
             source_ra = source_limiter.retry_after(1.0)
         if source_ra is not None:
-            source_ra_v = int(math.ceil(source_ra + 1))
+            source_ra_v = math.ceil(source_ra + 1)
             app.logger.info(
                 f"rate limiting {source.description}, retry after={source_ra_v}"
             )
@@ -707,7 +704,7 @@ def maybe_limit_request() -> tuple[Limiter | None, ResponseReturnValue | None]:
         global_limiter = get_limiter("global")
         global_ra = global_limiter.retry_after(1.0)
         if global_ra is not None:
-            global_ra_v = int(math.ceil(global_ra + 1))
+            global_ra_v = math.ceil(global_ra + 1)
             app.logger.info(f"rate limiting global, retry after={global_ra_v}")
 
             resp = make_response(
@@ -859,15 +856,15 @@ def legacy_epub_export() -> ResponseReturnValue:
         # Rate limited 429
         q = request.args.get("q", "").strip()
         d = res.data.decode("utf-8")
-        fixits = ["an error ocurred :(", "", flask.escape(d)]
+        fixits = ["an error ocurred :(", "", markupsafe.escape(d)]
         return render_template("index.html", q=q, fixits=fixits, fic_info=None), 429
     q = request.args.get("q", "").strip() if "q" not in res else res["q"]
     fixits = res.get("fixits", [])
-    if "err" not in res or int(res["err"]) == 0 and "urlId" in res:
+    if ("err" not in res or int(res["err"]) == 0) and "urlId" in res:
         return index_impl(res["urlId"], True)
     if "fixits" in res:
         del res["fixits"]
-    fixits = ["an error ocurred :(", *fixits, "", flask.escape(json.dumps(res))]
+    fixits = ["an error ocurred :(", *fixits, "", markupsafe.escape(json.dumps(res))]
     return render_template("index.html", q=q, fixits=fixits, fic_info=None)
 
 
@@ -909,8 +906,6 @@ def uwsgi_init() -> None:
         app.logger.info(f"reset CURRENT_CSS to len {len(CURRENT_CSS)}")
 
     if Path("./static/js/_.js").is_file():
-        from fichub_net import util
-
         jshash = util.hash_file(Path("./static/js/_.js"))
         if len(jshash) > 0:
             JS_CACHE_BUSTER = jshash

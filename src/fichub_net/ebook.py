@@ -262,8 +262,7 @@ def convert_epub(
 
 def build_epub_chapters(chapters: dict[int, Chapter]) -> dict[int, epub.EpubHtml]:
     epub_chapters = {}
-    for n in chapters:
-        ch = chapters[n]
+    for n, ch in chapters.items():
         c = epub.EpubHtml(title=ch.title, file_name=f"chap_{n}.xhtml", lang="en")
         c.title = ch.title
         c.content = ch.content

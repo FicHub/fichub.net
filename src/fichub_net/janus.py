@@ -7,6 +7,7 @@ from http import HTTPStatus
 import inspect
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import os.path
 from pathlib import Path
@@ -35,8 +36,6 @@ class WaitTimeoutError(Exception):
 def init_logging() -> None:
     if not Path("./log").is_dir():
         Path("./log").mkdir(parents=True)
-
-    from logging.handlers import RotatingFileHandler
 
     file_formatter = logging.Formatter(
         fmt="%(asctime)s\t%(levelname)s\t%(message)s", datefmt="%s"
@@ -114,7 +113,9 @@ def plog(msg: str, **kwargs: Any) -> None:
     msg = json.dumps(
         {"service": "fichub/janus", "pid": os.getpid(), "msg": msg} | kwargs
     )
-    logging.info(msg)
+
+    janus_logger = logging.getLogger("janus")
+    janus_logger.info(msg)
 
 
 def get_wait_key(cmdline: list[str]) -> str:

@@ -12,6 +12,7 @@ from requests.auth import HTTPBasicAuth
 import responses
 from responses import matchers
 from responses.registries import OrderedRegistry
+from typing_extensions import Self
 
 from fichub_net import ax, es
 import fichub_net.authentications as a
@@ -68,7 +69,7 @@ class AxMock:
             "Authorization": basic_auth_value(a.AX_USER, a.AX_PASS),
         }
 
-    def __enter__(self) -> "AxMock":
+    def __enter__(self) -> Self:
         if self.manage_rsps:
             self.rsps.__enter__()
         return self

@@ -120,7 +120,7 @@ def generate_fic_info() -> Iterator[dict[str, Any]]:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) not in {1}:
+    if len(argv) != 1:
         print(f"usage: {argv[0]}")
         return 1
 

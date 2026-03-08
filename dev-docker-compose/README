@@ -1,7 +1,20 @@
+Setup the src/fichub_net/ authentications and rl_conf files by copying the
+examples (these will be mounted over in the live container):
+
+1. cd ../src/fichub_net/
+2. cp authentications.ex.py authentications.py
+3. cp rl_conf.ex.py rl_conf.py
+4. cd ../../dev-docker-compose
+
 Create an authentications.py file, based on authentications.ex.py. You can
 simply copy it to use the fake alexandria api included for testing:
 
 1. cp authentications.ex.py authentications.py
+
+To compile the ts/sass into js/css when first getting started or when making
+changes to the frontend a utility image can be used via make in the project
+root:
+1. make frontend
 
 Start the services:
 

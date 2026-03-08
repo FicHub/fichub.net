@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/devcontainers/typescript-node:4.0.6-22-bookworm
+
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends sassc && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
+
+RUN useradd -ms /bin/bash fichub_net
+
+RUN mkdir -p /app && chown fichub_net:fichub_net /app
+
+USER fichub_net
+
+WORKDIR /app
+
+CMD ["bash"]

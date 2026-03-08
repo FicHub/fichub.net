@@ -1,5 +1,4 @@
-
-default: beta
+default: dirs maybe-static-docker-image frontend
 
 beta: dirs static/js/_.js static/style/_.css
 	rsync -aPvc --delete static/ /var/www/b.fichub.net/
@@ -8,13 +7,25 @@ prod: dirs static/js/_.js static/style/_.css
 	rsync -aPvc --delete static/ /var/www/fichub.net/
 
 dirs:
-	mkdir -p static/js static/style
+	@mkdir -p static/js static/style
+
+frontend: static/js/_.js static/style/_.css
 
 # dev
-static/js/_.js: frontend/_.ts | dirs
-	tsc --out $@ $<
-static/style/_.css: frontend/_.sass | dirs
-	sassc -t compressed $< > $@
+static/js/_.js: frontend/_.ts | dirs maybe-static-docker-image
+	docker run -v ./$<:/app/_.ts:ro --rm fichub/static-build:0.0.1 tsc _.ts --outFile /dev/stdout > $@
+static/style/_.css: frontend/_.sass | dirs maybe-static-docker-image
+	docker run -v ./$<:/app/_.sass:ro --rm -i fichub/static-build:0.0.1 sassc -t compressed _.sass > $@
+
+.PHONY: static-docker-image
+static-docker-image:
+	docker build -f dev-docker-compose/Dockerfile.static -t fichub/static-build:0.0.1 .
+
+.PHONY: maybe-static-docker-image
+maybe-static-docker-image:
+	@if ! docker image inspect fichub/static-build:0.0.1 2>&1 >/dev/null; then\
+		make static-docker-image;\
+	fi
 
 .PHONY: requirements.txt
 requirements.txt: pyproject.toml

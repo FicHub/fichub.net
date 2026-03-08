@@ -6,6 +6,8 @@ import sys
 import traceback
 import xml.etree.ElementTree as ET
 
+from fichub_net.rl_conf import IP_TAG_SOURCES
+
 IPNetwork = ipaddress.IPv4Network | ipaddress.IPv6Network
 
 TAGGED_IP_RANGES: dict[str, list[IPNetwork]] = {}
@@ -22,13 +24,12 @@ def try_parse_ip_network(r: str) -> IPNetwork | None:
     return None
 
 
-def load_azure_ip_ranges() -> None:
-    tag = "azure"
+def load_azure_ip_ranges_xml(fname: Path, tag: str = "azure") -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
     # Load legacy xml format
-    with Path("./dat/PublicIPs_20200824.xml").open() as f:
+    with fname.open() as f:
         x = f.read().strip()
 
     root = ET.fromstring(x)
@@ -48,8 +49,13 @@ def load_azure_ip_ranges() -> None:
         if n is not None:
             TAGGED_IP_RANGES[tag].append(n)
 
+
+def load_azure_ip_ranges_json(fname: Path, tag: str = "azure") -> None:
+    if tag not in TAGGED_IP_RANGES:
+        TAGGED_IP_RANGES[tag] = []
+
     # Load new json format
-    with Path("./dat/ServiceTags_Public_20230703.json").open() as f:
+    with fname.open() as f:
         x = f.read()
     j = json.loads(x)
     for val in j["values"]:
@@ -60,12 +66,11 @@ def load_azure_ip_ranges() -> None:
                 TAGGED_IP_RANGES[tag].append(n)
 
 
-def load_google_ip_ranges() -> None:
-    tag = "google"
+def load_google_ip_ranges(fname: Path, tag: str = "google") -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    with Path("./dat/google_cloud.json").open() as f:
+    with fname.open() as f:
         x = f.read()
     j = json.loads(x)
 
@@ -82,12 +87,11 @@ def load_google_ip_ranges() -> None:
             TAGGED_IP_RANGES[tag].append(n)
 
 
-def load_aws_ip_ranges() -> None:
-    tag = "aws"
+def load_aws_ip_ranges(fname: Path, tag: str = "aws") -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    with Path("./dat/aws-ip-ranges.json").open() as f:
+    with fname.open() as f:
         x = f.read()
     j = json.loads(x)
 
@@ -102,11 +106,11 @@ def load_aws_ip_ranges() -> None:
             TAGGED_IP_RANGES[tag].append(n)
 
 
-def load_asn_list(tag: str, fname: str) -> None:
+def load_asn_list(tag: str, fname: Path) -> None:
     if tag not in TAGGED_IP_RANGES:
         TAGGED_IP_RANGES[tag] = []
 
-    with Path(fname).open() as f:
+    with fname.open() as f:
         x = f.readlines()
 
     for xx in x:
@@ -124,12 +128,36 @@ def load_asn_list(tag: str, fname: str) -> None:
             )
 
 
-def load_ip_ranges() -> None:
-    load_asn_list("do", "./dat/digitalocean_ip_cidr_blocks.lst")
-    load_asn_list("asn", "./dat/asn9009_2024_02_11.txt")
-    load_azure_ip_ranges()
-    load_google_ip_ranges()
-    load_aws_ip_ranges()
+def load_ip_ranges(dat: Path, sources: dict[str, tuple[str, str]]) -> None:
+    seen_sources = set()
+    for src in dat.rglob("*"):
+        if str(src) not in sources:
+            msg = f"load_ip_ranges: live source is not in sources: {src}"
+            raise Exception(msg)  # noqa: TRY002
+
+        typ, tag = sources[str(src)]
+        if typ == "asn_list":
+            load_asn_list(tag, src)
+        elif typ == "azure_xml":
+            load_azure_ip_ranges_xml(src, tag)
+        elif typ == "azure_json":
+            load_azure_ip_ranges_json(src, tag)
+        elif typ == "google":
+            load_google_ip_ranges(src, tag)
+        elif typ == "aws":
+            load_aws_ip_ranges(src, tag)
+        elif typ == "ignore":
+            pass
+        else:
+            msg = f"load_ip_ranges: unknown tag type: {typ}"
+            raise Exception(msg)  # noqa: TRY002
+
+        seen_sources |= {str(src)}
+
+    unseen_sources = set(sources.keys()) - seen_sources
+    if len(unseen_sources) != 0:
+        msg = f"load_ip_ranges: never loaded some sources: {unseen_sources}"
+        raise Exception(msg)  # noqa: TRY002
 
 
 def ip_is_datacenter(addr: str) -> str | None:
@@ -158,7 +186,7 @@ def ip_is_datacenter(addr: str) -> str | None:
 
 
 def main() -> int:
-    load_ip_ranges()
+    load_ip_ranges(Path("./dat/"), IP_TAG_SOURCES)
     all_good = True
     count = 0
     for line in sys.stdin.readlines():

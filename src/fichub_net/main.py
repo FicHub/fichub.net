@@ -29,6 +29,7 @@ from fichub_net.ip_tag import TAGGED_IP_RANGES, ip_is_datacenter, load_ip_ranges
 from fichub_net.limiter import Limiter
 from fichub_net.rl_conf import (
     DYNAMIC_RATE_LIMIT,
+    IP_TAG_SOURCES,
     LIMIT_UPSTREAMS,
     LIMIT_UPSTREAMS_EXTRA,
     NO_LIMIT_UPSTREAMS,
@@ -911,7 +912,7 @@ def uwsgi_init() -> None:
         app.logger.info(f"reset JS_CACHE_BUSTER: {JS_CACHE_BUSTER}")
 
     app.logger.info("loading IP ranges")
-    load_ip_ranges()
+    load_ip_ranges(Path("./dat/"), IP_TAG_SOURCES)
     for tag in TAGGED_IP_RANGES:
         app.logger.info(f"  loaded {tag=}: {len(TAGGED_IP_RANGES[tag])} IP ranges")
 
@@ -921,5 +922,5 @@ app.logger.info(__name__)
 if __name__ == "__main__":
     app.run(debug=True)
 
-if __name__ == "uwsgi_file___main":
+if __name__ in {"uwsgi_file___main", "fichub_net.main"}:
     uwsgi_init()

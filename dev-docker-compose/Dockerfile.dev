@@ -19,6 +19,7 @@ RUN mkdir -p src/fichub_net && touch src/fichub_net/__init.py__ && uv sync && rm
 COPY --chown=fichub_net src src
 COPY --chown=fichub_net static static
 COPY --chown=fichub_net epub_style.css .
+COPY --chown=fichub_net dat dat
 
 RUN uv sync
 

@@ -20,6 +20,7 @@ x-app-defaults: &x-app-defaults
     - ../src:/app/src:ro
     - ../static:/app/static:ro
     - ../epub_style.css:/app/epub_style.css:ro
+    - ../dat:/app/dat:ro
     - ./authentications.py:/app/src/fichub_net/authentications.py:ro
     - ./rl_conf.dev.py:/app/src/fichub_net/rl_conf.py:ro
   depends_on:

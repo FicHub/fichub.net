@@ -17,6 +17,13 @@ LIMIT_UPSTREAMS_EXTRA: dict[str, float] = {}
 # as "authorized" for the datacenter check.
 NO_LIMIT_UPSTREAMS: set[str] = set()
 
+# Types of ip tags to load, if one cannot be parsed the service will not start up.
+# If there are files in dat/ that are not covered here an error will also be raised.
+# source path => (type, tag)
+IP_TAG_SOURCES: dict[str, tuple[str, str]] = {
+    "dat/.gitkeep": ("ignore", "ignore"),
+}
+
 
 # An extra set of remotes to treat as "weird" and handle similarly to
 # datacenter IPs.

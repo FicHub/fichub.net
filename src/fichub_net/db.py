@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 import datetime
 from enum import Enum
 import json
@@ -34,7 +34,7 @@ class ExportLog:
     @staticmethod
     def lookup(
         url_id: str, version: int, etype: str, input_hash: str
-    ) -> Optional["ExportLog"]:
+    ) -> ExportLog | None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -50,7 +50,7 @@ class ExportLog:
             r = curs.fetchone()
             return ExportLog(*r[: ExportLog.field_count]) if r is not None else None
 
-    def upsert(self) -> "ExportLog":
+    def upsert(self) -> ExportLog:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -89,7 +89,7 @@ class FicVersionBump:
         self.value = value_
 
     @staticmethod
-    def select(url_id: str) -> list["FicVersionBump"]:
+    def select(url_id: str) -> list[FicVersionBump]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 f"""
@@ -175,7 +175,7 @@ class FicInfo:
         self.author_local_id = author_local_id_
         self.raw_extended_meta = raw_extended_meta_
 
-    def to_json(self) -> dict["str", Any]:
+    def to_json(self) -> dict[str, Any]:
         raw_extended_meta = None
         try:
             if self.raw_extended_meta is not None and len(self.raw_extended_meta) > 0:
@@ -202,7 +202,7 @@ class FicInfo:
         }
 
     @staticmethod
-    def select(url_id: str | None = None) -> list["FicInfo"]:
+    def select(url_id: str | None = None) -> list[FicInfo]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 f"""
@@ -261,7 +261,7 @@ class FicInfo:
             )
 
     @staticmethod
-    def parse(fic_info: dict[str, str]) -> "FicInfo":
+    def parse(fic_info: dict[str, str]) -> FicInfo:
         extra_meta = fic_info.get("extraMeta")
         if extra_meta is not None and len(extra_meta.strip()) < 1:
             extra_meta = None
@@ -270,18 +270,18 @@ class FicInfo:
             raw_extended_meta = None
         return FicInfo(
             fic_info["urlId"],
-            datetime.datetime.now(tz=datetime.timezone.utc),
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
+            datetime.datetime.now(tz=datetime.UTC),
             fic_info["title"],
             fic_info["author"],
             int(fic_info["chapters"]),
             int(fic_info["words"]),
             fic_info["desc"],
             datetime.datetime.fromtimestamp(
-                int(fic_info["published"]) / 1000.0, tz=datetime.timezone.utc
+                int(fic_info["published"]) / 1000.0, tz=datetime.UTC
             ),
             datetime.datetime.fromtimestamp(
-                int(fic_info["updated"]) / 1000.0, tz=datetime.timezone.utc
+                int(fic_info["updated"]) / 1000.0, tz=datetime.UTC
             ),
             fic_info["status"],
             fic_info["source"],
@@ -320,7 +320,7 @@ class FicBlacklist:
         self.reason = reason_
 
     @staticmethod
-    def select(url_id: str | None = None) -> list["FicBlacklist"]:
+    def select(url_id: str | None = None) -> list[FicBlacklist]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -403,7 +403,7 @@ class AuthorBlacklist:
     @staticmethod
     def select(
         source_id: int | None = None, author_id: int | None = None
-    ) -> list["AuthorBlacklist"]:
+    ) -> list[AuthorBlacklist]:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -473,7 +473,7 @@ class RequestSource:
     @staticmethod
     def select(
         is_automated: bool, route: str, description: str
-    ) -> Optional["RequestSource"]:
+    ) -> RequestSource | None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -487,7 +487,7 @@ class RequestSource:
             return None if r is None else RequestSource(*r)
 
     @staticmethod
-    def upsert(is_automated: bool, route: str, description: str) -> "RequestSource":
+    def upsert(is_automated: bool, route: str, description: str) -> RequestSource:
         existing = RequestSource.select(is_automated, route, description)
         if existing is not None:
             return existing
@@ -537,7 +537,7 @@ class RequestLog:
         self.url = url_
 
     @staticmethod
-    def most_recent_by_url_id(etype: str, url_id: str) -> Optional["RequestLog"]:
+    def most_recent_by_url_id(etype: str, url_id: str) -> RequestLog | None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """

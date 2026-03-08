@@ -1,10 +1,13 @@
+from typing import TYPE_CHECKING
 import datetime
 from pathlib import Path
 import shutil
 
-from flask import Flask
 from oil import oil
 import pytest
+
+if TYPE_CHECKING:
+    from flask import Flask
 
 from fichub_net import ax, ebook, util
 from fichub_net.db import ExportLog, FicInfo
@@ -224,23 +227,23 @@ def test_find_existing_export() -> None:
     ("dt", "expected"),
     [
         (
-            datetime.datetime(1000, 2, 3, tzinfo=datetime.timezone.utc),
+            datetime.datetime(1000, 2, 3, tzinfo=datetime.UTC),
             (1000, 2, 3, 0, 0, 0),
         ),
         (
-            datetime.datetime(2000, 2, 3, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2000, 2, 3, tzinfo=datetime.UTC),
             (2000, 2, 3, 0, 0, 0),
         ),
         (
-            datetime.datetime(7, 2, 3, 4, tzinfo=datetime.timezone.utc),
+            datetime.datetime(7, 2, 3, 4, tzinfo=datetime.UTC),
             (7, 2, 3, 4, 0, 0),
         ),
         (
-            datetime.datetime(7, 2, 3, 4, 5, tzinfo=datetime.timezone.utc),
+            datetime.datetime(7, 2, 3, 4, 5, tzinfo=datetime.UTC),
             (7, 2, 3, 4, 5, 0),
         ),
         (
-            datetime.datetime(7, 2, 3, 4, 5, 6, tzinfo=datetime.timezone.utc),
+            datetime.datetime(7, 2, 3, 4, 5, 6, tzinfo=datetime.UTC),
             (7, 2, 3, 4, 5, 6),
         ),
     ],

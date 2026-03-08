@@ -1,10 +1,14 @@
-from collections.abc import Iterator
+from typing import TYPE_CHECKING
 import contextlib
 import os
 from pathlib import Path
 import unittest.mock
 
-import pytest
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+if TYPE_CHECKING:
+    import pytest
 
 from fichub_net import ip_tag
 

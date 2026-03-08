@@ -1,5 +1,7 @@
-from typing import Any, Optional
-import datetime
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import datetime
 
 from oil import oil
 
@@ -39,11 +41,11 @@ class Limiter:
         return self.key.startswith("anon:")
 
     @staticmethod
-    def from_row(row: Any) -> "Limiter":
+    def from_row(row: Any) -> Limiter:
         return Limiter(*row)
 
     @staticmethod
-    def select(key: str) -> Optional["Limiter"]:
+    def select(key: str) -> Limiter | None:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -57,7 +59,7 @@ class Limiter:
             return None if r is None else Limiter.from_row(r)
 
     @staticmethod
-    def create(key: str) -> "Limiter":
+    def create(key: str) -> Limiter:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -70,7 +72,7 @@ class Limiter:
         assert limiter is not None
         return limiter
 
-    def set_parameters(self, capacity: float, flow: float) -> "Limiter":
+    def set_parameters(self, capacity: float, flow: float) -> Limiter:
         with oil.open() as db, db.cursor() as curs:
             curs.execute(
                 """
@@ -81,7 +83,7 @@ class Limiter:
             )
         return self.refresh()
 
-    def refresh(self) -> "Limiter":
+    def refresh(self) -> Limiter:
         limiter = Limiter.select(self.key)
         assert limiter is not None
         return limiter

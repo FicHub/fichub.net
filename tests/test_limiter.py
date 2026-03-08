@@ -16,7 +16,7 @@ class TestLimiter:
             10.0,
             1.0 / 1.0,
             0.0,
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
         )
 
     @staticmethod

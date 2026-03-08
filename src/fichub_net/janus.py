@@ -1,7 +1,6 @@
 #!/usr/bin/env -S uv run --quiet
-from typing import Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 import base64
-from collections.abc import Callable
 import functools
 from http import HTTPStatus
 import inspect
@@ -15,7 +14,10 @@ import resource
 import subprocess
 import sys
 import time
-from types import TracebackType
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import TracebackType
 
 import psutil
 

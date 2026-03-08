@@ -1,9 +1,11 @@
 #!./venv/bin/python
-from typing import Any
-from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any
 import sys
 import time
 import traceback
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 from elasticsearch import Elasticsearch
 import elasticsearch.helpers

@@ -1,17 +1,21 @@
-from typing import Any
-from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any
 import os
 from pathlib import Path
 import re
 
-from flask import Flask
-from flask.testing import FlaskClient
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 import oil
 import pytest
 import testcontainers.elasticsearch
 import testcontainers.postgres
 from urllib3.connectionpool import HTTPConnectionPool
-from urllib3.response import BaseHTTPResponse
+
+if TYPE_CHECKING:
+    from flask import Flask
+    from flask.testing import FlaskClient
+    from urllib3.response import BaseHTTPResponse
 
 POSTGRES_CONTAINER = None
 

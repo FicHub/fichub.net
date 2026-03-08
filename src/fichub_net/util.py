@@ -1,6 +1,8 @@
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 import hashlib
-from pathlib import Path
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 import requests
 

@@ -38,15 +38,15 @@ def build_test_fic_info_dict(url_id: str) -> dict[str, str]:
 def build_test_fic_info(url_id: str) -> FicInfo:
     return FicInfo(
         url_id,
-        datetime.datetime.now(tz=datetime.timezone.utc),
-        datetime.datetime.now(tz=datetime.timezone.utc),
+        datetime.datetime.now(tz=datetime.UTC),
+        datetime.datetime.now(tz=datetime.UTC),
         "test title",
         "test author",
         1,
         1_123,
         "test description",
-        datetime.datetime.now(tz=datetime.timezone.utc),
-        datetime.datetime.now(tz=datetime.timezone.utc),
+        datetime.datetime.now(tz=datetime.UTC),
+        datetime.datetime.now(tz=datetime.UTC),
         "test status",
         "test source",
         None,
@@ -67,7 +67,7 @@ class TestExportLog:
             "epub",
             "ex-hash",
             "ex-out-hash",
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
         )
 
     @staticmethod
@@ -82,7 +82,7 @@ class TestExportLog:
             "epub",
             "ex-hash",
             "ex-out-hash",
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
         )
         with pytest.raises(
             psycopg2.errors.ForeignKeyViolation,
@@ -99,7 +99,7 @@ class TestExportLog:
             "epub",
             "ex-hash",
             "ex-out-hash",
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
         )
         el0.upsert()
 
@@ -212,8 +212,8 @@ class TestFicBlacklist:
     def test_init(self) -> None:
         _fb = FicBlacklist(
             "foo4",
-            datetime.datetime.now(tz=datetime.timezone.utc),
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
+            datetime.datetime.now(tz=datetime.UTC),
             FicBlacklistReason.AUTHOR_GREYLIST_REQUEST.value,
         )
 
@@ -302,8 +302,8 @@ class TestAuthorBlacklist:
         AuthorBlacklist(
             1,
             1001,
-            datetime.datetime.now(tz=datetime.timezone.utc),
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
+            datetime.datetime.now(tz=datetime.UTC),
             5,
         )
 
@@ -406,7 +406,7 @@ class TestRequestSource:
     def test_init(self) -> None:
         RequestSource(
             1,
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
             False,
             "http://localhost",
             "127.0.0.1",
@@ -449,7 +449,7 @@ class TestRequestLog:
     def test_init(self) -> None:
         RequestLog(
             1,
-            datetime.datetime.now(tz=datetime.timezone.utc),
+            datetime.datetime.now(tz=datetime.UTC),
             1,
             "epub",
             "foo5",

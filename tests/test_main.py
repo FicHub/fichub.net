@@ -1,6 +1,9 @@
+from typing import TYPE_CHECKING
 from http import HTTPStatus
 
-from flask.testing import FlaskClient
+if TYPE_CHECKING:
+    from flask.testing import FlaskClient
+
 import pytest
 
 from fichub_net import main

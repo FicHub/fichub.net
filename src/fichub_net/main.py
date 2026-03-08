@@ -1,7 +1,4 @@
-from typing import (
-    Any,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, cast
 import contextlib
 from enum import IntEnum
 import json
@@ -20,9 +17,11 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from flask.typing import ResponseReturnValue
 import markupsafe
 from werkzeug.exceptions import NotFound
+
+if TYPE_CHECKING:
+    from flask.typing import ResponseReturnValue
 
 from fichub_net import ax, ebook, es, util
 from fichub_net.db import FicBlacklist, FicInfo, RequestLog, RequestSource

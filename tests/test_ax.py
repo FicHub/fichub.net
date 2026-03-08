@@ -1,9 +1,11 @@
-from typing import Any
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Self
 import datetime
 import json
 import time
-from types import TracebackType
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import TracebackType
 
 from elasticsearch import Elasticsearch
 from oil import oil
@@ -12,7 +14,6 @@ from requests.auth import HTTPBasicAuth
 import responses
 from responses import matchers
 from responses.registries import OrderedRegistry
-from typing_extensions import Self
 
 from fichub_net import ax, es
 import fichub_net.authentications as a
@@ -342,15 +343,15 @@ def test_fetch_chapters() -> None:
 
     fic_info = FicInfo(
         url_id,
-        datetime.datetime.now(tz=datetime.timezone.utc),
-        datetime.datetime.now(tz=datetime.timezone.utc),
+        datetime.datetime.now(tz=datetime.UTC),
+        datetime.datetime.now(tz=datetime.UTC),
         "test title",
         "test author",
         1,
         1_123,
         "test description",
-        datetime.datetime.now(tz=datetime.timezone.utc),
-        datetime.datetime.now(tz=datetime.timezone.utc),
+        datetime.datetime.now(tz=datetime.UTC),
+        datetime.datetime.now(tz=datetime.UTC),
         "test status",
         "test source",
         None,

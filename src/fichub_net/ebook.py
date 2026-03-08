@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 import datetime
 import os
 import pathlib
@@ -15,8 +16,10 @@ from ebooklib import epub
 from flask import render_template
 
 from fichub_net import util
-from fichub_net.ax import Chapter, FicInfo
 from fichub_net.db import ExportLog, FicVersionBump
+
+if TYPE_CHECKING:
+    from fichub_net.ax import Chapter, FicInfo
 
 TMP_DIR = "tmp"
 PRIMARY_CACHE_DIR = "/mnt/selene_fichub/cache"
@@ -76,9 +79,7 @@ def format_rel_date_part(val: int, which: str) -> str:
 
 
 def metadata_string(info: FicInfo) -> str:
-    diff = relativedelta(
-        datetime.datetime.now(tz=datetime.timezone.utc), info.fic_updated
-    )
+    diff = relativedelta(datetime.datetime.now(tz=datetime.UTC), info.fic_updated)
     parts = [
         (diff.years, "year"),
         (diff.months, "month"),
@@ -157,7 +158,7 @@ def finalize_export(
     # record this result so we can immediately return it next time, assuming the
     # input hash and export version have not changed
     try:
-        n = datetime.datetime.now(tz=datetime.timezone.utc)
+        n = datetime.datetime.now(tz=datetime.UTC)
         el = ExportLog(url_id, export_version(etype, url_id), etype, ihash, fhash, n)
         el.upsert()
     except Exception as e:
